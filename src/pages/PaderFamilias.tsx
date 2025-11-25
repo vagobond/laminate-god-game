@@ -52,21 +52,29 @@ const PaderFamilias = () => {
 
         <div className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-8">
           <Button 
+            variant="mystical" 
+            size="lg"
+            onClick={() => navigate("/explore-layers")}
+          >
+            Back to Exploration
+          </Button>
+          
+          <Button 
             variant="divine" 
             size="xl"
             onClick={() => navigate("/enter-lamsterverse")}
             className="w-full sm:w-auto min-w-[280px]"
           >
-            ENTER THE LAMSTERVERSE
+            ENTER THIS LAYER
           </Button>
           
           <Button 
             variant="mystical" 
             size="xl"
-            onClick={() => navigate("/create-layer")}
+            onClick={() => navigate("/branch-from-verse")}
             className="w-full sm:w-auto min-w-[280px]"
           >
-            CREATE A NEW LAYER
+            BRANCH FROM THIS LAYER
           </Button>
         </div>
       </div>

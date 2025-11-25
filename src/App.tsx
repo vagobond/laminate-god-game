@@ -6,9 +6,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Welcome from "./pages/Welcome";
 import Powers from "./pages/Powers";
 import AboutLaminate from "./pages/AboutLaminate";
+import CreationHub from "./pages/CreationHub";
+import CreateLayer from "./pages/CreateLayer";
+import ExploreLayers from "./pages/ExploreLayers";
 import PaderFamilias from "./pages/PaderFamilias";
 import EnterLamsterverse from "./pages/EnterLamsterverse";
-import CreateLayer from "./pages/CreateLayer";
+import BranchFromVerse from "./pages/BranchFromVerse";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,9 +26,12 @@ const App = () => (
           <Route path="/" element={<Welcome />} />
           <Route path="/powers" element={<Powers />} />
           <Route path="/about-laminate" element={<AboutLaminate />} />
+          <Route path="/creation-hub" element={<CreationHub />} />
+          <Route path="/create-layer" element={<CreateLayer />} />
+          <Route path="/explore-layers" element={<ExploreLayers />} />
           <Route path="/pader-familias" element={<PaderFamilias />} />
           <Route path="/enter-lamsterverse" element={<EnterLamsterverse />} />
-          <Route path="/create-layer" element={<CreateLayer />} />
+          <Route path="/branch-from-verse" element={<BranchFromVerse />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

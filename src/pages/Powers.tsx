@@ -21,10 +21,10 @@ const Powers = () => {
           <Button 
             variant="mystical" 
             size="xl"
-            onClick={() => navigate("/pader-familias")}
+            onClick={() => navigate("/creation-hub")}
             className="w-full sm:w-auto min-w-[250px]"
           >
-            CREATE
+            ENTER THE LAMINATE
           </Button>
           
           <Button 
