@@ -13,10 +13,18 @@ const ExploreLayers = () => {
           Explore The Laminate
         </h1>
 
-        <div className="text-center text-foreground/90 text-xl mb-8">
-          <p className="text-secondary font-semibold">
+        <div className="text-center space-y-4 mb-8">
+          <p className="text-foreground/90 text-xl text-secondary font-semibold">
             Discover existing layers. Choose one to explore or branch from...
           </p>
+          <Button 
+            variant="outline" 
+            size="lg"
+            onClick={() => navigate("/layer-tree")}
+            className="gap-2"
+          >
+            <span>🌳</span> View Layer Lineage Tree
+          </Button>
         </div>
 
         <div className="grid gap-6">
