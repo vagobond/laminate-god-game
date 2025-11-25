@@ -13,6 +13,7 @@ import PaderFamilias from "./pages/PaderFamilias";
 import EnterLamsterverse from "./pages/EnterLamsterverse";
 import BranchFromVerse from "./pages/BranchFromVerse";
 import LayerTree from "./pages/LayerTree";
+import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/enter-lamsterverse" element={<EnterLamsterverse />} />
           <Route path="/branch-from-verse" element={<BranchFromVerse />} />
           <Route path="/layer-tree" element={<LayerTree />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

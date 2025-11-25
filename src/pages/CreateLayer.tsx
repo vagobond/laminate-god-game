@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const CreateLayer = () => {
   const navigate = useNavigate();
@@ -14,11 +16,28 @@ const CreateLayer = () => {
   const [philosophy, setPhilosophy] = useState("");
   const [vision, setVision] = useState("");
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (godName && domain && philosophy && vision) {
-      // Future: Save to database or game state
-      alert(`Congratulations! You have created a new layer!\n\nGod: ${godName}\nDomain: ${domain}\nPhilosophy: ${philosophy}\n\nYour vision shall manifest in The Laminate.`);
-      navigate("/");
+      try {
+        const { error } = await supabase
+          .from('layers')
+          .insert({
+            name: godName,
+            creator_name: godName,
+            domain: domain,
+            philosophy: philosophy,
+            vision: vision,
+            description: `${domain} - ${philosophy}`
+          });
+
+        if (error) throw error;
+
+        toast.success("Your layer has been created and added to The Laminate!");
+        navigate("/explore-layers");
+      } catch (error) {
+        console.error("Error creating layer:", error);
+        toast.error("Failed to create layer. Please try again.");
+      }
     }
   };
 

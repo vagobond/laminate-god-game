@@ -1,21 +1,80 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const BranchFromVerse = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [branchName, setBranchName] = useState("");
   const [branchConcept, setBranchConcept] = useState("");
   const [connection, setConnection] = useState("");
+  const [parentLayer, setParentLayer] = useState<any>(null);
 
-  const handleSubmit = () => {
-    if (branchName && branchConcept && connection) {
-      alert(`Congratulations! You have created a branch from The Verse Layer!\n\nBranch: ${branchName}\nConcept: ${branchConcept}\n\nPader Familias will earn points as your branch grows.`);
-      navigate("/");
+  useEffect(() => {
+    const fetchParentLayer = async () => {
+      const parentId = searchParams.get('parent');
+      if (parentId) {
+        const { data } = await supabase
+          .from('layers')
+          .select('*')
+          .eq('id', parentId)
+          .single();
+        
+        if (data) setParentLayer(data);
+      } else {
+        // Default to The Verse Layer
+        const { data } = await supabase
+          .from('layers')
+          .select('*')
+          .eq('name', 'The Verse Layer')
+          .single();
+        
+        if (data) setParentLayer(data);
+      }
+    };
+
+    fetchParentLayer();
+  }, [searchParams]);
+
+  const handleSubmit = async () => {
+    if (branchName && branchConcept && connection && parentLayer) {
+      try {
+        // Create the new layer
+        const { data: newLayer, error: layerError } = await supabase
+          .from('layers')
+          .insert({
+            name: branchName,
+            creator_name: branchName,
+            description: branchConcept,
+            domain: connection
+          })
+          .select()
+          .single();
+
+        if (layerError) throw layerError;
+
+        // Create the relationship
+        const { error: relationError } = await supabase
+          .from('layer_relationships')
+          .insert({
+            parent_layer_id: parentLayer.id,
+            child_layer_id: newLayer.id
+          });
+
+        if (relationError) throw relationError;
+
+        toast.success(`Branch created! ${parentLayer.creator_name} will earn points as your branch grows.`);
+        navigate("/layer-tree");
+      } catch (error) {
+        console.error("Error creating branch:", error);
+        toast.error("Failed to create branch. Please try again.");
+      }
     }
   };
 
@@ -86,7 +145,7 @@ const BranchFromVerse = () => {
                 <Card className="p-6 bg-secondary/10 border-secondary/50">
                   <h3 className="text-2xl font-bold text-secondary mb-4">Your Branch</h3>
                   <div className="space-y-2 text-foreground/90">
-                    <p><strong className="text-secondary">Parent Node:</strong> The Verse Layer (by Pader Familias)</p>
+                    <p><strong className="text-secondary">Parent Node:</strong> {parentLayer?.name || 'Loading...'} (by {parentLayer?.creator_name || 'Loading...'})</p>
                     <p><strong className="text-secondary">Branch Name:</strong> {branchName}</p>
                     <p><strong className="text-secondary">Connection:</strong> {connection}</p>
                     <p><strong className="text-secondary">Concept:</strong> {branchConcept}</p>
