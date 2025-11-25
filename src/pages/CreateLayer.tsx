@@ -32,8 +32,8 @@ const CreateLayer = () => {
         <Card className="p-8 bg-card/60 backdrop-blur-sm border-primary/30 mystical-glow-teal space-y-6">
           <div className="text-foreground/90 text-lg leading-relaxed space-y-4">
             <p className="text-xl text-primary font-semibold italic text-center">
-              "Pader Familias created the world and the gods who would shape it. 
-              You are one of those gods..."
+              "Every idea becomes a module. Every module becomes a node. 
+              Every node becomes a layer. And every layer can spawn infinite new layers..."
             </p>
             
             <div className="space-y-6 pt-4">
@@ -125,9 +125,9 @@ const CreateLayer = () => {
           <Button 
             variant="mystical" 
             size="lg"
-            onClick={() => navigate("/pader-familias")}
+            onClick={() => navigate("/creation-hub")}
           >
-            Back
+            Back to Hub
           </Button>
           {godName && domain && philosophy && vision && (
             <Button 
