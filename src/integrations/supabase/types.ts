@@ -14,13 +14,91 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      layer_relationships: {
+        Row: {
+          child_layer_id: string
+          created_at: string
+          id: string
+          parent_layer_id: string
+        }
+        Insert: {
+          child_layer_id: string
+          created_at?: string
+          id?: string
+          parent_layer_id: string
+        }
+        Update: {
+          child_layer_id?: string
+          created_at?: string
+          id?: string
+          parent_layer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "layer_relationships_child_layer_id_fkey"
+            columns: ["child_layer_id"]
+            isOneToOne: false
+            referencedRelation: "layers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "layer_relationships_parent_layer_id_fkey"
+            columns: ["parent_layer_id"]
+            isOneToOne: false
+            referencedRelation: "layers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      layers: {
+        Row: {
+          branches_count: number
+          created_at: string
+          creator_name: string
+          description: string | null
+          domain: string | null
+          id: string
+          name: string
+          philosophy: string | null
+          total_points: number
+          updated_at: string
+          vision: string | null
+        }
+        Insert: {
+          branches_count?: number
+          created_at?: string
+          creator_name: string
+          description?: string | null
+          domain?: string | null
+          id?: string
+          name: string
+          philosophy?: string | null
+          total_points?: number
+          updated_at?: string
+          vision?: string | null
+        }
+        Update: {
+          branches_count?: number
+          created_at?: string
+          creator_name?: string
+          description?: string | null
+          domain?: string | null
+          id?: string
+          name?: string
+          philosophy?: string | null
+          total_points?: number
+          updated_at?: string
+          vision?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_layer_points: { Args: { layer_id: string }; Returns: number }
+      refresh_layer_stats: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

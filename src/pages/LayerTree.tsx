@@ -2,78 +2,79 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { LayerTreeNode, LayerNode } from "@/components/LayerTreeNode";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
-
-// Example data - this would come from a database in production
-const exampleTreeData: LayerNode = {
-  id: "verse-layer",
-  name: "The Verse Layer",
-  creator: "Pader Familias",
-  branches: 3,
-  points: 450,
-  children: [
-    {
-      id: "quantum-expanse",
-      name: "The Quantum Expanse",
-      creator: "Player CD",
-      branches: 2,
-      points: 200,
-      children: [
-        {
-          id: "probability-realm",
-          name: "Probability Realm",
-          creator: "Player JM",
-          branches: 1,
-          points: 100,
-          children: [
-            {
-              id: "schrodinger-gardens",
-              name: "Schrödinger's Gardens",
-              creator: "Player EK",
-              branches: 0,
-              points: 50,
-            }
-          ]
-        },
-        {
-          id: "void-nexus",
-          name: "The Void Nexus",
-          creator: "Player AS",
-          branches: 0,
-          points: 75,
-        }
-      ]
-    },
-    {
-      id: "shadow-aethermoor",
-      name: "Shadow Aethermoor",
-      creator: "Player MK",
-      branches: 1,
-      points: 150,
-      children: [
-        {
-          id: "twilight-crystals",
-          name: "Twilight Crystal Mines",
-          creator: "Player LP",
-          branches: 0,
-          points: 80,
-        }
-      ]
-    },
-    {
-      id: "underground-pyrothane",
-      name: "Underground Pyrothane",
-      creator: "Player TN",
-      branches: 0,
-      points: 100,
-    }
-  ]
-};
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const LayerTree = () => {
   const navigate = useNavigate();
   const [selectedNode, setSelectedNode] = useState<LayerNode | null>(null);
+  const [treeData, setTreeData] = useState<LayerNode | null>(null);
+
+  const { data: layers } = useQuery({
+    queryKey: ['layers-tree'],
+    queryFn: async () => {
+      const { data: layersData, error: layersError } = await supabase
+        .from('layers')
+        .select('*');
+      
+      if (layersError) throw layersError;
+
+      const { data: relationshipsData, error: relationshipsError } = await supabase
+        .from('layer_relationships')
+        .select('*');
+      
+      if (relationshipsError) throw relationshipsError;
+
+      return { layers: layersData, relationships: relationshipsData };
+    }
+  });
+
+  useEffect(() => {
+    if (!layers) return;
+
+    const buildTree = (parentId: string | null = null): LayerNode[] => {
+      const children: LayerNode[] = [];
+      
+      layers.relationships
+        .filter(rel => rel.parent_layer_id === parentId)
+        .forEach(rel => {
+          const layer = layers.layers.find(l => l.id === rel.child_layer_id);
+          if (layer) {
+            children.push({
+              id: layer.id,
+              name: layer.name,
+              creator: layer.creator_name,
+              branches: layer.branches_count,
+              points: layer.total_points,
+              children: buildTree(layer.id)
+            });
+          }
+        });
+      
+      return children;
+    };
+
+    // Find root nodes (layers with no parent)
+    const rootLayerIds = layers.layers
+      .filter(layer => !layers.relationships.some(rel => rel.child_layer_id === layer.id))
+      .map(layer => layer.id);
+
+    if (rootLayerIds.length > 0) {
+      const rootLayer = layers.layers.find(l => l.id === rootLayerIds[0]);
+      if (rootLayer) {
+        setTreeData({
+          id: rootLayer.id,
+          name: rootLayer.name,
+          creator: rootLayer.creator_name,
+          branches: rootLayer.branches_count,
+          points: rootLayer.total_points,
+          children: buildTree(rootLayer.id)
+        });
+      }
+    }
+  }, [layers]);
 
   const handleNodeClick = (node: LayerNode) => {
     setSelectedNode(node);
@@ -89,7 +90,7 @@ const LayerTree = () => {
     return total;
   };
 
-  const totalTreePoints = calculateTotalPoints(exampleTreeData);
+  const totalTreePoints = treeData ? calculateTotalPoints(treeData) : 0;
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -114,13 +115,19 @@ const LayerTree = () => {
                   </Badge>
                 </div>
                 
-                <div className="space-y-3">
-                  <LayerTreeNode
-                    node={exampleTreeData}
-                    level={0}
-                    onNodeClick={handleNodeClick}
-                  />
-                </div>
+                {treeData ? (
+                  <div className="space-y-3">
+                    <LayerTreeNode
+                      node={treeData}
+                      level={0}
+                      onNodeClick={handleNodeClick}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    Loading layer tree...
+                  </div>
+                )}
               </div>
             </Card>
           </div>
@@ -140,7 +147,7 @@ const LayerTree = () => {
                 </p>
                 <div className="pt-2 border-t border-primary/20">
                   <p className="text-xs text-muted-foreground italic">
-                    Example: Pader Familias earns points from all 6 descendant layers in this tree, totaling {exampleTreeData.points} points.
+                    The deeper your tree grows, the more points you accumulate from all descendants.
                   </p>
                 </div>
               </div>
