@@ -45,6 +45,14 @@ const BranchFromVerse = () => {
   const handleSubmit = async () => {
     if (branchName && branchConcept && connection && parentLayer) {
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          toast.error("You must be signed in to create a branch");
+          navigate("/auth");
+          return;
+        }
+
         // Create the new layer
         const { data: newLayer, error: layerError } = await supabase
           .from('layers')
@@ -52,7 +60,8 @@ const BranchFromVerse = () => {
             name: branchName,
             creator_name: branchName,
             description: branchConcept,
-            domain: connection
+            domain: connection,
+            user_id: session.user.id
           })
           .select()
           .single();
@@ -68,6 +77,10 @@ const BranchFromVerse = () => {
           });
 
         if (relationError) throw relationError;
+
+        // Refresh stats
+        const { error: refreshError } = await supabase.rpc('refresh_layer_stats');
+        if (refreshError) console.error('Error refreshing stats:', refreshError);
 
         toast.success(`Branch created! ${parentLayer.creator_name} will earn points as your branch grows.`);
         navigate("/layer-tree");

@@ -6,6 +6,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Trophy, Medal, Award } from "lucide-react";
 
+interface CreatorStats {
+  creator_name: string;
+  display_name: string | null;
+  total_branches: number;
+  total_points: number;
+}
+
 const Leaderboard = () => {
   const navigate = useNavigate();
 
@@ -14,27 +21,43 @@ const Leaderboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('layers')
-        .select('creator_name, branches_count, total_points')
+        .select(`
+          creator_name,
+          branches_count,
+          total_points,
+          user_id,
+          profiles:user_id (
+            display_name
+          )
+        `)
         .order('total_points', { ascending: false });
       
       if (error) throw error;
       
-      // Aggregate by creator
-      const creatorMap = new Map<string, { branches: number; points: number }>();
+      // Aggregate by user_id (for authenticated users) or creator_name (for legacy)
+      const creatorMap = new Map<string, CreatorStats>();
       data.forEach(layer => {
-        const existing = creatorMap.get(layer.creator_name) || { branches: 0, points: 0 };
-        creatorMap.set(layer.creator_name, {
-          branches: existing.branches + layer.branches_count,
-          points: existing.points + layer.total_points
-        });
+        const key = layer.user_id || layer.creator_name;
+        const displayName = (layer.profiles as any)?.display_name || layer.creator_name;
+        const existing = creatorMap.get(key);
+        
+        if (existing) {
+          creatorMap.set(key, {
+            ...existing,
+            total_branches: existing.total_branches + layer.branches_count,
+            total_points: existing.total_points + layer.total_points
+          });
+        } else {
+          creatorMap.set(key, {
+            creator_name: layer.creator_name,
+            display_name: displayName,
+            total_branches: layer.branches_count,
+            total_points: layer.total_points
+          });
+        }
       });
       
-      return Array.from(creatorMap.entries())
-        .map(([name, stats]) => ({
-          creator_name: name,
-          total_branches: stats.branches,
-          total_points: stats.points
-        }))
+      return Array.from(creatorMap.values())
         .sort((a, b) => b.total_points - a.total_points);
     }
   });
@@ -97,7 +120,7 @@ const Leaderboard = () => {
 
                         <div className="flex-1 min-w-0">
                           <h3 className="text-xl font-bold text-primary truncate">
-                            {creator.creator_name}
+                            {creator.display_name || creator.creator_name}
                           </h3>
                           <div className="flex gap-4 mt-2 text-sm">
                             <div className="flex items-center gap-1">

@@ -62,6 +62,7 @@ export type Database = {
           philosophy: string | null
           total_points: number
           updated_at: string
+          user_id: string | null
           vision: string | null
         }
         Insert: {
@@ -75,6 +76,7 @@ export type Database = {
           philosophy?: string | null
           total_points?: number
           updated_at?: string
+          user_id?: string | null
           vision?: string | null
         }
         Update: {
@@ -88,7 +90,38 @@ export type Database = {
           philosophy?: string | null
           total_points?: number
           updated_at?: string
+          user_id?: string | null
           vision?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
         }
         Relationships: []
       }
