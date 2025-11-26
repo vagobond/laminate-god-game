@@ -1,8 +1,32 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 const Powers = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleCreateClick = () => {
+    if (user) {
+      navigate("/creation-hub");
+    } else {
+      navigate("/auth");
+    }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
@@ -21,10 +45,10 @@ const Powers = () => {
           <Button 
             variant="mystical" 
             size="xl"
-            onClick={() => navigate("/creation-hub")}
+            onClick={handleCreateClick}
             className="w-full sm:w-auto min-w-[250px]"
           >
-            ENTER THE LAMINATE
+            CREATE
           </Button>
           
           <Button 
