@@ -21,23 +21,14 @@ const Welcome = () => {
           </div>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button 
-            variant="divine" 
-            size="xl"
-            onClick={() => navigate("/powers")}
-            className="animate-float"
-          >
-            ENTER THE LAMINATE
-          </Button>
-          <Button 
-            variant="mystical" 
-            size="lg"
-            onClick={() => navigate("/about-laminate")}
-          >
-            LEARN MORE
-          </Button>
-        </div>
+        <Button 
+          variant="divine" 
+          size="xl"
+          onClick={() => navigate("/powers")}
+          className="animate-float"
+        >
+          USE YOUR POWERS
+        </Button>
       </div>
     </div>
   );
