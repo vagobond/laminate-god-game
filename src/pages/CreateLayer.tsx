@@ -19,6 +19,14 @@ const CreateLayer = () => {
   const handleSubmit = async () => {
     if (godName && domain && philosophy && vision) {
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          toast.error("You must be signed in to create a layer");
+          navigate("/auth");
+          return;
+        }
+
         const { error } = await supabase
           .from('layers')
           .insert({
@@ -27,7 +35,8 @@ const CreateLayer = () => {
             domain: domain,
             philosophy: philosophy,
             vision: vision,
-            description: `${domain} - ${philosophy}`
+            description: `${domain} - ${philosophy}`,
+            user_id: session.user.id
           });
 
         if (error) throw error;

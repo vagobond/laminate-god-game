@@ -1,8 +1,28 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 const Welcome = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
@@ -21,14 +41,45 @@ const Welcome = () => {
           </div>
         </div>
         
-        <Button 
-          variant="divine" 
-          size="xl"
-          onClick={() => navigate("/powers")}
-          className="animate-float"
-        >
-          USE YOUR POWERS
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {user ? (
+            <>
+              <Button 
+                variant="divine" 
+                size="xl"
+                onClick={() => navigate("/powers")}
+                className="animate-float"
+              >
+                USE YOUR POWERS
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg"
+                onClick={handleSignOut}
+              >
+                Sign Out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button 
+                variant="divine" 
+                size="xl"
+                onClick={() => navigate("/auth")}
+                className="animate-float"
+              >
+                SIGN IN TO BEGIN
+              </Button>
+              <Button 
+                variant="mystical" 
+                size="lg"
+                onClick={() => navigate("/powers")}
+              >
+                EXPLORE
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
