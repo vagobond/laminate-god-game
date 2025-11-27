@@ -14,6 +14,7 @@ const BranchFromVerse = () => {
   const [branchName, setBranchName] = useState("");
   const [branchConcept, setBranchConcept] = useState("");
   const [connection, setConnection] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
   const [parentLayer, setParentLayer] = useState<any>(null);
 
   useEffect(() => {
@@ -43,7 +44,7 @@ const BranchFromVerse = () => {
   }, [searchParams]);
 
   const handleSubmit = async () => {
-    if (branchName && branchConcept && connection && parentLayer) {
+    if (branchName && branchConcept && connection && githubUrl && parentLayer) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
@@ -61,6 +62,7 @@ const BranchFromVerse = () => {
             creator_name: branchName,
             description: branchConcept,
             domain: connection,
+            github_repo_url: githubUrl,
             user_id: session.user.id
           })
           .select()
@@ -151,9 +153,28 @@ const BranchFromVerse = () => {
                   />
                 </div>
               )}
+
+              {branchConcept && (
+                <div className="space-y-3 animate-fade-in">
+                  <Label htmlFor="github" className="text-lg font-semibold text-foreground">
+                    GitHub Repository URL
+                  </Label>
+                  <Input
+                    id="github"
+                    placeholder="https://github.com/username/repo-name"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    className="bg-muted/20 border-primary/30 text-lg"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Connect your Lovable branch project via GitHub. After building your branch in Lovable, 
+                    connect it to GitHub and paste the repository URL here to link it back to the Laminate.
+                  </p>
+                </div>
+              )}
             </div>
 
-            {branchName && connection && branchConcept && (
+            {branchName && connection && branchConcept && githubUrl && (
               <div className="pt-6 animate-fade-in">
                 <Card className="p-6 bg-secondary/10 border-secondary/50">
                   <h3 className="text-2xl font-bold text-secondary mb-4">Your Branch</h3>
@@ -162,6 +183,7 @@ const BranchFromVerse = () => {
                     <p><strong className="text-secondary">Branch Name:</strong> {branchName}</p>
                     <p><strong className="text-secondary">Connection:</strong> {connection}</p>
                     <p><strong className="text-secondary">Concept:</strong> {branchConcept}</p>
+                    <p><strong className="text-secondary">GitHub:</strong> {githubUrl}</p>
                   </div>
                 </Card>
               </div>
@@ -177,7 +199,7 @@ const BranchFromVerse = () => {
           >
             Back
           </Button>
-          {branchName && connection && branchConcept && (
+          {branchName && connection && branchConcept && githubUrl && (
             <Button 
               variant="divine" 
               size="lg"

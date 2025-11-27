@@ -57,6 +57,7 @@ export type Database = {
           creator_name: string
           description: string | null
           domain: string | null
+          github_repo_url: string | null
           id: string
           name: string
           philosophy: string | null
@@ -71,6 +72,7 @@ export type Database = {
           creator_name: string
           description?: string | null
           domain?: string | null
+          github_repo_url?: string | null
           id?: string
           name: string
           philosophy?: string | null
@@ -85,6 +87,7 @@ export type Database = {
           creator_name?: string
           description?: string | null
           domain?: string | null
+          github_repo_url?: string | null
           id?: string
           name?: string
           philosophy?: string | null

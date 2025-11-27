@@ -15,9 +15,10 @@ const CreateLayer = () => {
   const [domain, setDomain] = useState("");
   const [philosophy, setPhilosophy] = useState("");
   const [vision, setVision] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
 
   const handleSubmit = async () => {
-    if (godName && domain && philosophy && vision) {
+    if (godName && domain && philosophy && vision && githubUrl) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
@@ -35,6 +36,7 @@ const CreateLayer = () => {
             domain: domain,
             philosophy: philosophy,
             vision: vision,
+            github_repo_url: githubUrl,
             description: `${domain} - ${philosophy}`,
             user_id: session.user.id
           });
@@ -131,9 +133,28 @@ const CreateLayer = () => {
                   </p>
                 </div>
               )}
+
+              {vision && (
+                <div className="space-y-3 animate-fade-in">
+                  <Label htmlFor="github" className="text-lg font-semibold text-foreground">
+                    GitHub Repository URL
+                  </Label>
+                  <Input
+                    id="github"
+                    placeholder="https://github.com/username/repo-name"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    className="bg-muted/20 border-primary/30 text-lg"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Connect your Lovable project via GitHub. After creating your project in Lovable, 
+                    connect it to GitHub and paste the repository URL here to link your build to the Laminate.
+                  </p>
+                </div>
+              )}
             </div>
 
-            {godName && domain && philosophy && vision && (
+            {godName && domain && philosophy && vision && githubUrl && (
               <div className="pt-6 animate-fade-in">
                 <Card className="p-6 bg-primary/10 border-primary/50">
                   <h3 className="text-2xl font-bold text-primary mb-4">Your Divine Essence</h3>
@@ -142,6 +163,7 @@ const CreateLayer = () => {
                     <p><strong className="text-primary">Domain:</strong> {domain}</p>
                     <p><strong className="text-primary">Philosophy:</strong> {philosophy}</p>
                     <p><strong className="text-primary">Vision:</strong> {vision}</p>
+                    <p><strong className="text-primary">GitHub:</strong> {githubUrl}</p>
                   </div>
                 </Card>
               </div>
@@ -157,7 +179,7 @@ const CreateLayer = () => {
           >
             Back to Hub
           </Button>
-          {godName && domain && philosophy && vision && (
+          {godName && domain && philosophy && vision && githubUrl && (
             <Button 
               variant="divine" 
               size="lg"
