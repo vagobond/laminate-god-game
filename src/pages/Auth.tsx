@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -181,14 +181,24 @@ const Auth = () => {
           </Tabs>
         </Card>
 
-        <div className="text-center">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/")}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            Back to Home
-          </Button>
+        <div className="text-center space-y-2">
+          <div>
+            <Link 
+              to="/onboarding-guide"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              How to Wield Godlike Powers
+            </Link>
+          </div>
+          <div>
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/")}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Back to Home
+            </Button>
+          </div>
         </div>
       </div>
     </div>
