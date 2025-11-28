@@ -15,6 +15,7 @@ const BranchFromVerse = () => {
   const [branchConcept, setBranchConcept] = useState("");
   const [connection, setConnection] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
+  const [githubUrlError, setGithubUrlError] = useState("");
   const [parentLayer, setParentLayer] = useState<any>(null);
 
   useEffect(() => {
@@ -43,7 +44,27 @@ const BranchFromVerse = () => {
     fetchParentLayer();
   }, [searchParams]);
 
+  const isValidGithubUrl = (url: string): boolean => {
+    if (!url) return true; // Allow empty URL
+    const githubRegex = /^https:\/\/github\.com\/[\w-]+\/[\w.-]+\/?$/;
+    return githubRegex.test(url);
+  };
+
+  const validateGithubUrl = (url: string) => {
+    if (url && !isValidGithubUrl(url)) {
+      setGithubUrlError("Please enter a valid GitHub repository URL (e.g., https://github.com/username/repo-name)");
+      return false;
+    }
+    setGithubUrlError("");
+    return true;
+  };
+
   const handleSubmit = async () => {
+    if (!validateGithubUrl(githubUrl)) {
+      toast.error("Please enter a valid GitHub repository URL");
+      return;
+    }
+
     if (branchName && branchConcept && connection && githubUrl && parentLayer) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -163,9 +184,16 @@ const BranchFromVerse = () => {
                     id="github"
                     placeholder="https://github.com/username/repo-name"
                     value={githubUrl}
-                    onChange={(e) => setGithubUrl(e.target.value)}
-                    className="bg-muted/20 border-primary/30 text-lg"
+                    onChange={(e) => {
+                      setGithubUrl(e.target.value);
+                      if (githubUrlError) validateGithubUrl(e.target.value);
+                    }}
+                    onBlur={(e) => validateGithubUrl(e.target.value)}
+                    className={`bg-muted/20 border-primary/30 text-lg ${githubUrlError ? 'border-destructive' : ''}`}
                   />
+                  {githubUrlError && (
+                    <p className="text-sm text-destructive">{githubUrlError}</p>
+                  )}
                   <p className="text-sm text-muted-foreground">
                     Connect your Lovable branch project via GitHub. After building your branch in Lovable, 
                     connect it to GitHub and paste the repository URL here to link it back to the Laminate.
