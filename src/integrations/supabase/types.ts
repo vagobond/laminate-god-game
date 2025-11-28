@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      game_deaths: {
+        Row: {
+          created_at: string
+          death_cause: string
+          id: string
+          scenario_context: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          death_cause: string
+          id?: string
+          scenario_context?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          death_cause?: string
+          id?: string
+          scenario_context?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      game_sessions: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          is_active: boolean
+          survival_streak: number
+          total_scenarios: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean
+          survival_streak?: number
+          total_scenarios?: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean
+          survival_streak?: number
+          total_scenarios?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       layer_relationships: {
         Row: {
           child_layer_id: string
