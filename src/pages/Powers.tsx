@@ -59,6 +59,15 @@ const Powers = () => {
           >
             WHAT IS THE LAMINATE?
           </Button>
+
+          <Button 
+            variant="divine" 
+            size="xl"
+            onClick={() => navigate("/lamsterverse-adventure")}
+            className="w-full sm:w-auto min-w-[250px]"
+          >
+            ADVENTURE
+          </Button>
         </div>
       </div>
     </div>

@@ -74,10 +74,7 @@ const EnterLamsterverse = () => {
           <Button 
             variant="divine" 
             size="lg"
-            onClick={() => {
-              // Future: Navigate to actual gameplay/exploration
-              alert("Your adventure in the Lamsterverse begins! (Gameplay coming soon...)");
-            }}
+            onClick={() => navigate("/lamsterverse-adventure")}
           >
             Begin Exploration
           </Button>

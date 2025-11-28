@@ -1,1 +1,4 @@
 project_id = "ceuaibqpikcvcnmuesos"
+
+[functions.adventure-game]
+verify_jwt = true
