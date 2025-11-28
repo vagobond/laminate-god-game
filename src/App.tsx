@@ -15,6 +15,7 @@ import BranchFromVerse from "./pages/BranchFromVerse";
 import LayerTree from "./pages/LayerTree";
 import Leaderboard from "./pages/Leaderboard";
 import Auth from "./pages/Auth";
+import OnboardingGuide from "./pages/OnboardingGuide";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/layer-tree" element={<LayerTree />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/onboarding-guide" element={<OnboardingGuide />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
