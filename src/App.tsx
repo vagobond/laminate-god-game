@@ -17,6 +17,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Auth from "./pages/Auth";
 import OnboardingGuide from "./pages/OnboardingGuide";
 import VerseAdventure from "./pages/VerseAdventure";
+import DeathHistory from "./pages/DeathHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/onboarding-guide" element={<OnboardingGuide />} />
           <Route path="/verse-adventure" element={<VerseAdventure />} />
+          <Route path="/death-history" element={<DeathHistory />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
