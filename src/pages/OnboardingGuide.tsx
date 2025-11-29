@@ -123,9 +123,9 @@ const OnboardingGuide = () => {
           <Button 
             variant="outline" 
             size="lg"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/powers")}
           >
-            Back to Home
+            Back to Hub
           </Button>
           <Button 
             variant="divine" 

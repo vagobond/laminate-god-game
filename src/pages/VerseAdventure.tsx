@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Skull, Trophy, Zap } from "lucide-react";
+import { Skull, Trophy, Zap, Home } from "lucide-react";
 
 interface Scenario {
   description: string;
@@ -123,6 +123,17 @@ const VerseAdventure = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-4 md:p-8">
       <div className="container max-w-4xl mx-auto">
+        <div className="flex justify-start mb-4">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => navigate("/powers")}
+            className="gap-2"
+          >
+            <Home className="w-4 h-4" />
+            Back to Hub
+          </Button>
+        </div>
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
             Verse Adventure

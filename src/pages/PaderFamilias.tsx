@@ -52,11 +52,18 @@ const PaderFamilias = () => {
 
         <div className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-8">
           <Button 
-            variant="mystical" 
+            variant="outline" 
             size="lg"
             onClick={() => navigate("/explore-layers")}
           >
             Back to Exploration
+          </Button>
+          <Button 
+            variant="mystical" 
+            size="lg"
+            onClick={() => navigate("/powers")}
+          >
+            Back to Hub
           </Button>
           
           <Button 
