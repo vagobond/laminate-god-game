@@ -65,11 +65,18 @@ const EnterLamsterverse = () => {
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button 
-            variant="mystical" 
+            variant="outline" 
             size="lg"
             onClick={() => navigate("/pader-familias")}
           >
             Back
+          </Button>
+          <Button 
+            variant="mystical" 
+            size="lg"
+            onClick={() => navigate("/powers")}
+          >
+            Back to Hub
           </Button>
           <Button 
             variant="divine" 
