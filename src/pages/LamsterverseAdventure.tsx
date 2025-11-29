@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,12 +25,14 @@ interface GameStats {
 
 const LamsterverseAdventure = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [scenario, setScenario] = useState<Scenario | null>(null);
   const [death, setDeath] = useState<Death | null>(null);
   const [stats, setStats] = useState<GameStats>({ survival_streak: 0, total_scenarios: 0 });
   const [gameStarted, setGameStarted] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -37,16 +40,15 @@ const LamsterverseAdventure = () => {
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to play the Lamsterverse Adventure",
-        variant: "destructive",
-      });
-    }
+    setIsAuthenticated(!!session);
   };
 
   const startGame = async () => {
+    if (!isAuthenticated) {
+      navigate('/auth');
+      return;
+    }
+    
     setIsLoading(true);
     setDeath(null);
     try {
@@ -185,13 +187,18 @@ const LamsterverseAdventure = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {isAuthenticated === false && (
+                <p className="text-sm text-muted-foreground mb-4">
+                  Please sign in to play the adventure.
+                </p>
+              )}
               <Button 
                 onClick={startGame} 
                 disabled={isLoading}
                 size="lg"
                 className="w-full"
               >
-                {isLoading ? "Generating Adventure..." : "Begin Adventure"}
+                {isLoading ? "Generating Adventure..." : isAuthenticated === false ? "Sign In to Play" : "Begin Adventure"}
               </Button>
             </CardContent>
           </Card>
