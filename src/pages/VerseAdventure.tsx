@@ -23,7 +23,7 @@ interface GameStats {
   total_scenarios: number;
 }
 
-const LamsterverseAdventure = () => {
+const VerseAdventure = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -125,7 +125,7 @@ const LamsterverseAdventure = () => {
       <div className="container max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            Lamsterverse Adventure
+            Verse Adventure
           </h1>
           <p className="text-muted-foreground text-lg">
             Navigate the infinite layers... where death is never the same twice
@@ -180,7 +180,7 @@ const LamsterverseAdventure = () => {
         {!gameStarted && !death && (
           <Card>
             <CardHeader>
-              <CardTitle>Ready to Enter the Lamsterverse?</CardTitle>
+              <CardTitle>Ready to Enter the Verse?</CardTitle>
               <CardDescription>
                 Choose your path through infinite creative layers. But beware - obscure deaths await around every corner. 
                 Each death is unique and based on real historical events. Will you survive?
@@ -243,4 +243,4 @@ const LamsterverseAdventure = () => {
   );
 };
 
-export default LamsterverseAdventure;
+export default VerseAdventure;

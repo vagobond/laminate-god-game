@@ -63,7 +63,7 @@ const Powers = () => {
           <Button 
             variant="divine" 
             size="xl"
-            onClick={() => navigate("/lamsterverse-adventure")}
+            onClick={() => navigate("/verse-adventure")}
             className="w-full sm:w-auto min-w-[250px]"
           >
             ADVENTURE

@@ -74,7 +74,7 @@ const EnterLamsterverse = () => {
           <Button 
             variant="divine" 
             size="lg"
-            onClick={() => navigate("/lamsterverse-adventure")}
+            onClick={() => navigate("/verse-adventure")}
           >
             Begin Exploration
           </Button>

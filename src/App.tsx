@@ -16,7 +16,7 @@ import LayerTree from "./pages/LayerTree";
 import Leaderboard from "./pages/Leaderboard";
 import Auth from "./pages/Auth";
 import OnboardingGuide from "./pages/OnboardingGuide";
-import LamsterverseAdventure from "./pages/LamsterverseAdventure";
+import VerseAdventure from "./pages/VerseAdventure";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,7 +41,7 @@ const App = () => (
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/onboarding-guide" element={<OnboardingGuide />} />
-          <Route path="/lamsterverse-adventure" element={<LamsterverseAdventure />} />
+          <Route path="/verse-adventure" element={<VerseAdventure />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
