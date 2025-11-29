@@ -33,14 +33,27 @@ const VerseAdventure = () => {
   const [stats, setStats] = useState<GameStats>({ survival_streak: 0, total_scenarios: 0 });
   const [gameStarted, setGameStarted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [deathCount, setDeathCount] = useState(0);
 
   useEffect(() => {
     checkAuth();
+    fetchDeathCount();
   }, []);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     setIsAuthenticated(!!session);
+  };
+
+  const fetchDeathCount = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const { count } = await supabase
+      .from('game_deaths')
+      .select('*', { count: 'exact', head: true });
+    
+    setDeathCount(count || 0);
   };
 
   const startGame = async () => {
@@ -101,6 +114,7 @@ const VerseAdventure = () => {
         setDeath(data.death);
         setScenario(null);
         setGameStarted(false);
+        fetchDeathCount(); // Update death count
       } else {
         setScenario(data.scenario);
         toast({
@@ -144,7 +158,7 @@ const VerseAdventure = () => {
         </div>
 
         {/* Stats Display */}
-        <div className="flex justify-center gap-4 mb-8">
+        <div className="flex justify-center gap-4 mb-8 flex-wrap">
           <Badge variant="secondary" className="text-lg px-4 py-2">
             <Trophy className="w-4 h-4 mr-2" />
             Streak: {stats.survival_streak}
@@ -153,6 +167,16 @@ const VerseAdventure = () => {
             <Zap className="w-4 h-4 mr-2" />
             Total: {stats.total_scenarios}
           </Badge>
+          {isAuthenticated && (
+            <Badge 
+              variant="destructive" 
+              className="text-lg px-4 py-2 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => navigate('/death-history')}
+            >
+              <Skull className="w-4 h-4 mr-2" />
+              Deaths: {deathCount}
+            </Badge>
+          )}
         </div>
 
         {/* Death Screen */}
