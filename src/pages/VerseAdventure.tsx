@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Skull, Trophy, Zap, Home } from "lucide-react";
+import { WolfemonGame } from "@/components/WolfemonGame";
 
 interface Scenario {
   description: string;
@@ -136,7 +137,7 @@ const VerseAdventure = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-4 md:p-8">
-      <div className="container max-w-4xl mx-auto">
+      <div className="container max-w-6xl mx-auto">
         <div className="flex justify-start mb-4">
           <Button 
             variant="ghost" 
@@ -150,15 +151,17 @@ const VerseAdventure = () => {
         </div>
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            Verse Adventure
+            Mini-Games Hub
           </h1>
           <p className="text-muted-foreground text-lg">
-            Navigate the infinite layers... where death is never the same twice
+            Challenge yourself with our collection of unique games
           </p>
         </div>
 
-        {/* Stats Display */}
-        <div className="flex justify-center gap-4 mb-8 flex-wrap">
+        {/* Verse Adventure Stats */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold mb-4">Verse Adventure</h2>
+          <div className="flex justify-start gap-4 mb-6 flex-wrap">
           <Badge variant="secondary" className="text-lg px-4 py-2">
             <Trophy className="w-4 h-4 mr-2" />
             Streak: {stats.survival_streak}
@@ -177,6 +180,108 @@ const VerseAdventure = () => {
               Deaths: {deathCount}
             </Badge>
           )}
+          </div>
+
+        {/* Death Screen */}
+        {death && (
+          <Card className="mb-8 border-destructive">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <Skull className="w-6 h-6" />
+                You Died!
+              </CardTitle>
+              <CardDescription className="text-lg font-semibold">
+                {death.cause}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-lg leading-relaxed">{death.description}</p>
+              
+              <div className="bg-muted p-4 rounded-lg">
+                <p className="text-sm font-semibold mb-2">Historical Basis:</p>
+                <p className="text-sm text-muted-foreground">{death.historicalBasis}</p>
+              </div>
+
+              <div className="text-center pt-4">
+                <p className="text-muted-foreground mb-4">
+                  Final Stats: {stats.survival_streak} scenarios survived
+                </p>
+                <Button onClick={startGame} disabled={isLoading} size="lg">
+                  Try Again
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Game Scenario */}
+        {!gameStarted && !death && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Ready to Enter the Verse?</CardTitle>
+              <CardDescription>
+                Choose your path through infinite creative layers. But beware - obscure deaths await around every corner. 
+                Each death is unique and based on real historical events. Will you survive?
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isAuthenticated === false && (
+                <p className="text-sm text-muted-foreground mb-4">
+                  Please sign in to play the adventure.
+                </p>
+              )}
+              <Button 
+                onClick={startGame} 
+                disabled={isLoading}
+                size="lg"
+                className="w-full"
+              >
+                {isLoading ? "Generating Adventure..." : isAuthenticated === false ? "Sign In to Play" : "Begin Adventure"}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {scenario && gameStarted && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Journey Continues...</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <p className="text-lg leading-relaxed whitespace-pre-line">
+                {scenario.description}
+              </p>
+
+              <div className="space-y-3">
+                <p className="font-semibold text-muted-foreground">What do you do?</p>
+                {scenario.choices.map((choice, index) => (
+                  <Button
+                    key={index}
+                    onClick={() => makeChoice(index)}
+                    disabled={isLoading}
+                    variant="outline"
+                    className="w-full justify-start text-left h-auto py-4 px-6 hover:bg-primary/10"
+                  >
+                    <span className="font-semibold mr-3">{index + 1}.</span>
+                    <span>{choice}</span>
+                  </Button>
+                ))}
+              </div>
+
+              {isLoading && (
+                <div className="text-center text-muted-foreground animate-pulse">
+                  Determining your fate...
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+        </div>
+
+        {/* Wolfemon Game */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">Wolfemon</h2>
+          <WolfemonGame />
         </div>
 
         {/* Death Screen */}

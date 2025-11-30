@@ -182,6 +182,45 @@ export type Database = {
         }
         Relationships: []
       }
+      wolfemon_game_state: {
+        Row: {
+          created_at: string
+          gold: number
+          has_wolfemon: boolean
+          id: string
+          last_action_at: string
+          sheep_count: number
+          total_sheep_collected: number
+          updated_at: string
+          user_id: string
+          wool_count: number
+        }
+        Insert: {
+          created_at?: string
+          gold?: number
+          has_wolfemon?: boolean
+          id?: string
+          last_action_at?: string
+          sheep_count?: number
+          total_sheep_collected?: number
+          updated_at?: string
+          user_id: string
+          wool_count?: number
+        }
+        Update: {
+          created_at?: string
+          gold?: number
+          has_wolfemon?: boolean
+          id?: string
+          last_action_at?: string
+          sheep_count?: number
+          total_sheep_collected?: number
+          updated_at?: string
+          user_id?: string
+          wool_count?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
