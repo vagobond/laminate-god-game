@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Skull, Trophy, Zap, Home } from "lucide-react";
 import { WolfemonGame } from "@/components/WolfemonGame";
+import { ArtIFucked } from "@/components/ArtIFucked";
 
 interface Scenario {
   description: string;
@@ -279,9 +280,15 @@ const VerseAdventure = () => {
         </div>
 
         {/* Wolfemon Game */}
-        <div className="mb-8">
+        <div className="mb-12">
           <h2 className="text-2xl font-bold mb-4">Wolfemon</h2>
           <WolfemonGame />
+        </div>
+
+        {/* Art I Fucked Game */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">Art I Fucked</h2>
+          <ArtIFucked />
         </div>
 
         {/* Death Screen */}

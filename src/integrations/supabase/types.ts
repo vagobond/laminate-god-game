@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      art_i_fucked_state: {
+        Row: {
+          created_at: string
+          encounters_completed: number
+          id: string
+          sharts_collected: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          encounters_completed?: number
+          id?: string
+          sharts_collected?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          encounters_completed?: number
+          id?: string
+          sharts_collected?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       game_deaths: {
         Row: {
           created_at: string
