@@ -27,11 +27,13 @@ export const WolfemonGame = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
+    console.log('WolfemonGame: Component mounted');
     checkAuthAndLoadGame();
   }, []);
 
   const checkAuthAndLoadGame = async () => {
     const { data: { session } } = await supabase.auth.getSession();
+    console.log('WolfemonGame: Auth check', !!session);
     setIsAuthenticated(!!session);
     
     if (session) {
@@ -283,6 +285,8 @@ export const WolfemonGame = () => {
     
     setIsLoading(false);
   };
+
+  console.log('WolfemonGame: Render - isAuthenticated:', isAuthenticated);
 
   if (isAuthenticated === false) {
     return (
