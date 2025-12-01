@@ -27,13 +27,11 @@ export const WolfemonGame = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    console.log('WolfemonGame: Component mounted');
     checkAuthAndLoadGame();
   }, []);
 
   const checkAuthAndLoadGame = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    console.log('WolfemonGame: Auth check', !!session);
     setIsAuthenticated(!!session);
     
     if (session) {
@@ -286,7 +284,17 @@ export const WolfemonGame = () => {
     setIsLoading(false);
   };
 
-  console.log('WolfemonGame: Render - isAuthenticated:', isAuthenticated);
+  // Show loading state while checking auth
+  if (isAuthenticated === null) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>🐑 Wolfemon</CardTitle>
+          <CardDescription>Loading...</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   if (isAuthenticated === false) {
     return (
@@ -297,6 +305,15 @@ export const WolfemonGame = () => {
             Please sign in to play Wolfemon and collect pixelated lamsters!
           </CardDescription>
         </CardHeader>
+        <CardContent>
+          <Button 
+            onClick={() => window.location.href = '/auth'}
+            className="w-full"
+            size="lg"
+          >
+            Sign In to Play
+          </Button>
+        </CardContent>
       </Card>
     );
   }

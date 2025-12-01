@@ -125,11 +125,7 @@ export const ArtIFucked = () => {
 
   const startEncounter = async () => {
     if (!isAuthenticated) {
-      toast({
-        title: "Sign In Required",
-        description: "Please sign in to play Art I Fucked.",
-        variant: "destructive",
-      });
+      window.location.href = '/auth';
       return;
     }
 
