@@ -117,6 +117,7 @@ export function SlyDoubtGame() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [gameState, setGameState] = useState<GameState>({ bloot_collected: 0, revolution_acts: 0 });
   const [currentEncounter, setCurrentEncounter] = useState<Encounter | null>(null);
+  const [lastEncounterIndex, setLastEncounterIndex] = useState<number>(-1);
   const [outcome, setOutcome] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -171,8 +172,15 @@ export function SlyDoubtGame() {
   };
 
   const startEncounter = () => {
-    const randomEncounter = encounters[Math.floor(Math.random() * encounters.length)];
-    setCurrentEncounter(randomEncounter);
+    // Pick a random encounter that's different from the last one
+    let randomIndex;
+    do {
+      randomIndex = Math.floor(Math.random() * encounters.length);
+    } while (randomIndex === lastEncounterIndex && encounters.length > 1);
+    
+    console.log('Starting encounter:', randomIndex, encounters[randomIndex].location);
+    setLastEncounterIndex(randomIndex);
+    setCurrentEncounter(encounters[randomIndex]);
     setOutcome(null);
     
     if (!audioRef.current) {
