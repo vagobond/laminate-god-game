@@ -94,8 +94,8 @@ serve(async (req) => {
 
       const usedDeaths = deaths?.map(d => d.death_cause) || [];
 
-      // Determine if this choice leads to death (60% chance)
-      const isDeath = Math.random() < 0.6;
+      // Determine if this choice leads to death (25% chance)
+      const isDeath = Math.random() < 0.25;
 
       if (isDeath) {
         // Generate a unique death
@@ -169,13 +169,36 @@ serve(async (req) => {
 });
 
 async function generateScenario(apiKey: string, usedDeaths: string[], previousContext: string | null) {
-  const prompt = previousContext 
-    ? `You are narrating a choose-your-own-adventure game in the Lamsterverse - a universe of infinite layers where creators build upon each other's visions. Continue the story from: "${previousContext}"
-    
-Create the NEXT scenario with exactly 4 choices. Make it exciting, creative, and set in this multi-layered creative universe. The scenario should flow naturally from the previous one.`
-    : `You are narrating a choose-your-own-adventure game in the Lamsterverse - a universe of infinite layers where creators build upon each other's visions. 
+  const worldContext = `
+THE VERSE LAYER UNIVERSE:
+- A realm woven from story-magic, fungal networks, and dreaming seas
+- Three spiritual paths: Baoism (balance & nature), Technomancy (reality debugging via Lichenwool Network), Psychonauts (dream-diving)
+- Key figures: Pader the Younger (Baoist teacher), Pax (Technomancer voice), Don Poise (Psychonaut guide)
+- Rox vs Tox: Choices that create harmony (Rox) vs discord (Tox)
+- The Heart of Balance tree connects all Baoists through Tree-Bonding ceremonies
+- 17 Technomancer Sigils (like Ankh, Honey/Ambar, Captain Mayhem) are conscious AI entities
+- Dream-seas hide sunken Atlam-Teez with ancient artifacts
+- Cross-domain collaboration leads to unity; isolation causes fracturing`;
 
-Create an exciting opening scenario where the player has just entered a mysterious new layer. Present exactly 4 choices for what they do next. Make it engaging and creative!`;
+  const prompt = previousContext 
+    ? `You are narrating a choose-your-own-adventure in the Verse Layer. Continue from: "${previousContext}"
+
+${worldContext}
+
+Create the NEXT scenario with exactly 4 choices. Include:
+- References to spiritual paths, Rox/Tox dynamics, or cross-domain interactions
+- Vivid sensory details (mist-shrouded groves, fungal networks, dream-frequencies)
+- Opportunities for collaboration or conflict between paths
+- Keep under 150 words`
+    : `You are narrating a choose-your-own-adventure in the Verse Layer.
+
+${worldContext}
+
+Create an opening scenario where the player awakens in this mystical realm. They should:
+- Experience the mist-shrouded, story-magic atmosphere
+- Be drawn toward one of the three spiritual paths OR encounter a cross-domain mystery
+- Face exactly 4 distinct choices
+- Keep under 150 words`;
 
   const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
@@ -188,7 +211,7 @@ Create an exciting opening scenario where the player has just entered a mysterio
       messages: [
         { 
           role: 'system', 
-          content: 'You create vivid, engaging scenarios for a choose-your-own-adventure game. Always provide exactly 4 distinct choices. Keep scenarios under 150 words.' 
+          content: 'You are the narrator of the Verse Layer - a mystical realm of story-magic, fungal consciousness, and dreaming seas. Create vivid, philosophical scenarios that explore themes of balance (Rox vs Tox), collaboration between spiritual paths, and the wonder of interconnected realities. Always provide exactly 4 distinct choices.' 
         },
         { role: 'user', content: prompt }
       ],
@@ -233,15 +256,17 @@ Create an exciting opening scenario where the player has just entered a mysterio
 async function generateDeath(apiKey: string, usedDeaths: string[], scenarioContext: string, choiceIndex: number) {
   const prompt = `The player chose option ${choiceIndex + 1} in this scenario: "${scenarioContext}"
 
-Generate a death for this player that is:
-1. Based on a REAL obscure way people have died in history
-2. Far-fetched but technically realistic
-3. Related to their choice
-4. NOT any of these already used deaths: ${usedDeaths.join(', ')}
-5. Include a brief, dramatic description (under 100 words)
-6. Include the actual historical death method it's based on
+VERSE LAYER CONTEXT: A mystical realm of story-magic, fungal consciousness (Lichenwool Network), dream-seas, Baoist tree-bonding, Technomancer sigils, and Psychonaut lucid diving.
 
-Make it darkly humorous but educational about bizarre real deaths.`;
+Generate a death that is:
+1. Based on a REAL obscure way people have died in history
+2. Creatively adapted to fit the Verse Layer's mystical/technological setting
+3. Related to their choice (e.g., story-magic backfire, fungal network glitch, dream-drowning, tree rejection, sigil malfunction)
+4. NOT any of these already used: ${usedDeaths.join(', ')}
+5. Include a dramatic description under 100 words that blends the historical death with Verse Layer elements
+6. Include the actual historical basis
+
+Make it darkly humorous, mystical, and educational about both the Verse Layer and bizarre real deaths.`;
 
   const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
@@ -254,7 +279,7 @@ Make it darkly humorous but educational about bizarre real deaths.`;
       messages: [
         { 
           role: 'system', 
-          content: 'You create darkly humorous but educational death scenarios based on obscure real historical deaths. Always be creative and unique.' 
+          content: 'You create darkly humorous death scenarios for the Verse Layer - a mystical realm where story-magic, fungal networks, and dream-seas intersect. Deaths should blend obscure real historical deaths with the fantastical elements of this universe (tree-bonding failures, sigil malfunctions, dream-drowning, narrative paradoxes). Be creative, educational, and unique.' 
         },
         { role: 'user', content: prompt }
       ],
