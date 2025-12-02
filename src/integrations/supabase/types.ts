@@ -186,6 +186,11 @@ export type Database = {
           created_at: string
           display_name: string | null
           email: string | null
+          hometown_city: string | null
+          hometown_country: string | null
+          hometown_description: string | null
+          hometown_latitude: number | null
+          hometown_longitude: number | null
           id: string
           updated_at: string
         }
@@ -195,6 +200,11 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string | null
+          hometown_city?: string | null
+          hometown_country?: string | null
+          hometown_description?: string | null
+          hometown_latitude?: number | null
+          hometown_longitude?: number | null
           id: string
           updated_at?: string
         }
@@ -204,6 +214,11 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string | null
+          hometown_city?: string | null
+          hometown_country?: string | null
+          hometown_description?: string | null
+          hometown_latitude?: number | null
+          hometown_longitude?: number | null
           id?: string
           updated_at?: string
         }

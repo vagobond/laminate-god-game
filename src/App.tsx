@@ -18,6 +18,7 @@ import Auth from "./pages/Auth";
 import OnboardingGuide from "./pages/OnboardingGuide";
 import VerseAdventure from "./pages/VerseAdventure";
 import DeathHistory from "./pages/DeathHistory";
+import IRLLayer from "./pages/IRLLayer";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
           <Route path="/onboarding-guide" element={<OnboardingGuide />} />
           <Route path="/verse-adventure" element={<VerseAdventure />} />
           <Route path="/death-history" element={<DeathHistory />} />
+          <Route path="/irl-layer" element={<IRLLayer />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
