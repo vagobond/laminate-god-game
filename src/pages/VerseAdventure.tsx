@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skull, Trophy, Zap, Home } from "lucide-react";
 import { WolfemonGame } from "@/components/WolfemonGame";
 import { ArtIFucked } from "@/components/ArtIFucked";
+import { SlyDoubtGame } from "@/components/SlyDoubtGame";
 
 interface Scenario {
   description: string;
@@ -289,6 +290,12 @@ const VerseAdventure = () => {
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Art I Fucked</h2>
           <ArtIFucked />
+        </div>
+
+        {/* Sly Doubt of Uranus Game */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">Sly Doubt of Uranus</h2>
+          <SlyDoubtGame />
         </div>
       </div>
     </div>
