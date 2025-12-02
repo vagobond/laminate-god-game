@@ -68,6 +68,15 @@ const Powers = () => {
           >
             ADVENTURE
           </Button>
+
+          <Button 
+            variant="mystical" 
+            size="xl"
+            onClick={() => navigate("/irl-layer")}
+            className="w-full sm:w-auto min-w-[250px]"
+          >
+            THE IRL LAYER
+          </Button>
         </div>
       </div>
     </div>
