@@ -71,7 +71,7 @@ const Powers = () => {
             </Button>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+          <div className="flex justify-center">
             <Button 
               variant="mystical" 
               size="xl"
@@ -79,14 +79,6 @@ const Powers = () => {
               className="w-full sm:w-auto min-w-[250px]"
             >
               THE IRL LAYER
-            </Button>
-            <Button 
-              variant="mystical" 
-              size="xl"
-              onClick={() => navigate("/profile")}
-              className="w-full sm:w-auto min-w-[250px]"
-            >
-              MY PROFILE
             </Button>
           </div>
         </div>

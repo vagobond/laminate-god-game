@@ -21,6 +21,7 @@ import DeathHistory from "./pages/DeathHistory";
 import IRLLayer from "./pages/IRLLayer";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import AppHeader from "./components/AppHeader";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <AppHeader />
         <Routes>
           <Route path="/" element={<Welcome />} />
           <Route path="/powers" element={<Powers />} />
