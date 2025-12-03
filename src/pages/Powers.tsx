@@ -41,42 +41,46 @@ const Powers = () => {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-          <Button 
-            variant="mystical" 
-            size="xl"
-            onClick={handleCreateClick}
-            className="w-full sm:w-auto min-w-[250px]"
-          >
-            CREATE
-          </Button>
-          
-          <Button 
-            variant="mystical" 
-            size="xl"
-            onClick={() => navigate("/about-laminate")}
-            className="w-full sm:w-auto min-w-[250px]"
-          >
-            WHAT IS THE LAMINATE?
-          </Button>
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+            <Button 
+              variant="mystical" 
+              size="xl"
+              onClick={handleCreateClick}
+              className="w-full sm:w-auto min-w-[250px]"
+            >
+              CREATE
+            </Button>
+            
+            <Button 
+              variant="mystical" 
+              size="xl"
+              onClick={() => navigate("/about-laminate")}
+              className="w-full sm:w-auto min-w-[250px]"
+            >
+              WHAT IS THE LAMINATE?
+            </Button>
 
-          <Button 
-            variant="divine" 
-            size="xl"
-            onClick={() => navigate("/verse-adventure")}
-            className="w-full sm:w-auto min-w-[250px]"
-          >
-            ADVENTURE
-          </Button>
+            <Button 
+              variant="divine" 
+              size="xl"
+              onClick={() => navigate("/verse-adventure")}
+              className="w-full sm:w-auto min-w-[250px]"
+            >
+              ADVENTURE
+            </Button>
+          </div>
 
-          <Button 
-            variant="mystical" 
-            size="xl"
-            onClick={() => navigate("/irl-layer")}
-            className="w-full sm:w-auto min-w-[250px]"
-          >
-            THE IRL LAYER
-          </Button>
+          <div className="flex justify-center">
+            <Button 
+              variant="mystical" 
+              size="xl"
+              onClick={() => navigate("/irl-layer")}
+              className="w-full sm:w-auto min-w-[250px]"
+            >
+              THE IRL LAYER
+            </Button>
+          </div>
         </div>
       </div>
     </div>
