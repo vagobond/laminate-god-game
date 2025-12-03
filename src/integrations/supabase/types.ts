@@ -192,6 +192,7 @@ export type Database = {
           hometown_latitude: number | null
           hometown_longitude: number | null
           id: string
+          link: string | null
           updated_at: string
         }
         Insert: {
@@ -206,6 +207,7 @@ export type Database = {
           hometown_latitude?: number | null
           hometown_longitude?: number | null
           id: string
+          link?: string | null
           updated_at?: string
         }
         Update: {
@@ -220,6 +222,7 @@ export type Database = {
           hometown_latitude?: number | null
           hometown_longitude?: number | null
           id?: string
+          link?: string | null
           updated_at?: string
         }
         Relationships: []
