@@ -13,7 +13,7 @@ const IRLLayer = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [mapboxToken, setMapboxToken] = useState<string>("");
+  const mapboxToken = "pk.eyJ1IjoiY2QtaW5kaWduaWZpZWQiLCJhIjoiY21pcDkydzdyMGJidDNkb2s0YTBybzA3cyJ9.LjvGRHio9ZXGWWOYIZmYIQ";
   const [showClaimForm, setShowClaimForm] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{ lng: number; lat: number; city: string; country: string } | null>(null);
   const [hometownDescription, setHometownDescription] = useState("");
@@ -196,39 +196,15 @@ const IRLLayer = () => {
         </div>
       )}
 
-      {!mapboxToken ? (
-        <div className="max-w-7xl mx-auto p-8 border border-primary/20 rounded-lg bg-card space-y-4">
-          <h2 className="text-2xl font-semibold">Enter Mapbox Token</h2>
-          <p className="text-foreground/70">
-            To use the map, please enter your Mapbox public token. Get one at{" "}
-            <a
-              href="https://mapbox.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              mapbox.com
-            </a>
-          </p>
-          <input
-            type="text"
-            value={mapboxToken}
-            onChange={(e) => setMapboxToken(e.target.value)}
-            placeholder="pk.eyJ1Ijoi..."
-            className="w-full px-4 py-2 rounded-md border border-input bg-background"
-          />
-        </div>
-      ) : (
-        <div className="max-w-7xl mx-auto relative">
-          <div ref={mapContainer} className="w-full h-[600px] rounded-lg shadow-lg" />
-          
-          {!userHometown && (
-            <div className="absolute top-4 left-4 bg-card/95 p-4 rounded-lg border border-primary/20 max-w-xs">
-              <p className="text-sm">Click anywhere on the map to claim your hometown!</p>
-            </div>
-          )}
-        </div>
-      )}
+      <div className="max-w-7xl mx-auto relative">
+        <div ref={mapContainer} className="w-full h-[600px] rounded-lg shadow-lg" />
+        
+        {!userHometown && (
+          <div className="absolute top-4 left-4 bg-card/95 p-4 rounded-lg border border-primary/20 max-w-xs">
+            <p className="text-sm">Click anywhere on the map to claim your hometown!</p>
+          </div>
+        )}
+      </div>
 
       {showClaimForm && selectedLocation && (
         <div className="fixed inset-0 bg-background/80 flex items-center justify-center p-4 z-50">
