@@ -101,20 +101,31 @@ const Profile = () => {
       const fileExt = file.name.split(".").pop();
       const filePath = `${user.id}/avatar.${fileExt}`;
 
+      console.log("Uploading to path:", filePath);
+
       // Upload file to storage
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from("avatars")
         .upload(filePath, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw uploadError;
+      }
+
+      console.log("Upload successful:", uploadData);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from("avatars")
         .getPublicUrl(filePath);
 
+      console.log("Public URL:", publicUrl);
+
       // Add cache-busting query param
       const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
+      console.log("URL with timestamp:", urlWithTimestamp);
+      
       setAvatarUrl(urlWithTimestamp);
 
       // Save to profile immediately
@@ -123,8 +134,12 @@ const Profile = () => {
         .update({ avatar_url: urlWithTimestamp })
         .eq("id", user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Profile update error:", updateError);
+        throw updateError;
+      }
 
+      console.log("Profile updated successfully");
       toast.success("Avatar uploaded successfully!");
     } catch (error) {
       console.error("Error uploading avatar:", error);
@@ -212,7 +227,7 @@ const Profile = () => {
             {/* Avatar Section */}
             <div className="flex flex-col items-center space-y-4">
               <div className="relative">
-                <Avatar className="w-24 h-24">
+                <Avatar className="w-24 h-24" key={avatarUrl}>
                   <AvatarImage src={avatarUrl} alt={displayName || "Profile"} />
                   <AvatarFallback>
                     <User className="w-12 h-12 text-muted-foreground" />
