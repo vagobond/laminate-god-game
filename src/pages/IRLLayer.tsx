@@ -18,6 +18,7 @@ const IRLLayer = () => {
   const [selectedLocation, setSelectedLocation] = useState<{ lng: number; lat: number; city: string; country: string } | null>(null);
   const [hometownDescription, setHometownDescription] = useState("");
   const [userHometown, setUserHometown] = useState<any>(null);
+  const [allHometowns, setAllHometowns] = useState<any[]>([]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -53,6 +54,24 @@ const IRLLayer = () => {
       setUserHometown(data);
     }
   };
+
+  const loadAllHometowns = async () => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, display_name, hometown_city, hometown_country, hometown_latitude, hometown_longitude, hometown_description")
+      .not("hometown_city", "is", null);
+
+    if (error) {
+      console.error("Error loading hometowns:", error);
+      return;
+    }
+
+    setAllHometowns(data || []);
+  };
+
+  useEffect(() => {
+    loadAllHometowns();
+  }, []);
 
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken) return;
@@ -112,6 +131,37 @@ const IRLLayer = () => {
       map.current?.remove();
     };
   }, [mapboxToken, user, userHometown]);
+
+  // Add markers for all hometowns
+  useEffect(() => {
+    if (!map.current || allHometowns.length === 0) return;
+
+    // Wait for map to load
+    const addMarkers = () => {
+      allHometowns.forEach((hometown) => {
+        if (hometown.hometown_latitude && hometown.hometown_longitude) {
+          const popupContent = `
+            <div style="color: #1a1a1a;">
+              <strong>${hometown.display_name || 'Anonymous'}</strong><br/>
+              <span>${hometown.hometown_city}, ${hometown.hometown_country}</span>
+              ${hometown.hometown_description ? `<br/><em>"${hometown.hometown_description}"</em>` : ''}
+            </div>
+          `;
+
+          new mapboxgl.Marker({ color: "#8B5CF6" })
+            .setLngLat([hometown.hometown_longitude, hometown.hometown_latitude])
+            .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(popupContent))
+            .addTo(map.current!);
+        }
+      });
+    };
+
+    if (map.current.loaded()) {
+      addMarkers();
+    } else {
+      map.current.on('load', addMarkers);
+    }
+  }, [allHometowns]);
 
   const handleClaimHometown = async () => {
     if (!user || !selectedLocation) return;
