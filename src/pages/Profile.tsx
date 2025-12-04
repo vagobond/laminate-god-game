@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { User, MapPin, Link as LinkIcon, Save, ArrowLeft, Upload, Loader2 } from "lucide-react";
+import { User, MapPin, Link as LinkIcon, Save, ArrowLeft, Upload, Loader2, Eye, Share2 } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -207,17 +207,42 @@ const Profile = () => {
     ? `${profile.hometown_city}, ${profile.hometown_country}`
     : null;
 
+  const copyProfileLink = () => {
+    const profileUrl = `${window.location.origin}/u/${user.id}`;
+    navigator.clipboard.writeText(profileUrl);
+    toast.success("Profile link copied to clipboard!");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 p-4 pt-20">
       <div className="max-w-2xl mx-auto space-y-6">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate("/powers")}
-          className="mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
+        <div className="flex items-center justify-between mb-4">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate("/powers")}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate(`/u/${user.id}`)}
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View Profile
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={copyProfileLink}
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
+            </Button>
+          </div>
+        </div>
 
         <Card>
           <CardHeader>
