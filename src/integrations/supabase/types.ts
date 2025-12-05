@@ -41,6 +41,84 @@ export type Database = {
         }
         Relationships: []
       }
+      friend_requests: {
+        Row: {
+          created_at: string
+          from_user_id: string
+          id: string
+          message: string | null
+          to_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_user_id: string
+          id?: string
+          message?: string | null
+          to_user_id: string
+        }
+        Update: {
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          message?: string | null
+          to_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friend_requests_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_requests_to_user_id_fkey"
+            columns: ["to_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      friendships: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          level: Database["public"]["Enums"]["friendship_level"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          level: Database["public"]["Enums"]["friendship_level"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          level?: Database["public"]["Enums"]["friendship_level"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friendships_friend_id_fkey"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_deaths: {
         Row: {
           created_at: string
@@ -183,6 +261,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          contact_email: string | null
           created_at: string
           display_name: string | null
           email: string | null
@@ -192,12 +271,18 @@ export type Database = {
           hometown_latitude: number | null
           hometown_longitude: number | null
           id: string
+          instagram_url: string | null
           link: string | null
+          linkedin_url: string | null
+          phone_number: string | null
+          private_email: string | null
           updated_at: string
+          whatsapp: string | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          contact_email?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
@@ -207,12 +292,18 @@ export type Database = {
           hometown_latitude?: number | null
           hometown_longitude?: number | null
           id: string
+          instagram_url?: string | null
           link?: string | null
+          linkedin_url?: string | null
+          phone_number?: string | null
+          private_email?: string | null
           updated_at?: string
+          whatsapp?: string | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          contact_email?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
@@ -222,8 +313,13 @@ export type Database = {
           hometown_latitude?: number | null
           hometown_longitude?: number | null
           id?: string
+          instagram_url?: string | null
           link?: string | null
+          linkedin_url?: string | null
+          phone_number?: string | null
+          private_email?: string | null
           updated_at?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }
@@ -271,11 +367,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      are_mutual_close_friends: {
+        Args: { user1_id: string; user2_id: string }
+        Returns: boolean
+      }
       calculate_layer_points: { Args: { layer_id: string }; Returns: number }
+      get_friendship_level: {
+        Args: { profile_id: string; viewer_id: string }
+        Returns: Database["public"]["Enums"]["friendship_level"]
+      }
       refresh_layer_stats: { Args: never; Returns: undefined }
     }
     Enums: {
-      [_ in never]: never
+      friendship_level:
+        | "close_friend"
+        | "buddy"
+        | "friendly_acquaintance"
+        | "secret_friend"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -402,6 +510,13 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      friendship_level: [
+        "close_friend",
+        "buddy",
+        "friendly_acquaintance",
+        "secret_friend",
+      ],
+    },
   },
 } as const
