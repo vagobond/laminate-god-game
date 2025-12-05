@@ -17,6 +17,12 @@ interface Profile {
   link: string | null;
   hometown_city: string | null;
   hometown_country: string | null;
+  whatsapp: string | null;
+  phone_number: string | null;
+  private_email: string | null;
+  instagram_url: string | null;
+  linkedin_url: string | null;
+  contact_email: string | null;
 }
 
 const Profile = () => {
@@ -32,6 +38,12 @@ const Profile = () => {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [bio, setBio] = useState("");
   const [link, setLink] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [privateEmail, setPrivateEmail] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -59,7 +71,7 @@ const Profile = () => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, bio, link, hometown_city, hometown_country")
+        .select("id, display_name, avatar_url, bio, link, hometown_city, hometown_country, whatsapp, phone_number, private_email, instagram_url, linkedin_url, contact_email")
         .eq("id", userId)
         .maybeSingle();
 
@@ -71,6 +83,12 @@ const Profile = () => {
         setAvatarUrl(data.avatar_url || "");
         setBio(data.bio || "");
         setLink(data.link || "");
+        setWhatsapp(data.whatsapp || "");
+        setPhoneNumber(data.phone_number || "");
+        setPrivateEmail(data.private_email || "");
+        setInstagramUrl(data.instagram_url || "");
+        setLinkedinUrl(data.linkedin_url || "");
+        setContactEmail(data.contact_email || "");
       }
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -161,6 +179,12 @@ const Profile = () => {
           avatar_url: avatarUrl,
           bio: bio,
           link: link,
+          whatsapp: whatsapp || null,
+          phone_number: phoneNumber || null,
+          private_email: privateEmail || null,
+          instagram_url: instagramUrl || null,
+          linkedin_url: linkedinUrl || null,
+          contact_email: contactEmail || null,
         })
         .eq("id", user.id);
 
@@ -342,6 +366,91 @@ const Profile = () => {
                 onChange={(e) => setLink(e.target.value)}
                 placeholder="What is the most important link to get to know you?"
               />
+            </div>
+
+            {/* Friend-only Fields Section */}
+            <div className="pt-4 border-t border-border">
+              <h3 className="text-lg font-semibold mb-4">Friend-Only Information</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                These fields are only visible to friends based on their friendship level.
+              </p>
+
+              {/* Close Friends Only */}
+              <div className="space-y-4 mb-6">
+                <div className="text-sm font-medium text-primary">Close Friends Only</div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                    WhatsApp Number
+                  </label>
+                  <Input
+                    value={whatsapp}
+                    onChange={(e) => setWhatsapp(e.target.value)}
+                    placeholder="+1234567890"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                    Phone Number
+                  </label>
+                  <Input
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="+1234567890"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                    Private Email
+                  </label>
+                  <Input
+                    type="email"
+                    value={privateEmail}
+                    onChange={(e) => setPrivateEmail(e.target.value)}
+                    placeholder="personal@email.com"
+                  />
+                </div>
+              </div>
+
+              {/* Buddies & Close Friends */}
+              <div className="space-y-4 mb-6">
+                <div className="text-sm font-medium text-primary">Buddies & Close Friends</div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                    Instagram
+                  </label>
+                  <Input
+                    value={instagramUrl}
+                    onChange={(e) => setInstagramUrl(e.target.value)}
+                    placeholder="https://instagram.com/username"
+                  />
+                </div>
+              </div>
+
+              {/* Acquaintances & Above */}
+              <div className="space-y-4">
+                <div className="text-sm font-medium text-primary">Acquaintances & Above</div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                    LinkedIn
+                  </label>
+                  <Input
+                    value={linkedinUrl}
+                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                    placeholder="https://linkedin.com/in/username"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                    Contact Email
+                  </label>
+                  <Input
+                    type="email"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    placeholder="contact@email.com"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Save Button */}
