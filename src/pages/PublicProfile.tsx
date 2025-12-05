@@ -118,10 +118,13 @@ const PublicProfile = () => {
 
             {/* Hometown */}
             {hometown && (
-              <div className="flex items-center justify-center gap-2 text-muted-foreground mb-4">
+              <button
+                onClick={() => navigate("/irl-layer")}
+                className="flex items-center justify-center gap-2 text-muted-foreground mb-4 hover:text-primary transition-colors cursor-pointer"
+              >
                 <MapPin className="w-4 h-4" />
-                <span>{hometown}</span>
-              </div>
+                <span className="hover:underline">{hometown}</span>
+              </button>
             )}
 
             {/* Bio */}
