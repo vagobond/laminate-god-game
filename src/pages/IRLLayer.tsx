@@ -2,23 +2,46 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { X } from "lucide-react";
+
+interface ProfileData {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  hometown_city: string;
+  hometown_country: string;
+  hometown_latitude: number;
+  hometown_longitude: number;
+  hometown_description: string | null;
+}
+
+interface HometownGroup {
+  city: string;
+  country: string;
+  lat: number;
+  lng: number;
+  profiles: ProfileData[];
+}
 
 const IRLLayer = () => {
   const navigate = useNavigate();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const mapboxToken = "pk.eyJ1IjoiY2QtaW5kaWduaWZpZWQiLCJhIjoiY21pcDkydzdyMGJidDNkb2s0YTBybzA3cyJ9.LjvGRHio9ZXGWWOYIZmYIQ";
   const [showClaimForm, setShowClaimForm] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{ lng: number; lat: number; city: string; country: string } | null>(null);
   const [hometownDescription, setHometownDescription] = useState("");
   const [userHometown, setUserHometown] = useState<any>(null);
-  const [allHometowns, setAllHometowns] = useState<any[]>([]);
+  const [allHometowns, setAllHometowns] = useState<ProfileData[]>([]);
+  const [selectedHometown, setSelectedHometown] = useState<HometownGroup | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -58,7 +81,7 @@ const IRLLayer = () => {
   const loadAllHometowns = async () => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, display_name, hometown_city, hometown_country, hometown_latitude, hometown_longitude, hometown_description")
+      .select("id, display_name, avatar_url, hometown_city, hometown_country, hometown_latitude, hometown_longitude, hometown_description")
       .not("hometown_city", "is", null);
 
     if (error) {
@@ -66,12 +89,28 @@ const IRLLayer = () => {
       return;
     }
 
-    setAllHometowns(data || []);
+    setAllHometowns((data || []) as ProfileData[]);
   };
 
   useEffect(() => {
     loadAllHometowns();
   }, []);
+
+  // Group profiles by hometown
+  const groupedHometowns = allHometowns.reduce<Record<string, HometownGroup>>((acc, profile) => {
+    const key = `${profile.hometown_city}-${profile.hometown_country}`;
+    if (!acc[key]) {
+      acc[key] = {
+        city: profile.hometown_city,
+        country: profile.hometown_country,
+        lat: profile.hometown_latitude,
+        lng: profile.hometown_longitude,
+        profiles: [],
+      };
+    }
+    acc[key].profiles.push(profile);
+    return acc;
+  }, {});
 
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken) return;
@@ -89,6 +128,10 @@ const IRLLayer = () => {
 
     // Add click handler for claiming location
     map.current.on("click", async (e) => {
+      // Check if click was on a marker (don't trigger claim form)
+      const target = e.originalEvent.target as HTMLElement;
+      if (target.closest('.mapboxgl-marker')) return;
+
       if (!user) {
         toast.error("Please sign in to claim a hometown");
         return;
@@ -132,27 +175,54 @@ const IRLLayer = () => {
     };
   }, [mapboxToken, user, userHometown]);
 
-  // Add markers for all hometowns
+  // Add markers for grouped hometowns
   useEffect(() => {
-    if (!map.current || allHometowns.length === 0) return;
+    if (!map.current || Object.keys(groupedHometowns).length === 0) return;
 
-    // Wait for map to load
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+
     const addMarkers = () => {
-      allHometowns.forEach((hometown) => {
-        if (hometown.hometown_latitude && hometown.hometown_longitude) {
-          const popupContent = `
-            <div style="color: #1a1a1a;">
-              <strong>${hometown.display_name || 'Anonymous'}</strong><br/>
-              <span>${hometown.hometown_city}, ${hometown.hometown_country}</span>
-              ${hometown.hometown_description ? `<br/><em>"${hometown.hometown_description}"</em>` : ''}
-            </div>
-          `;
+      Object.values(groupedHometowns).forEach((group) => {
+        const count = group.profiles.length;
+        
+        // Create custom marker element with count
+        const el = document.createElement('div');
+        el.className = 'hometown-marker';
+        el.style.cssText = `
+          background: linear-gradient(135deg, #8B5CF6, #6D28D9);
+          color: white;
+          border-radius: 50%;
+          width: ${Math.min(40 + count * 4, 60)}px;
+          height: ${Math.min(40 + count * 4, 60)}px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          font-size: ${count > 9 ? '14px' : '16px'};
+          cursor: pointer;
+          border: 3px solid white;
+          box-shadow: 0 2px 10px rgba(139, 92, 246, 0.5);
+          transition: transform 0.2s;
+        `;
+        el.textContent = count.toString();
+        el.addEventListener('mouseenter', () => {
+          el.style.transform = 'scale(1.1)';
+        });
+        el.addEventListener('mouseleave', () => {
+          el.style.transform = 'scale(1)';
+        });
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          setSelectedHometown(group);
+        });
 
-          new mapboxgl.Marker({ color: "#8B5CF6" })
-            .setLngLat([hometown.hometown_longitude, hometown.hometown_latitude])
-            .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(popupContent))
-            .addTo(map.current!);
-        }
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat([group.lng, group.lat])
+          .addTo(map.current!);
+
+        markersRef.current.push(marker);
       });
     };
 
@@ -161,7 +231,7 @@ const IRLLayer = () => {
     } else {
       map.current.on('load', addMarkers);
     }
-  }, [allHometowns]);
+  }, [groupedHometowns]);
 
   const handleClaimHometown = async () => {
     if (!user || !selectedLocation) return;
@@ -195,17 +265,8 @@ const IRLLayer = () => {
     setSelectedLocation(null);
     setHometownDescription("");
 
-    // Add marker to map
-    if (map.current) {
-      new mapboxgl.Marker({ color: "#8B5CF6" })
-        .setLngLat([selectedLocation.lng, selectedLocation.lat])
-        .setPopup(
-          new mapboxgl.Popup().setHTML(
-            `<strong>${selectedLocation.city}</strong><br/>${hometownDescription}`
-          )
-        )
-        .addTo(map.current);
-    }
+    // Reload all hometowns to update markers
+    loadAllHometowns();
   };
 
   if (!user) {
@@ -255,6 +316,57 @@ const IRLLayer = () => {
           </div>
         )}
       </div>
+
+      {/* Hometown profiles modal */}
+      {selectedHometown && (
+        <div className="fixed inset-0 bg-background/80 flex items-center justify-center p-4 z-50">
+          <div className="bg-card border border-primary/20 rounded-lg p-6 max-w-md w-full space-y-4 max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="text-2xl font-bold">{selectedHometown.city}</h2>
+                <p className="text-foreground/70">{selectedHometown.country}</p>
+                <p className="text-sm text-primary mt-1">
+                  {selectedHometown.profiles.length} Laminater{selectedHometown.profiles.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSelectedHometown(null)}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            
+            <div className="overflow-y-auto flex-1 space-y-3">
+              {selectedHometown.profiles.map((profile) => (
+                <div
+                  key={profile.id}
+                  onClick={() => navigate(`/u/${profile.id}`)}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 cursor-pointer transition-colors"
+                >
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage src={profile.avatar_url || undefined} />
+                    <AvatarFallback>
+                      {(profile.display_name || "A").slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">
+                      {profile.display_name || "Anonymous Laminater"}
+                    </p>
+                    {profile.hometown_description && (
+                      <p className="text-sm text-foreground/60 truncate italic">
+                        "{profile.hometown_description}"
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showClaimForm && selectedLocation && (
         <div className="fixed inset-0 bg-background/80 flex items-center justify-center p-4 z-50">
