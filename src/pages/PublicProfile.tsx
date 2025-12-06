@@ -47,44 +47,45 @@ const PublicProfile = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Load profile with secure function when we have user context
   useEffect(() => {
     if (userId) {
-      loadProfile(userId);
+      // Wait a bit for auth to initialize, then load profile
+      loadSecureProfile(userId, currentUser?.id);
     }
-  }, [userId]);
+  }, [userId, currentUser]);
 
-  useEffect(() => {
-    if (currentUser && userId && currentUser.id !== userId) {
-      loadFriendshipLevel();
-    } else if (currentUser?.id === userId) {
-      // Viewing own profile - can see everything
-      setFriendshipLevel("close_friend");
-    }
-  }, [currentUser, userId]);
-
-  const loadFriendshipLevel = async () => {
-    if (!currentUser || !userId) return;
-
-    const { data } = await supabase.rpc("get_friendship_level", {
-      viewer_id: currentUser.id,
-      profile_id: userId,
-    });
-
-    setFriendshipLevel(data as FriendshipLevel);
-  };
-
-  const loadProfile = async (id: string) => {
+  const loadSecureProfile = async (profileId: string, viewerId: string | null) => {
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url, bio, link, hometown_city, hometown_country, whatsapp, phone_number, private_email, instagram_url, linkedin_url, contact_email")
-        .eq("id", id)
-        .maybeSingle();
+      setLoading(true);
+      
+      // Use the secure database function that enforces access control
+      const { data, error } = await supabase.rpc("get_visible_profile", {
+        viewer_id: viewerId ?? null,
+        profile_id: profileId,
+      });
 
       if (error) throw error;
 
-      if (data) {
-        setProfile(data);
+      if (data && data.length > 0) {
+        const profileData = data[0];
+        setProfile({
+          id: profileData.id,
+          display_name: profileData.display_name,
+          avatar_url: profileData.avatar_url,
+          bio: profileData.bio,
+          link: profileData.link,
+          hometown_city: profileData.hometown_city,
+          hometown_country: profileData.hometown_country,
+          whatsapp: profileData.whatsapp,
+          phone_number: profileData.phone_number,
+          private_email: profileData.private_email,
+          instagram_url: profileData.instagram_url,
+          linkedin_url: profileData.linkedin_url,
+          contact_email: profileData.contact_email,
+        });
+        // Friendship level is returned from the secure function
+        setFriendshipLevel(profileData.friendship_level as FriendshipLevel);
       } else {
         setNotFound(true);
       }
