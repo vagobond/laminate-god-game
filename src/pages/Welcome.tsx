@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-// Force rebuild
 
 const Welcome = () => {
   const navigate = useNavigate();
