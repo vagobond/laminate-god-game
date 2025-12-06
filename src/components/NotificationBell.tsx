@@ -97,54 +97,19 @@ const NotificationBell = () => {
     setProcessing(true);
 
     try {
-      // For "not_friend", just delete the request without creating friendship
-      if (selectedLevel === "not_friend") {
-        await supabase
-          .from("friend_requests")
-          .delete()
-          .eq("id", selectedRequest.id);
+      // Use the secure RPC function to handle friend request acceptance
+      const { error } = await supabase.rpc('accept_friend_request', {
+        request_id: selectedRequest.id,
+        friendship_level: selectedLevel,
+      });
 
-        toast.success("Request declined");
-        setSelectedRequest(null);
-        loadRequests();
-        setProcessing(false);
-        return;
-      }
+      if (error) throw error;
 
-      // Create friendship for the accepting user (they set the level)
-      const { error: friendship1Error } = await supabase
-        .from("friendships")
-        .insert({
-          user_id: user.id,
-          friend_id: selectedRequest.from_user_id,
-          level: selectedLevel,
-        });
-
-      if (friendship1Error) throw friendship1Error;
-
-      // For fake_friend, don't create reverse friendship (requester thinks they're friends)
-      if (selectedLevel !== "fake_friend") {
-        // Create reverse friendship for the requester (default to buddy, they can change later)
-        const { error: friendship2Error } = await supabase
-          .from("friendships")
-          .insert({
-            user_id: selectedRequest.from_user_id,
-            friend_id: user.id,
-            level: "buddy",
-          });
-
-        if (friendship2Error) throw friendship2Error;
-      }
-
-      // Delete the request
-      await supabase
-        .from("friend_requests")
-        .delete()
-        .eq("id", selectedRequest.id);
-
-      const message = selectedLevel === "fake_friend" 
-        ? "Request handled (they'll think you're friends)" 
-        : "Friend request accepted!";
+      const message = selectedLevel === "not_friend"
+        ? "Request declined"
+        : selectedLevel === "fake_friend" 
+          ? "Request handled (they'll think you're friends)" 
+          : "Friend request accepted!";
       toast.success(message);
       setSelectedRequest(null);
       loadRequests();
