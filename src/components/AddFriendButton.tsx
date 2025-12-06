@@ -57,31 +57,33 @@ const AddFriendButton = ({ profileUserId }: AddFriendButtonProps) => {
       return;
     }
 
-    // Check if already friends (either direction)
-    const { data: friendship } = await supabase
+    // Check if I have them as a friend
+    const { data: myFriendship } = await supabase
       .from("friendships")
       .select("id, level")
       .eq("user_id", user.id)
       .eq("friend_id", profileUserId)
       .maybeSingle();
 
-    if (friendship) {
-      setStatus("friends");
-      return;
-    }
-
-    // Check if the other person has us as a friend (for fake_friend scenario - they see "friends")
-    const { data: reverseFriendship } = await supabase
+    // Check if they have me as a friend
+    const { data: theirFriendship } = await supabase
       .from("friendships")
-      .select("id")
+      .select("id, level")
       .eq("user_id", profileUserId)
       .eq("friend_id", user.id)
       .maybeSingle();
 
-    if (reverseFriendship) {
+    // Only show "friends" if I have them as a friend
+    // (This covers: I added them, or I accepted their request)
+    if (myFriendship) {
       setStatus("friends");
       return;
     }
+
+    // If they have me as friend but I don't have them, 
+    // they either fake-friended me OR I unfriended them
+    // In both cases, allow sending a new request
+    // (Don't show "friends" just because they have me)
 
     // Check for pending request sent
     const { data: sentRequest } = await supabase
