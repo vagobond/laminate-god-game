@@ -142,7 +142,7 @@ const PublicProfile = () => {
         <div className="flex items-center justify-between mb-4">
           <Button 
             variant="ghost" 
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/irl-layer")}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
