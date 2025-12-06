@@ -31,13 +31,24 @@ interface FriendRequest {
   };
 }
 
+interface PendingFriendship {
+  id: string;
+  friend_id: string;
+  friend_profile?: {
+    display_name: string | null;
+    avatar_url: string | null;
+  };
+}
+
 type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | "fake_friend" | "not_friend";
 
 const NotificationBell = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
+  const [pendingFriendships, setPendingFriendships] = useState<PendingFriendship[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<FriendRequest | null>(null);
+  const [selectedPendingFriendship, setSelectedPendingFriendship] = useState<PendingFriendship | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<FriendshipLevel>("buddy");
   const [processing, setProcessing] = useState(false);
 
@@ -56,6 +67,7 @@ const NotificationBell = () => {
   useEffect(() => {
     if (user) {
       loadRequests();
+      loadPendingFriendships();
     }
   }, [user]);
 
@@ -92,6 +104,39 @@ const NotificationBell = () => {
     setRequests(requestsWithProfiles);
   };
 
+  const loadPendingFriendships = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("friendships")
+      .select("id, friend_id")
+      .eq("user_id", user.id)
+      .eq("needs_level_set", true);
+
+    if (error) {
+      console.error("Error loading pending friendships:", error);
+      return;
+    }
+
+    // Load profiles for each pending friendship
+    const friendshipsWithProfiles = await Promise.all(
+      (data || []).map(async (friendship) => {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("display_name, avatar_url")
+          .eq("id", friendship.friend_id)
+          .single();
+        
+        return {
+          ...friendship,
+          friend_profile: profileData || undefined,
+        };
+      })
+    );
+
+    setPendingFriendships(friendshipsWithProfiles);
+  };
+
   const handleAccept = async () => {
     if (!selectedRequest || !user) return;
     setProcessing(true);
@@ -112,10 +157,36 @@ const NotificationBell = () => {
           : "Friend request accepted!";
       toast.success(message);
       setSelectedRequest(null);
+      setSelectedLevel("buddy");
       loadRequests();
     } catch (error) {
       console.error("Error accepting request:", error);
       toast.error("Failed to accept request");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleSetFriendshipLevel = async () => {
+    if (!selectedPendingFriendship || !user) return;
+    setProcessing(true);
+
+    try {
+      const { error } = await supabase
+        .from("friendships")
+        .update({ level: selectedLevel, needs_level_set: false })
+        .eq("id", selectedPendingFriendship.id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      toast.success("Friendship level set!");
+      setSelectedPendingFriendship(null);
+      setSelectedLevel("buddy");
+      loadPendingFriendships();
+    } catch (error) {
+      console.error("Error setting friendship level:", error);
+      toast.error("Failed to set friendship level");
     } finally {
       setProcessing(false);
     }
@@ -162,26 +233,65 @@ const NotificationBell = () => {
 
   if (!user) return null;
 
+  const totalNotifications = requests.length + pendingFriendships.length;
+
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
-            {requests.length > 0 && (
+            {totalNotifications > 0 && (
               <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
-                {requests.length}
+                {totalNotifications}
               </span>
             )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-80 bg-popover border border-border z-50">
           <div className="p-2">
-            <h3 className="font-semibold mb-2">Friend Requests</h3>
-            {requests.length === 0 ? (
-              <p className="text-sm text-muted-foreground p-2">No pending requests</p>
+            <h3 className="font-semibold mb-2">Notifications</h3>
+            {totalNotifications === 0 ? (
+              <p className="text-sm text-muted-foreground p-2">No pending notifications</p>
             ) : (
               <div className="space-y-2 max-h-80 overflow-y-auto">
+                {/* Pending friendships - need to set level */}
+                {pendingFriendships.map((friendship) => (
+                  <div key={friendship.id} className="p-3 bg-primary/10 rounded-lg space-y-2 border border-primary/30">
+                    <div className="flex items-center gap-3">
+                      <Avatar 
+                        className="h-10 w-10 cursor-pointer" 
+                        onClick={() => navigate(`/u/${friendship.friend_id}`)}
+                      >
+                        <AvatarImage src={friendship.friend_profile?.avatar_url || undefined} />
+                        <AvatarFallback>
+                          {(friendship.friend_profile?.display_name || "?").slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p 
+                          className="font-medium truncate cursor-pointer hover:underline"
+                          onClick={() => navigate(`/u/${friendship.friend_id}`)}
+                        >
+                          {friendship.friend_profile?.display_name || "Unknown User"}
+                        </p>
+                        <p className="text-sm text-primary">Accepted your request! Set your friendship level.</p>
+                      </div>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => {
+                        setSelectedPendingFriendship(friendship);
+                        setSelectedLevel("buddy");
+                      }}
+                    >
+                      Choose Friendship Level
+                    </Button>
+                  </div>
+                ))}
+
+                {/* Friend requests */}
                 {requests.map((request) => (
                   <div key={request.id} className="p-3 bg-secondary/50 rounded-lg space-y-2">
                     <div className="flex items-center gap-3">
@@ -230,6 +340,7 @@ const NotificationBell = () => {
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {/* Dialog for accepting friend requests */}
       <Dialog open={!!selectedRequest} onOpenChange={(open) => !open && setSelectedRequest(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -294,6 +405,61 @@ const NotificationBell = () => {
               {processing ? "Accepting..." : "Confirm"}
             </Button>
             <Button variant="outline" onClick={() => setSelectedRequest(null)} className="flex-1">
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog for setting friendship level on accepted requests */}
+      <Dialog open={!!selectedPendingFriendship} onOpenChange={(open) => !open && setSelectedPendingFriendship(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set Friendship Level</DialogTitle>
+            <DialogDescription>
+              {selectedPendingFriendship?.friend_profile?.display_name || "This person"} accepted your friend request! Now choose what type of friend they are to you.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <RadioGroup value={selectedLevel} onValueChange={(v) => setSelectedLevel(v as FriendshipLevel)} className="space-y-3">
+            <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
+              <RadioGroupItem value="close_friend" id="pending_close_friend" className="mt-1" />
+              <Label htmlFor="pending_close_friend" className="flex-1 cursor-pointer">
+                <span className="font-medium">Close Friend</span>
+                <p className="text-sm text-muted-foreground">Can see your WhatsApp, phone number, or private email.</p>
+              </Label>
+            </div>
+            
+            <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
+              <RadioGroupItem value="buddy" id="pending_buddy" className="mt-1" />
+              <Label htmlFor="pending_buddy" className="flex-1 cursor-pointer">
+                <span className="font-medium">Buddy</span>
+                <p className="text-sm text-muted-foreground">Can see your Instagram or other social profile.</p>
+              </Label>
+            </div>
+            
+            <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
+              <RadioGroupItem value="friendly_acquaintance" id="pending_friendly_acquaintance" className="mt-1" />
+              <Label htmlFor="pending_friendly_acquaintance" className="flex-1 cursor-pointer">
+                <span className="font-medium">Friendly Acquaintance</span>
+                <p className="text-sm text-muted-foreground">Can see your LinkedIn or general contact email.</p>
+              </Label>
+            </div>
+            
+            <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
+              <RadioGroupItem value="secret_friend" id="pending_secret_friend" className="mt-1" />
+              <Label htmlFor="pending_secret_friend" className="flex-1 cursor-pointer">
+                <span className="font-medium">Secret Friend</span>
+                <p className="text-sm text-muted-foreground">All privileges of close friend, but hidden from friends lists.</p>
+              </Label>
+            </div>
+          </RadioGroup>
+
+          <div className="flex gap-2 mt-4">
+            <Button onClick={handleSetFriendshipLevel} disabled={processing} className="flex-1">
+              {processing ? "Saving..." : "Confirm"}
+            </Button>
+            <Button variant="outline" onClick={() => setSelectedPendingFriendship(null)} className="flex-1">
               Cancel
             </Button>
           </div>
