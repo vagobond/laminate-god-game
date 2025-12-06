@@ -21,6 +21,7 @@ import DeathHistory from "./pages/DeathHistory";
 import IRLLayer from "./pages/IRLLayer";
 import Profile from "./pages/Profile";
 import PublicProfile from "./pages/PublicProfile";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import AppHeader from "./components/AppHeader";
 
@@ -52,6 +53,7 @@ const App = () => (
           <Route path="/irl-layer" element={<IRLLayer />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/u/:userId" element={<PublicProfile />} />
+          <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
