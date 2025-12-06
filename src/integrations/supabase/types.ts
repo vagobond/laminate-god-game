@@ -403,6 +403,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_friend_request: {
+        Args: {
+          friendship_level: Database["public"]["Enums"]["friendship_level"]
+          request_id: string
+        }
+        Returns: undefined
+      }
       are_mutual_close_friends: {
         Args: { user1_id: string; user2_id: string }
         Returns: boolean
