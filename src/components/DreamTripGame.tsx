@@ -27,6 +27,7 @@ export const DreamTripGame = () => {
   const [stepHistory, setStepHistory] = useState<string[]>([]);
   const [gameComplete, setGameComplete] = useState(false);
   const [currentDestinationIndex, setCurrentDestinationIndex] = useState(0);
+  const [totalSteps, setTotalSteps] = useState(20);
 
   useEffect(() => {
     checkAuth();
@@ -85,6 +86,8 @@ export const DreamTripGame = () => {
       if (error) throw error;
 
       setCurrentStep(data.step);
+      setTotalSteps(data.totalSteps);
+      setCurrentDestinationIndex(data.currentDestinationIndex);
       setGameStarted(true);
 
       toast({
@@ -118,7 +121,8 @@ export const DreamTripGame = () => {
           currentStep: currentStep.step,
           choiceMade,
           previousDescription: currentStep.description,
-          history: stepHistory
+          history: stepHistory,
+          currentDestinationIndex
         }
       });
 
@@ -130,12 +134,8 @@ export const DreamTripGame = () => {
         setCurrentDestinationIndex(destinations.length - 1);
       } else {
         setCurrentStep(data.step);
-        // Progress through destinations based on step number
-        const progressIndex = Math.min(
-          Math.floor((data.step.step / 20) * destinations.length),
-          destinations.length - 1
-        );
-        setCurrentDestinationIndex(progressIndex);
+        setTotalSteps(data.totalSteps);
+        setCurrentDestinationIndex(data.currentDestinationIndex);
       }
     } catch (error: any) {
       console.error('Error continuing trip:', error);
@@ -156,6 +156,7 @@ export const DreamTripGame = () => {
     setGameComplete(false);
     setDestinations([]);
     setCurrentDestinationIndex(0);
+    setTotalSteps(20);
   };
 
   // Destination input phase
@@ -307,11 +308,11 @@ export const DreamTripGame = () => {
             Dream Trip
           </CardTitle>
           <Badge variant="secondary">
-            Step {currentStep?.step || 1} / 20
+            Step {currentStep?.step || 1} / {totalSteps}
           </Badge>
         </div>
         <CardDescription>
-          Visiting: {destinations.join(' → ')}
+          Currently in: <span className="font-semibold text-primary">{destinations[currentDestinationIndex]}</span> ({currentDestinationIndex + 1}/{destinations.length})
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

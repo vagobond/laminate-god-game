@@ -11,26 +11,36 @@ serve(async (req) => {
   }
 
   try {
-    const { action, destinations, currentStep, choiceMade, previousDescription, history } = await req.json();
+    const { action, destinations, currentStep, choiceMade, previousDescription, history, currentDestinationIndex } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    // Calculate total steps: 2 steps per destination, minimum 10 steps
+    const totalSteps = Math.max(destinations.length * 2, 10);
+
     if (action === "start") {
-      const step = await generateStep(LOVABLE_API_KEY, destinations, 1, null, null, []);
-      return new Response(JSON.stringify({ step }), {
+      const step = await generateStep(LOVABLE_API_KEY, destinations, 1, null, null, [], 0, totalSteps);
+      return new Response(JSON.stringify({ step, totalSteps, currentDestinationIndex: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (action === "continue") {
       const nextStepNum = currentStep + 1;
+      
+      // Calculate which destination we should be at based on progress
+      const stepsPerDestination = totalSteps / destinations.length;
+      const newDestinationIndex = Math.min(
+        Math.floor((nextStepNum - 1) / stepsPerDestination),
+        destinations.length - 1
+      );
 
-      // Check if we've reached the end (20 steps)
-      if (nextStepNum > 20) {
-        return new Response(JSON.stringify({ complete: true }), {
+      // Check if we've reached the end
+      if (nextStepNum > totalSteps) {
+        return new Response(JSON.stringify({ complete: true, currentDestinationIndex: destinations.length - 1 }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -41,10 +51,12 @@ serve(async (req) => {
         nextStepNum,
         previousDescription,
         choiceMade,
-        history || []
+        history || [],
+        newDestinationIndex,
+        totalSteps
       );
 
-      return new Response(JSON.stringify({ step }), {
+      return new Response(JSON.stringify({ step, totalSteps, currentDestinationIndex: newDestinationIndex }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -68,10 +80,16 @@ async function generateStep(
   stepNumber: number,
   previousDescription: string | null,
   choiceMade: string | null,
-  history: string[]
+  history: string[],
+  currentDestinationIndex: number,
+  totalSteps: number
 ): Promise<{ step: number; description: string; choices: string[] }> {
-  const destinationList = destinations.join(", ");
-  const progressPercent = Math.round((stepNumber / 20) * 100);
+  const currentDestination = destinations[currentDestinationIndex];
+  const destinationList = destinations.join(" → ");
+  const progressPercent = Math.round((stepNumber / totalSteps) * 100);
+  const stepsPerDestination = totalSteps / destinations.length;
+  const isTransitionStep = stepNumber % stepsPerDestination === 0 && currentDestinationIndex < destinations.length - 1;
+  const nextDestination = destinations[currentDestinationIndex + 1];
 
   let contextPrompt = "";
   if (previousDescription && choiceMade) {
@@ -84,31 +102,33 @@ Journey so far: ${history.join(" → ")}
 
   const systemPrompt = `You are a creative travel adventure storyteller. You're creating a "Choose Your Own Adventure" style story for a fantasy trip.
 
-The traveler is visiting these destinations: ${destinationList}
+The complete journey: ${destinationList}
+CURRENT LOCATION: ${currentDestination} (destination ${currentDestinationIndex + 1} of ${destinations.length})
+${isTransitionStep ? `IMPORTANT: This step should END in ${currentDestination} and set up the transition to the NEXT destination: ${nextDestination}` : ""}
 
-Story progress: Step ${stepNumber} of 20 (${progressPercent}% complete)
+Story progress: Step ${stepNumber} of ${totalSteps} (${progressPercent}% complete)
 
 Guidelines:
-- Create vivid, immersive scenes that capture the magic of travel
-- Include sensory details: sights, sounds, smells, tastes
-- Reference local culture, food, landmarks, and hidden gems
+- Create vivid, immersive scenes set specifically in ${currentDestination}
+- Include sensory details: sights, sounds, smells, tastes specific to ${currentDestination}
+- Reference local culture, food, landmarks, and hidden gems of ${currentDestination}
 - Build narrative tension and excitement
-- Make each destination feel unique and memorable
-- As the story progresses, weave in meaningful travel themes: personal growth, unexpected connections, wonder
-- Near the end (steps 17-20), start wrapping up the journey with satisfying conclusions`;
+- Make ${currentDestination} feel unique and memorable
+${isTransitionStep ? `- This is a TRANSITION step: wrap up the ${currentDestination} experience and have one choice lead to departing for ${nextDestination}` : ""}
+${stepNumber >= totalSteps - 2 ? "- We're nearing the end: start wrapping up the journey with satisfying conclusions" : ""}`;
 
   const userPrompt = `${contextPrompt}
 
-Generate step ${stepNumber} of this dream trip adventure.
+Generate step ${stepNumber} of this dream trip adventure, set in ${currentDestination}.
 
 Respond ONLY with valid JSON in this exact format:
 {
   "step": ${stepNumber},
-  "description": "A 2-3 paragraph description of the current scene and situation (about 100-150 words)",
+  "description": "A 2-3 paragraph description of the current scene in ${currentDestination} (about 100-150 words)",
   "choices": ["First choice option", "Second choice option", "Third choice option"]
 }
 
-The description should set the scene and present a situation. The three choices should be distinct options that lead to different experiences.`;
+The description should set the scene in ${currentDestination} and present a situation. The three choices should be distinct options that lead to different experiences.`;
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -155,6 +175,6 @@ The description should set the scene and present a situation. The three choices 
   return {
     step: stepNumber,
     description: parsed.description,
-    choices: parsed.choices.slice(0, 3), // Ensure exactly 3 choices
+    choices: parsed.choices.slice(0, 3),
   };
 }
