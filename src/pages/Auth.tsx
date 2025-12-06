@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,6 +33,7 @@ const Auth = () => {
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; displayName?: string }>({});
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -79,7 +81,8 @@ const Auth = () => {
       });
 
       if (error) throw error;
-      toast.success("Account created! You can now sign in.");
+      setShowEmailConfirmation(true);
+      toast.success("Check your email to verify your account!");
     } catch (error: any) {
       toast.error(error.message || "Failed to sign up");
     } finally {
@@ -174,60 +177,82 @@ const Auth = () => {
             </TabsContent>
 
             <TabsContent value="signup" className="space-y-4">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Display Name</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="Your divine name"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    className="bg-muted/20 border-primary/30"
-                    maxLength={50}
-                  />
-                  {errors.displayName && (
-                    <p className="text-sm text-destructive">{errors.displayName}</p>
-                  )}
+              {showEmailConfirmation ? (
+                <div className="text-center space-y-4 py-6">
+                  <div className="mx-auto w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Mail className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold">Check Your Email</h3>
+                  <p className="text-muted-foreground">
+                    We've sent a verification link to <span className="font-medium text-foreground">{email}</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Click the link in the email to verify your account and complete registration.
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowEmailConfirmation(false)}
+                    className="mt-4"
+                  >
+                    Back to Sign Up
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="bg-muted/20 border-primary/30"
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="bg-muted/20 border-primary/30"
-                  />
-                  {errors.password && (
-                    <p className="text-sm text-destructive">{errors.password}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
-                </div>
-                <Button
-                  type="submit"
-                  variant="divine"
-                  className="w-full"
-                  disabled={loading}
-                >
-                  {loading ? "Creating account..." : "Create Account"}
-                </Button>
-              </form>
+              ) : (
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name">Display Name</Label>
+                    <Input
+                      id="signup-name"
+                      type="text"
+                      placeholder="Your divine name"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      className="bg-muted/20 border-primary/30"
+                      maxLength={50}
+                    />
+                    {errors.displayName && (
+                      <p className="text-sm text-destructive">{errors.displayName}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="bg-muted/20 border-primary/30"
+                    />
+                    {errors.email && (
+                      <p className="text-sm text-destructive">{errors.email}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Password</Label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="bg-muted/20 border-primary/30"
+                    />
+                    {errors.password && (
+                      <p className="text-sm text-destructive">{errors.password}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
+                  </div>
+                  <Button
+                    type="submit"
+                    variant="divine"
+                    className="w-full"
+                    disabled={loading}
+                  >
+                    {loading ? "Creating account..." : "Create Account"}
+                  </Button>
+                </form>
+              )}
             </TabsContent>
           </Tabs>
         </Card>
