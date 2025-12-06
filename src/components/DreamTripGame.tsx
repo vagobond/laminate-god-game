@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plane, MapPin, Plus, X, Sparkles, ExternalLink } from "lucide-react";
+import { DreamTripMap } from "./DreamTripMap";
 
 interface GameStep {
   step: number;
@@ -25,6 +26,7 @@ export const DreamTripGame = () => {
   const [currentStep, setCurrentStep] = useState<GameStep | null>(null);
   const [stepHistory, setStepHistory] = useState<string[]>([]);
   const [gameComplete, setGameComplete] = useState(false);
+  const [currentDestinationIndex, setCurrentDestinationIndex] = useState(0);
 
   useEffect(() => {
     checkAuth();
@@ -125,8 +127,15 @@ export const DreamTripGame = () => {
       if (data.complete) {
         setGameComplete(true);
         setCurrentStep(null);
+        setCurrentDestinationIndex(destinations.length - 1);
       } else {
         setCurrentStep(data.step);
+        // Progress through destinations based on step number
+        const progressIndex = Math.min(
+          Math.floor((data.step.step / 20) * destinations.length),
+          destinations.length - 1
+        );
+        setCurrentDestinationIndex(progressIndex);
       }
     } catch (error: any) {
       console.error('Error continuing trip:', error);
@@ -146,6 +155,7 @@ export const DreamTripGame = () => {
     setStepHistory([]);
     setGameComplete(false);
     setDestinations([]);
+    setCurrentDestinationIndex(0);
   };
 
   // Destination input phase
@@ -246,6 +256,11 @@ export const DreamTripGame = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          <DreamTripMap 
+            destinations={destinations} 
+            currentDestinationIndex={destinations.length - 1} 
+          />
+
           <p className="text-lg leading-relaxed">
             What an incredible journey through {destinations.join(', ')}! 
             Your adventure took you to amazing places and created memories that will last a lifetime.
@@ -300,6 +315,11 @@ export const DreamTripGame = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        <DreamTripMap 
+          destinations={destinations} 
+          currentDestinationIndex={currentDestinationIndex} 
+        />
+
         {currentStep && (
           <>
             <p className="text-lg leading-relaxed whitespace-pre-line">
