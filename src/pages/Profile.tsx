@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { User, MapPin, Link as LinkIcon, Save, ArrowLeft, Upload, Loader2, Eye, Share2 } from "lucide-react";
+import BlockedUsersManager from "@/components/BlockedUsersManager";
+import FriendsList from "@/components/FriendsList";
 
 interface Profile {
   id: string;
@@ -465,6 +467,14 @@ const Profile = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Friends List */}
+        {user && (
+          <FriendsList userId={user.id} viewerId={user.id} showLevels={true} />
+        )}
+
+        {/* Blocked Users Manager */}
+        <BlockedUsersManager />
       </div>
     </div>
   );

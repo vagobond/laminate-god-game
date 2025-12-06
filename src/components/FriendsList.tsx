@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, UserMinus } from "lucide-react";
+import { toast } from "sonner";
 
 interface Friend {
   id: string;
@@ -35,6 +37,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
   const [canSeeLevels, setCanSeeLevels] = useState(false);
+  const isOwnProfile = viewerId === userId;
 
   useEffect(() => {
     loadFriends();
@@ -101,6 +104,31 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
     }
   };
 
+  const handleUnfriend = async (friendshipId: string, friendId: string, displayName: string | null) => {
+    try {
+      // Delete my friendship with them
+      const { error: error1 } = await supabase
+        .from("friendships")
+        .delete()
+        .eq("id", friendshipId);
+
+      if (error1) throw error1;
+
+      // Also delete their friendship with me (if exists)
+      await supabase
+        .from("friendships")
+        .delete()
+        .eq("user_id", friendId)
+        .eq("friend_id", userId);
+
+      setFriends((prev) => prev.filter((f) => f.id !== friendshipId));
+      toast.success(`Unfriended ${displayName || "user"}`);
+    } catch (error) {
+      console.error("Error unfriending:", error);
+      toast.error("Failed to unfriend");
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -140,24 +168,41 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
           {friends.map((friend) => (
             <div
               key={friend.id}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 cursor-pointer transition-colors"
-              onClick={() => navigate(`/u/${friend.friend_id}`)}
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors"
             >
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={friend.profile?.avatar_url || undefined} />
-                <AvatarFallback>
-                  {(friend.profile?.display_name || "?").slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">
-                  {friend.profile?.display_name || "Unknown"}
-                </p>
+              <div
+                className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+                onClick={() => navigate(`/u/${friend.friend_id}`)}
+              >
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={friend.profile?.avatar_url || undefined} />
+                  <AvatarFallback>
+                    {(friend.profile?.display_name || "?").slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">
+                    {friend.profile?.display_name || "Unknown"}
+                  </p>
+                </div>
+                {(showLevels || canSeeLevels) && friend.level !== "secret_friend" && (
+                  <Badge variant="secondary" className="text-xs">
+                    {levelLabels[friend.level] || friend.level}
+                  </Badge>
+                )}
               </div>
-              {(showLevels || canSeeLevels) && friend.level !== "secret_friend" && (
-                <Badge variant="secondary" className="text-xs">
-                  {levelLabels[friend.level] || friend.level}
-                </Badge>
+              {isOwnProfile && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUnfriend(friend.id, friend.friend_id, friend.profile?.display_name || null);
+                  }}
+                >
+                  <UserMinus className="w-4 h-4" />
+                </Button>
               )}
             </div>
           ))}
