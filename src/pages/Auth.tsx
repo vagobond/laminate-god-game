@@ -73,7 +73,7 @@ const Auth = () => {
         email: result.data.email,
         password: result.data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: "https://laminate-god-game.lovable.app/",
           data: {
             display_name: result.data.displayName,
           }
