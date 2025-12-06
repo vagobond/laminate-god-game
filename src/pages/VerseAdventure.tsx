@@ -9,6 +9,7 @@ import { Skull, Trophy, Zap, Home } from "lucide-react";
 import { WolfemonGame } from "@/components/WolfemonGame";
 import { ArtIFucked } from "@/components/ArtIFucked";
 import { SlyDoubtGame } from "@/components/SlyDoubtGame";
+import { DreamTripGame } from "@/components/DreamTripGame";
 
 interface Scenario {
   description: string;
@@ -296,6 +297,12 @@ const VerseAdventure = () => {
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Sly Doubt of Uranus</h2>
           <SlyDoubtGame />
+        </div>
+
+        {/* Dream Trip Game */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">Dream Trip</h2>
+          <DreamTripGame />
         </div>
       </div>
     </div>
