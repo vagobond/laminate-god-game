@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { User as UserIcon, LogIn, LogOut, Settings } from "lucide-react";
+import { User as UserIcon, LogIn, LogOut, Settings, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 const UserMenu = () => {
@@ -19,15 +19,18 @@ const UserMenu = () => {
   const [user, setUser] = useState<User | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         loadProfile(session.user.id);
+        checkAdminStatus(session.user.id);
       } else {
         setAvatarUrl(null);
         setDisplayName(null);
+        setIsAdmin(false);
       }
     });
 
@@ -35,6 +38,7 @@ const UserMenu = () => {
       setUser(session?.user ?? null);
       if (session?.user) {
         loadProfile(session.user.id);
+        checkAdminStatus(session.user.id);
       }
     });
 
@@ -52,6 +56,17 @@ const UserMenu = () => {
       setAvatarUrl(data.avatar_url);
       setDisplayName(data.display_name);
     }
+  };
+
+  const checkAdminStatus = async (userId: string) => {
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    
+    setIsAdmin(!!data);
   };
 
   const handleLogout = async () => {
@@ -113,6 +128,12 @@ const UserMenu = () => {
           <Settings className="w-4 h-4 mr-2" />
           Settings
         </DropdownMenuItem>
+        {isAdmin && (
+          <DropdownMenuItem onClick={() => navigate("/admin")} className="cursor-pointer">
+            <Shield className="w-4 h-4 mr-2" />
+            Admin Dashboard
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
           <LogOut className="w-4 h-4 mr-2" />

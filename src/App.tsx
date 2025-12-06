@@ -22,6 +22,7 @@ import IRLLayer from "./pages/IRLLayer";
 import Profile from "./pages/Profile";
 import PublicProfile from "./pages/PublicProfile";
 import Settings from "./pages/Settings";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import AppHeader from "./components/AppHeader";
 
@@ -54,6 +55,7 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/u/:userId" element={<PublicProfile />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/admin" element={<AdminDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
