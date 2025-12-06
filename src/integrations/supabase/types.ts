@@ -412,6 +412,28 @@ export type Database = {
         Args: { profile_id: string; viewer_id: string }
         Returns: Database["public"]["Enums"]["friendship_level"]
       }
+      get_visible_profile: {
+        Args: { profile_id: string; viewer_id: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          contact_email: string
+          display_name: string
+          friendship_level: string
+          hometown_city: string
+          hometown_country: string
+          hometown_description: string
+          hometown_latitude: number
+          hometown_longitude: number
+          id: string
+          instagram_url: string
+          link: string
+          linkedin_url: string
+          phone_number: string
+          private_email: string
+          whatsapp: string
+        }[]
+      }
       is_blocked: {
         Args: { blocked_id: string; blocker_id: string }
         Returns: boolean
