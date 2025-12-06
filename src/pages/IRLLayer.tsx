@@ -8,7 +8,7 @@ import { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { X } from "lucide-react";
+import { X, Globe, ChevronRight, Users } from "lucide-react";
 
 interface ProfileData {
   id: string;
@@ -42,6 +42,8 @@ const IRLLayer = () => {
   const [userHometown, setUserHometown] = useState<any>(null);
   const [allHometowns, setAllHometowns] = useState<ProfileData[]>([]);
   const [selectedHometown, setSelectedHometown] = useState<HometownGroup | null>(null);
+  const [showExploreModal, setShowExploreModal] = useState(false);
+  const [expandedHometown, setExpandedHometown] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -283,16 +285,39 @@ const IRLLayer = () => {
     );
   }
 
+  // Sort hometowns by user count for explore modal
+  const sortedHometowns = Object.values(groupedHometowns).sort(
+    (a, b) => b.profiles.length - a.profiles.length
+  );
+
+  const handleExploreClick = (group: HometownGroup) => {
+    setShowExploreModal(false);
+    setSelectedHometown(group);
+    if (map.current) {
+      map.current.flyTo({
+        center: [group.lng, group.lat],
+        zoom: 10,
+        duration: 1500,
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen p-4 space-y-6">
-      <div className="flex justify-between items-center max-w-7xl mx-auto">
+      <div className="flex justify-between items-center max-w-7xl mx-auto flex-wrap gap-4">
         <div>
           <h1 className="text-4xl md:text-5xl font-bold text-glow">The IRL Layer</h1>
           <p className="text-foreground/80 mt-2">Claim your hometown on the Laminate map</p>
         </div>
-        <Button onClick={() => navigate("/powers")} variant="outline">
-          Back to Powers
-        </Button>
+        <div className="flex gap-3">
+          <Button onClick={() => setShowExploreModal(true)} variant="mystical" className="gap-2">
+            <Globe className="w-4 h-4" />
+            Explore Hometowns
+          </Button>
+          <Button onClick={() => navigate("/powers")} variant="outline">
+            Back to Powers
+          </Button>
+        </div>
       </div>
 
       {userHometown && (
@@ -316,6 +341,118 @@ const IRLLayer = () => {
           </div>
         )}
       </div>
+
+      {/* Explore Hometowns Modal */}
+      {showExploreModal && (
+        <div className="fixed inset-0 bg-background/80 flex items-center justify-center p-4 z-50">
+          <div className="bg-card border border-primary/20 rounded-lg p-6 max-w-lg w-full space-y-4 max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <Globe className="w-6 h-6 text-primary" />
+                  Explore Hometowns
+                </h2>
+                <p className="text-foreground/70 text-sm mt-1">
+                  {allHometowns.length} Laminater{allHometowns.length !== 1 ? 's' : ''} across {sortedHometowns.length} location{sortedHometowns.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowExploreModal(false)}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            
+            <div className="overflow-y-auto flex-1 space-y-2">
+              {sortedHometowns.length === 0 ? (
+                <p className="text-foreground/60 text-center py-8">
+                  No hometowns claimed yet. Be the first!
+                </p>
+              ) : (
+                sortedHometowns.map((group) => {
+                  const key = `${group.city}-${group.country}`;
+                  const isExpanded = expandedHometown === key;
+                  const hasMultiple = group.profiles.length > 1;
+
+                  return (
+                    <div key={key} className="border border-border/50 rounded-lg overflow-hidden">
+                      <div
+                        onClick={() => {
+                          if (hasMultiple) {
+                            setExpandedHometown(isExpanded ? null : key);
+                          } else {
+                            handleExploreClick(group);
+                          }
+                        }}
+                        className="flex items-center gap-3 p-3 bg-secondary/20 hover:bg-secondary/40 cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/20 text-primary font-bold">
+                          {group.profiles.length}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium">{group.city}</p>
+                          <p className="text-sm text-foreground/60">{group.country}</p>
+                        </div>
+                        {hasMultiple ? (
+                          <ChevronRight className={`w-5 h-5 text-foreground/60 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleExploreClick(group);
+                            }}
+                            className="text-primary"
+                          >
+                            View on Map
+                          </Button>
+                        )}
+                      </div>
+                      
+                      {hasMultiple && isExpanded && (
+                        <div className="border-t border-border/50 bg-background/50">
+                          <div className="p-2 space-y-1">
+                            {group.profiles.map((profile) => (
+                              <div
+                                key={profile.id}
+                                onClick={() => navigate(`/u/${profile.id}`)}
+                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/30 cursor-pointer transition-colors"
+                              >
+                                <Avatar className="w-8 h-8">
+                                  <AvatarImage src={profile.avatar_url || undefined} />
+                                  <AvatarFallback className="text-xs">
+                                    {(profile.display_name || "A").slice(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="text-sm truncate">
+                                  {profile.display_name || "Anonymous Laminater"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="p-2 border-t border-border/50">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleExploreClick(group)}
+                              className="w-full text-primary"
+                            >
+                              View on Map
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hometown profiles modal */}
       {selectedHometown && (
