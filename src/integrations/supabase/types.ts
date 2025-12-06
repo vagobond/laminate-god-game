@@ -86,6 +86,7 @@ export type Database = {
           friend_id: string
           id: string
           level: Database["public"]["Enums"]["friendship_level"]
+          needs_level_set: boolean
           user_id: string
         }
         Insert: {
@@ -93,6 +94,7 @@ export type Database = {
           friend_id: string
           id?: string
           level: Database["public"]["Enums"]["friendship_level"]
+          needs_level_set?: boolean
           user_id: string
         }
         Update: {
@@ -100,6 +102,7 @@ export type Database = {
           friend_id?: string
           id?: string
           level?: Database["public"]["Enums"]["friendship_level"]
+          needs_level_set?: boolean
           user_id?: string
         }
         Relationships: [
