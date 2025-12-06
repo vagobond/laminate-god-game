@@ -189,13 +189,38 @@ const Auth = () => {
                   <p className="text-sm text-muted-foreground">
                     Click the link in the email to verify your account and complete registration.
                   </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowEmailConfirmation(false)}
-                    className="mt-4"
-                  >
-                    Back to Sign Up
-                  </Button>
+                  <div className="flex flex-col gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      disabled={loading}
+                      onClick={async () => {
+                        setLoading(true);
+                        try {
+                          const { error } = await supabase.auth.resend({
+                            type: 'signup',
+                            email: email,
+                            options: {
+                              emailRedirectTo: "https://laminate-god-game.lovable.app/",
+                            }
+                          });
+                          if (error) throw error;
+                          toast.success("Verification email resent!");
+                        } catch (error: any) {
+                          toast.error(error.message || "Failed to resend email");
+                        } finally {
+                          setLoading(false);
+                        }
+                      }}
+                    >
+                      {loading ? "Sending..." : "Resend Verification Email"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowEmailConfirmation(false)}
+                    >
+                      Back to Sign Up
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={handleSignUp} className="space-y-4">
