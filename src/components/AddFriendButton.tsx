@@ -14,7 +14,7 @@ interface AddFriendButtonProps {
   profileUserId: string;
 }
 
-type FriendStatus = "none" | "pending_sent" | "pending_received" | "friends";
+type FriendStatus = "none" | "pending_sent" | "pending_received" | "friends" | "blocked";
 
 const AddFriendButton = ({ profileUserId }: AddFriendButtonProps) => {
   const [user, setUser] = useState<any>(null);
@@ -44,15 +44,41 @@ const AddFriendButton = ({ profileUserId }: AddFriendButtonProps) => {
   const checkFriendStatus = async () => {
     if (!user) return;
 
-    // Check if already friends
+    // Check if blocked by this user
+    const { data: blocked } = await supabase
+      .from("user_blocks")
+      .select("id")
+      .eq("blocker_id", profileUserId)
+      .eq("blocked_id", user.id)
+      .maybeSingle();
+
+    if (blocked) {
+      setStatus("blocked");
+      return;
+    }
+
+    // Check if already friends (either direction)
     const { data: friendship } = await supabase
       .from("friendships")
-      .select("id")
+      .select("id, level")
       .eq("user_id", user.id)
       .eq("friend_id", profileUserId)
       .maybeSingle();
 
     if (friendship) {
+      setStatus("friends");
+      return;
+    }
+
+    // Check if the other person has us as a friend (for fake_friend scenario - they see "friends")
+    const { data: reverseFriendship } = await supabase
+      .from("friendships")
+      .select("id")
+      .eq("user_id", profileUserId)
+      .eq("friend_id", user.id)
+      .maybeSingle();
+
+    if (reverseFriendship) {
       setStatus("friends");
       return;
     }
@@ -138,8 +164,12 @@ const AddFriendButton = ({ profileUserId }: AddFriendButtonProps) => {
     }
   };
 
-  // Don't show for own profile or if not logged in
+  // Don't show for own profile, if not logged in, or if blocked
   if (!user || user.id === profileUserId) return null;
+
+  if (status === "blocked") {
+    return null; // Don't show any button if blocked
+  }
 
   if (status === "friends") {
     return (

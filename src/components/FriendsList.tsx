@@ -27,6 +27,7 @@ const levelLabels: Record<string, string> = {
   buddy: "Buddy",
   friendly_acquaintance: "Acquaintance",
   secret_friend: "Secret Friend",
+  fake_friend: "Friend", // Display as normal friend to the fake friend
 };
 
 const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps) => {
@@ -66,8 +67,12 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
 
       if (error) throw error;
 
-      // Filter out secret friends for non-owners
+      // Filter out secret friends and fake friends for non-owners
+      // Fake friends should never appear in the profile owner's list
       const visibleFriends = (data || []).filter((f) => {
+        // Never show fake friends in the owner's list (they don't really exist as friends)
+        if (f.level === "fake_friend") return false;
+        // Only owner can see secret friends
         if (viewerId === userId) return true;
         return f.level !== "secret_friend";
       });

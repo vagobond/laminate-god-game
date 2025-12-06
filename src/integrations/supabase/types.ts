@@ -323,6 +323,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_blocks_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wolfemon_game_state: {
         Row: {
           created_at: string
@@ -376,6 +412,10 @@ export type Database = {
         Args: { profile_id: string; viewer_id: string }
         Returns: Database["public"]["Enums"]["friendship_level"]
       }
+      is_blocked: {
+        Args: { blocked_id: string; blocker_id: string }
+        Returns: boolean
+      }
       refresh_layer_stats: { Args: never; Returns: undefined }
     }
     Enums: {
@@ -384,6 +424,8 @@ export type Database = {
         | "buddy"
         | "friendly_acquaintance"
         | "secret_friend"
+        | "fake_friend"
+        | "not_friend"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -516,6 +558,8 @@ export const Constants = {
         "buddy",
         "friendly_acquaintance",
         "secret_friend",
+        "fake_friend",
+        "not_friend",
       ],
     },
   },
