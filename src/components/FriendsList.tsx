@@ -16,6 +16,11 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Friend {
   id: string;
@@ -240,28 +245,38 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
                 </div>
                 {isOwnProfile && (
                   <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-muted-foreground hover:text-foreground"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditLevel(friend);
-                      }}
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleUnfriend(friend.id, friend.friend_id, friend.profile?.display_name || null);
-                      }}
-                    >
-                      <UserMinus className="w-4 h-4" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-foreground"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditLevel(friend);
+                          }}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Edit friendship level</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUnfriend(friend.id, friend.friend_id, friend.profile?.display_name || null);
+                          }}
+                        >
+                          <UserMinus className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Unfriend</TooltipContent>
+                    </Tooltip>
                   </div>
                 )}
               </div>
