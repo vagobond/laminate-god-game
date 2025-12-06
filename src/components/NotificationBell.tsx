@@ -31,7 +31,7 @@ interface FriendRequest {
   };
 }
 
-type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend";
+type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | "fake_friend" | "not_friend";
 
 const NotificationBell = () => {
   const navigate = useNavigate();
@@ -97,6 +97,20 @@ const NotificationBell = () => {
     setProcessing(true);
 
     try {
+      // For "not_friend", just delete the request without creating friendship
+      if (selectedLevel === "not_friend") {
+        await supabase
+          .from("friend_requests")
+          .delete()
+          .eq("id", selectedRequest.id);
+
+        toast.success("Request declined");
+        setSelectedRequest(null);
+        loadRequests();
+        setProcessing(false);
+        return;
+      }
+
       // Create friendship for the accepting user (they set the level)
       const { error: friendship1Error } = await supabase
         .from("friendships")
@@ -108,16 +122,19 @@ const NotificationBell = () => {
 
       if (friendship1Error) throw friendship1Error;
 
-      // Create reverse friendship for the requester (default to buddy, they can change later)
-      const { error: friendship2Error } = await supabase
-        .from("friendships")
-        .insert({
-          user_id: selectedRequest.from_user_id,
-          friend_id: user.id,
-          level: "buddy",
-        });
+      // For fake_friend, don't create reverse friendship (requester thinks they're friends)
+      if (selectedLevel !== "fake_friend") {
+        // Create reverse friendship for the requester (default to buddy, they can change later)
+        const { error: friendship2Error } = await supabase
+          .from("friendships")
+          .insert({
+            user_id: selectedRequest.from_user_id,
+            friend_id: user.id,
+            level: "buddy",
+          });
 
-      if (friendship2Error) throw friendship2Error;
+        if (friendship2Error) throw friendship2Error;
+      }
 
       // Delete the request
       await supabase
@@ -125,7 +142,10 @@ const NotificationBell = () => {
         .delete()
         .eq("id", selectedRequest.id);
 
-      toast.success("Friend request accepted!");
+      const message = selectedLevel === "fake_friend" 
+        ? "Request handled (they'll think you're friends)" 
+        : "Friend request accepted!";
+      toast.success(message);
       setSelectedRequest(null);
       loadRequests();
     } catch (error) {
@@ -148,6 +168,30 @@ const NotificationBell = () => {
     } catch (error) {
       console.error("Error declining request:", error);
       toast.error("Failed to decline request");
+    }
+  };
+
+  const handleBlock = async (request: FriendRequest) => {
+    try {
+      // Delete the request
+      await supabase
+        .from("friend_requests")
+        .delete()
+        .eq("id", request.id);
+
+      // Add to blocks
+      await supabase
+        .from("user_blocks")
+        .insert({
+          blocker_id: user.id,
+          blocked_id: request.from_user_id,
+        });
+
+      toast.success("User blocked");
+      loadRequests();
+    } catch (error) {
+      console.error("Error blocking user:", error);
+      toast.error("Failed to block user");
     }
   };
 
@@ -203,15 +247,14 @@ const NotificationBell = () => {
                         className="flex-1"
                         onClick={() => setSelectedRequest(request)}
                       >
-                        Accept
+                        Respond
                       </Button>
                       <Button 
                         size="sm" 
-                        variant="outline" 
-                        className="flex-1"
-                        onClick={() => handleDecline(request.id)}
+                        variant="destructive"
+                        onClick={() => handleBlock(request)}
                       >
-                        Decline
+                        Block
                       </Button>
                     </div>
                   </div>
@@ -261,6 +304,22 @@ const NotificationBell = () => {
               <Label htmlFor="secret_friend" className="flex-1 cursor-pointer">
                 <span className="font-medium">Secret Friend</span>
                 <p className="text-sm text-muted-foreground">All privileges of close friend, but neither of you appears in each other's friends lists.</p>
+              </Label>
+            </div>
+            
+            <div className="flex items-start space-x-3 p-3 rounded-lg border border-amber-500/50 hover:bg-amber-500/10">
+              <RadioGroupItem value="fake_friend" id="fake_friend" className="mt-1" />
+              <Label htmlFor="fake_friend" className="flex-1 cursor-pointer">
+                <span className="font-medium text-amber-600">Fake Friend</span>
+                <p className="text-sm text-muted-foreground">They'll think you accepted, but they get no access and won't appear in your list.</p>
+              </Label>
+            </div>
+            
+            <div className="flex items-start space-x-3 p-3 rounded-lg border border-destructive/50 hover:bg-destructive/10">
+              <RadioGroupItem value="not_friend" id="not_friend" className="mt-1" />
+              <Label htmlFor="not_friend" className="flex-1 cursor-pointer">
+                <span className="font-medium text-destructive">Not Friend</span>
+                <p className="text-sm text-muted-foreground">Decline the request without any friendship.</p>
               </Label>
             </div>
           </RadioGroup>
