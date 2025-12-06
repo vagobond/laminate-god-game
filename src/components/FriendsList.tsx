@@ -8,6 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Users, UserMinus, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -54,6 +64,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
   const [loading, setLoading] = useState(true);
   const [canSeeLevels, setCanSeeLevels] = useState(false);
   const [editingFriend, setEditingFriend] = useState<Friend | null>(null);
+  const [unfriendingFriend, setUnfriendingFriend] = useState<Friend | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<FriendshipLevel>("buddy");
   const [processing, setProcessing] = useState(false);
   const isOwnProfile = viewerId === userId;
@@ -123,13 +134,15 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
     }
   };
 
-  const handleUnfriend = async (friendshipId: string, friendId: string, displayName: string | null) => {
+  const confirmUnfriend = async () => {
+    if (!unfriendingFriend) return;
+    
     try {
       // Delete my friendship with them
       const { error: error1 } = await supabase
         .from("friendships")
         .delete()
-        .eq("id", friendshipId);
+        .eq("id", unfriendingFriend.id);
 
       if (error1) throw error1;
 
@@ -137,14 +150,16 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
       await supabase
         .from("friendships")
         .delete()
-        .eq("user_id", friendId)
+        .eq("user_id", unfriendingFriend.friend_id)
         .eq("friend_id", userId);
 
-      setFriends((prev) => prev.filter((f) => f.id !== friendshipId));
-      toast.success(`Unfriended ${displayName || "user"}`);
+      setFriends((prev) => prev.filter((f) => f.id !== unfriendingFriend.id));
+      toast.success(`Unfriended ${unfriendingFriend.profile?.display_name || "user"}`);
     } catch (error) {
       console.error("Error unfriending:", error);
       toast.error("Failed to unfriend");
+    } finally {
+      setUnfriendingFriend(null);
     }
   };
 
@@ -269,7 +284,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
                           className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleUnfriend(friend.id, friend.friend_id, friend.profile?.display_name || null);
+                            setUnfriendingFriend(friend);
                           }}
                         >
                           <UserMinus className="w-4 h-4" />
@@ -347,6 +362,27 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation dialog for unfriending */}
+      <AlertDialog open={!!unfriendingFriend} onOpenChange={(open) => !open && setUnfriendingFriend(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unfriend {unfriendingFriend?.profile?.display_name || "this person"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove them from your friends list and you from theirs. You can always send a new friend request later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmUnfriend}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Unfriend
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
