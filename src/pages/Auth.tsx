@@ -7,6 +7,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
+import { z } from "zod";
+
+// Validation schemas
+const signInSchema = z.object({
+  email: z.string().trim().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(1, { message: "Password is required" }),
+});
+
+const signUpSchema = z.object({
+  displayName: z.string()
+    .trim()
+    .min(1, { message: "Display name is required" })
+    .max(50, { message: "Display name must be 50 characters or less" }),
+  email: z.string().trim().email({ message: "Please enter a valid email address" }),
+  password: z.string()
+    .min(8, { message: "Password must be at least 8 characters" }),
+});
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -14,6 +31,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string; displayName?: string }>({});
 
   useEffect(() => {
     // Check if user is already logged in
@@ -34,20 +52,28 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !displayName) {
-      toast.error("Please fill in all fields");
+    setErrors({});
+
+    const result = signUpSchema.safeParse({ displayName, email, password });
+    if (!result.success) {
+      const fieldErrors: typeof errors = {};
+      result.error.errors.forEach((err) => {
+        const field = err.path[0] as keyof typeof errors;
+        fieldErrors[field] = err.message;
+      });
+      setErrors(fieldErrors);
       return;
     }
 
     setLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: result.data.email,
+        password: result.data.password,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            display_name: displayName,
+            display_name: result.data.displayName,
           }
         }
       });
@@ -63,16 +89,24 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error("Please fill in all fields");
+    setErrors({});
+
+    const result = signInSchema.safeParse({ email, password });
+    if (!result.success) {
+      const fieldErrors: typeof errors = {};
+      result.error.errors.forEach((err) => {
+        const field = err.path[0] as keyof typeof errors;
+        fieldErrors[field] = err.message;
+      });
+      setErrors(fieldErrors);
       return;
     }
 
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: result.data.email,
+        password: result.data.password,
       });
 
       if (error) throw error;
@@ -110,6 +144,9 @@ const Auth = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     className="bg-muted/20 border-primary/30"
                   />
+                  {errors.email && (
+                    <p className="text-sm text-destructive">{errors.email}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signin-password">Password</Label>
@@ -121,6 +158,9 @@ const Auth = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="bg-muted/20 border-primary/30"
                   />
+                  {errors.password && (
+                    <p className="text-sm text-destructive">{errors.password}</p>
+                  )}
                 </div>
                 <Button
                   type="submit"
@@ -144,7 +184,11 @@ const Auth = () => {
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     className="bg-muted/20 border-primary/30"
+                    maxLength={50}
                   />
+                  {errors.displayName && (
+                    <p className="text-sm text-destructive">{errors.displayName}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
@@ -156,6 +200,9 @@ const Auth = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     className="bg-muted/20 border-primary/30"
                   />
+                  {errors.email && (
+                    <p className="text-sm text-destructive">{errors.email}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Password</Label>
@@ -167,6 +214,10 @@ const Auth = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="bg-muted/20 border-primary/30"
                   />
+                  {errors.password && (
+                    <p className="text-sm text-destructive">{errors.password}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
                 </div>
                 <Button
                   type="submit"
