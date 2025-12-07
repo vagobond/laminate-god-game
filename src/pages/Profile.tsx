@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { User, MapPin, Link as LinkIcon, Save, ArrowLeft, Upload, Loader2, Eye, Share2 } from "lucide-react";
 import BlockedUsersManager from "@/components/BlockedUsersManager";
 import FriendsList from "@/components/FriendsList";
+import { ProfileGameStats } from "@/components/ProfileGameStats";
 
 interface Profile {
   id: string;
@@ -471,6 +472,11 @@ const Profile = () => {
         {/* Friends List */}
         {user && (
           <FriendsList userId={user.id} viewerId={user.id} showLevels={true} />
+        )}
+
+        {/* Mini-Game Stats */}
+        {user && (
+          <ProfileGameStats userId={user.id} />
         )}
 
         {/* Blocked Users Manager */}

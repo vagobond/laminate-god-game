@@ -85,6 +85,15 @@ export const DreamTripGame = () => {
 
       if (error) throw error;
 
+      // Save destinations to database for profile display
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('dream_trips').insert({
+          user_id: user.id,
+          destinations: destinations,
+        });
+      }
+
       setCurrentStep(data.step);
       setTotalSteps(data.totalSteps);
       setCurrentDestinationIndex(data.currentDestinationIndex);

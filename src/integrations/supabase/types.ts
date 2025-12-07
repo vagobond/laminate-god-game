@@ -41,6 +41,27 @@ export type Database = {
         }
         Relationships: []
       }
+      dream_trips: {
+        Row: {
+          created_at: string
+          destinations: string[]
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          destinations?: string[]
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          destinations?: string[]
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       friend_requests: {
         Row: {
           created_at: string
