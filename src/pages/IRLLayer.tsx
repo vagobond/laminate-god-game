@@ -493,7 +493,7 @@ const IRLLayer = () => {
                       {profile.display_name || "Anonymous Laminater"}
                     </p>
                     {profile.hometown_description && (
-                      <p className="text-sm text-foreground/60 truncate italic">
+                      <p className="text-sm text-foreground/60 italic mt-1">
                         "{profile.hometown_description}"
                       </p>
                     )}
