@@ -347,6 +347,33 @@ export type Database = {
         }
         Relationships: []
       }
+      sly_doubt_game_state: {
+        Row: {
+          bloot_collected: number
+          created_at: string
+          id: string
+          revolution_acts: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bloot_collected?: number
+          created_at?: string
+          id?: string
+          revolution_acts?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bloot_collected?: number
+          created_at?: string
+          id?: string
+          revolution_acts?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_blocks: {
         Row: {
           blocked_id: string
