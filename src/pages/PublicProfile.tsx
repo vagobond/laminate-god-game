@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { User, MapPin, Link as LinkIcon, ArrowLeft, ExternalLink, Phone, Mail, MessageCircle } from "lucide-react";
 import AddFriendButton from "@/components/AddFriendButton";
 import FriendsList from "@/components/FriendsList";
+import { ProfileGameStats } from "@/components/ProfileGameStats";
 
 interface Profile {
   id: string;
@@ -296,6 +297,11 @@ const PublicProfile = () => {
             userId={userId} 
             viewerId={currentUser?.id || null}
           />
+        )}
+
+        {/* Mini-Game Stats */}
+        {userId && (
+          <ProfileGameStats userId={userId} />
         )}
       </div>
     </div>
