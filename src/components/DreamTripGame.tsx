@@ -178,7 +178,7 @@ export const DreamTripGame = () => {
             Dream Trip
           </CardTitle>
           <CardDescription>
-            Add up to 10 destinations for your fantasy trip, then live the adventure through an AI-generated story!
+            Add up to 10 destinations for your fantasy trip, then live the adventure through a choose your own adventure story!
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
