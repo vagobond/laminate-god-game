@@ -129,10 +129,6 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
     stats.shartsCollected > 0 || 
     stats.destinations.length > 0;
 
-  if (!hasAnyStats) {
-    return null;
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -142,79 +138,75 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Verse Adventure */}
-        {stats.deathCount > 0 && (
-          <div className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg border border-destructive/20">
-            <div className="flex items-center gap-2">
-              <Skull className="w-5 h-5 text-destructive" />
-              <span className="font-medium">Verse Adventure</span>
-            </div>
-            <Button 
-              variant="destructive" 
-              size="sm"
-              onClick={() => navigate('/death-history')}
-            >
-              {stats.deathCount} Deaths
-            </Button>
+        {!hasAnyStats && (
+          <div className="text-sm text-muted-foreground italic">
+            No mini-game stats yet. Play some games to see your progress!
           </div>
         )}
+
+        {/* Verse Adventure */}
+        <div className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+          <div className="flex items-center gap-2">
+            <Skull className="w-5 h-5 text-destructive" />
+            <span className="font-medium">Verse Adventure</span>
+          </div>
+          <Button 
+            variant="destructive" 
+            size="sm"
+            onClick={() => navigate('/death-history')}
+          >
+            {stats.deathCount} Deaths
+          </Button>
+        </div>
 
         {/* Wolfemon */}
-        {(stats.gold > 0 || stats.sheepCount > 0) && (
-          <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xl">🐺</span>
-              <span className="font-medium">Wolfemon</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">💰 {stats.gold} Gold</Badge>
-              <Badge variant="secondary">🐑 {stats.sheepCount} Lamsters</Badge>
-              <Badge variant="secondary">🧶 {stats.woolCount} Wool</Badge>
-              {stats.wolfemonCount > 0 && (
-                <Badge variant="default">🐺 {stats.wolfemonCount} Wolfemon</Badge>
-              )}
-            </div>
+        <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl">🐺</span>
+            <span className="font-medium">Wolfemon</span>
           </div>
-        )}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">💰 {stats.gold} Gold</Badge>
+            <Badge variant="secondary">🐑 {stats.sheepCount} Lamsters</Badge>
+            <Badge variant="secondary">🧶 {stats.woolCount} Wool</Badge>
+            <Badge variant="default">🐺 {stats.wolfemonCount} Wolfemon</Badge>
+          </div>
+        </div>
 
         {/* Art I Fucked */}
-        {stats.shartsCollected > 0 && (
-          <div className="p-3 bg-accent/10 rounded-lg border border-accent/20">
-            <div className="flex items-center gap-2 mb-2">
-              <Palette className="w-5 h-5 text-accent" />
-              <span className="font-medium">Art I Fucked</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">💨 {stats.shartsCollected} Sharts</Badge>
-              <Badge variant="secondary">🎨 {stats.encountersCompleted} Encounters</Badge>
-            </div>
+        <div className="p-3 bg-accent/10 rounded-lg border border-accent/20">
+          <div className="flex items-center gap-2 mb-2">
+            <Palette className="w-5 h-5 text-accent" />
+            <span className="font-medium">Art I Fucked</span>
           </div>
-        )}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">💨 {stats.shartsCollected} Sharts</Badge>
+            <Badge variant="secondary">🎨 {stats.encountersCompleted} Encounters</Badge>
+          </div>
+        </div>
 
-        {/* Sly Doubt of Uranus - uses same table but different labels */}
-        {stats.encountersCompleted > 0 && (
-          <div className="p-3 bg-secondary/50 rounded-lg border border-border">
-            <div className="flex items-center gap-2 mb-2">
-              <Globe className="w-5 h-5 text-primary" />
-              <span className="font-medium">Sly Doubt of Uranus</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">💎 {stats.shartsCollected} Bloot</Badge>
-              <Badge variant="secondary">✊ {stats.encountersCompleted} Revolution Acts</Badge>
-            </div>
+        {/* Sly Doubt of Uranus */}
+        <div className="p-3 bg-secondary/50 rounded-lg border border-border">
+          <div className="flex items-center gap-2 mb-2">
+            <Globe className="w-5 h-5 text-primary" />
+            <span className="font-medium">Sly Doubt of Uranus</span>
           </div>
-        )}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">💎 {stats.shartsCollected} Bloot</Badge>
+            <Badge variant="secondary">✊ {stats.encountersCompleted} Revolution Acts</Badge>
+          </div>
+        </div>
 
         {/* Dream Trip */}
-        {stats.destinations.length > 0 && (
-          <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
-            <div className="flex items-center gap-2 mb-2">
-              <Plane className="w-5 h-5 text-primary" />
-              <span className="font-medium">Dream Trip</span>
-            </div>
-            <div className="text-sm text-muted-foreground mb-2">
-              Trips Taken: {stats.destinations.length} destination{stats.destinations.length !== 1 ? 's' : ''}
-            </div>
+        <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+          <div className="flex items-center gap-2 mb-2">
+            <Plane className="w-5 h-5 text-primary" />
+            <span className="font-medium">Dream Trip</span>
+          </div>
+          <div className="text-sm text-muted-foreground mb-2">
+            Trips Taken: {stats.destinations.length} destination{stats.destinations.length !== 1 ? 's' : ''}
+          </div>
+          {stats.destinations.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
               {stats.destinations.map((dest, index) => (
                 <Badge key={index} variant="outline" className="text-xs">
@@ -223,8 +215,10 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
                 </Badge>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="text-sm text-muted-foreground italic">No trips yet</div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
