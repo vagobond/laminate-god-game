@@ -141,32 +141,32 @@ export function SlyDoubtGame() {
     if (!user) return;
 
     const { data, error } = await supabase
-      .from('art_i_fucked_state')
+      .from('sly_doubt_game_state')
       .select('*')
       .eq('user_id', user.id)
       .single();
 
     if (error && error.code === 'PGRST116') {
       const { data: newState } = await supabase
-        .from('art_i_fucked_state')
+        .from('sly_doubt_game_state')
         .insert({ 
           user_id: user.id, 
-          sharts_collected: 0, 
-          encounters_completed: 0 
+          bloot_collected: 0, 
+          revolution_acts: 0 
         })
         .select()
         .single();
       
       if (newState) {
         setGameState({ 
-          bloot_collected: newState.sharts_collected, 
-          revolution_acts: newState.encounters_completed 
+          bloot_collected: newState.bloot_collected, 
+          revolution_acts: newState.revolution_acts 
         });
       }
     } else if (data) {
       setGameState({ 
-        bloot_collected: data.sharts_collected, 
-        revolution_acts: data.encounters_completed 
+        bloot_collected: data.bloot_collected, 
+        revolution_acts: data.revolution_acts 
       });
     }
   };
@@ -210,11 +210,11 @@ export function SlyDoubtGame() {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       await supabase
-        .from('art_i_fucked_state')
+        .from('sly_doubt_game_state')
         .upsert({ 
           user_id: user.id, 
-          sharts_collected: newBloot, 
-          encounters_completed: newActs 
+          bloot_collected: newBloot, 
+          revolution_acts: newActs 
         });
     }
   };

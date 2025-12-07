@@ -21,6 +21,9 @@ interface GameStats {
   // Art I Fucked
   shartsCollected: number;
   encountersCompleted: number;
+  // Sly Doubt of Uranus
+  blootCollected: number;
+  revolutionActs: number;
   // Dream Trip
   destinations: string[];
 }
@@ -35,6 +38,8 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
     wolfemonCount: 0,
     shartsCollected: 0,
     encountersCompleted: 0,
+    blootCollected: 0,
+    revolutionActs: 0,
     destinations: [],
   });
   const [loading, setLoading] = useState(true);
@@ -46,7 +51,7 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
   const loadStats = async () => {
     try {
       // Fetch all game stats in parallel
-      const [deathsResult, wolfemonResult, artResult, tripsResult] = await Promise.all([
+      const [deathsResult, wolfemonResult, artResult, slyDoubtResult, tripsResult] = await Promise.all([
         // Verse Adventure deaths
         supabase
           .from('game_deaths')
@@ -58,10 +63,16 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
           .select('gold, sheep_count, wool_count, has_wolfemon, total_sheep_collected')
           .eq('user_id', userId)
           .maybeSingle(),
-        // Art I Fucked state (also used for Sly Doubt)
+        // Art I Fucked state
         supabase
           .from('art_i_fucked_state')
           .select('sharts_collected, encounters_completed')
+          .eq('user_id', userId)
+          .maybeSingle(),
+        // Sly Doubt of Uranus state
+        supabase
+          .from('sly_doubt_game_state')
+          .select('bloot_collected, revolution_acts')
           .eq('user_id', userId)
           .maybeSingle(),
         // Dream Trip destinations
@@ -101,6 +112,8 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
         wolfemonCount,
         shartsCollected: artResult.data?.sharts_collected || 0,
         encountersCompleted: artResult.data?.encounters_completed || 0,
+        blootCollected: slyDoubtResult.data?.bloot_collected || 0,
+        revolutionActs: slyDoubtResult.data?.revolution_acts || 0,
         destinations: allDestinations,
       });
     } catch (error) {
@@ -127,6 +140,7 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
     stats.deathCount > 0 || 
     stats.gold > 0 || 
     stats.shartsCollected > 0 || 
+    stats.blootCollected > 0 ||
     stats.destinations.length > 0;
 
   return (
@@ -192,8 +206,8 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
             <span className="font-medium">Sly Doubt of Uranus</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary">💎 {stats.shartsCollected} Bloot</Badge>
-            <Badge variant="secondary">✊ {stats.encountersCompleted} Revolution Acts</Badge>
+            <Badge variant="secondary">💎 {stats.blootCollected} Bloot</Badge>
+            <Badge variant="secondary">✊ {stats.revolutionActs} Revolution Acts</Badge>
           </div>
         </div>
 
