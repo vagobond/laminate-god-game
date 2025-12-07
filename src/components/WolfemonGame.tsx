@@ -101,8 +101,8 @@ export const WolfemonGame = () => {
     
     setIsLoading(true);
     
-    // RNG for Wolfemon attack (10% chance)
-    const wolfemonAttack = Math.random() < 0.1;
+    // RNG for Wolfemon attack (10% chance) - Wolfemon owners are protected
+    const wolfemonAttack = !gameState.has_wolfemon && Math.random() < 0.1;
     
     if (wolfemonAttack) {
       toast({
@@ -114,19 +114,38 @@ export const WolfemonGame = () => {
       return;
     }
 
+    let newTotalCollected = gameState.total_sheep_collected + 1;
+    let newHasWolfemon = gameState.has_wolfemon;
+    let transmogrified = false;
+
+    // Check if we've hit 100 collected - transmogrify into a Wolfemon!
+    if (newTotalCollected >= 100 && !gameState.has_wolfemon) {
+      newTotalCollected = newTotalCollected % 100; // Reset to remainder (e.g., 105 -> 5)
+      newHasWolfemon = true;
+      transmogrified = true;
+    }
+
     const newState = {
       ...gameState,
       sheep_count: gameState.sheep_count + 1,
-      total_sheep_collected: gameState.total_sheep_collected + 1,
+      total_sheep_collected: newTotalCollected,
+      has_wolfemon: newHasWolfemon,
     };
     
     setGameState(newState);
     await saveGameState(newState);
     
-    toast({
-      title: "Lamster Collected!",
-      description: `You now have ${newState.sheep_count} lamsters in your field.`,
-    });
+    if (transmogrified) {
+      toast({
+        title: "🐺 TRANSMOGRIFICATION!",
+        description: "Your 100 lamsters have transmogrified into a Wolfemon! It now protects your field and helps with harvesting!",
+      });
+    } else {
+      toast({
+        title: "Lamster Collected!",
+        description: `You now have ${newState.sheep_count} lamsters in your field.`,
+      });
+    }
     
     setIsLoading(false);
   };
@@ -346,7 +365,7 @@ export const WolfemonGame = () => {
           </Badge>
           <Badge variant="outline" className="text-base px-3 py-1">
             <Zap className="w-4 h-4 mr-1" />
-            {gameState.total_sheep_collected}/100 collected
+            {String(gameState.total_sheep_collected).padStart(3, '0')}/100 collected
           </Badge>
         </div>
 
@@ -388,19 +407,6 @@ export const WolfemonGame = () => {
           </Button>
         </div>
 
-        {/* Wolfemon features */}
-        {gameState.total_sheep_collected >= 100 && !gameState.has_wolfemon && (
-          <div className="pt-2 border-t">
-            <Button 
-              onClick={deployWolfemon} 
-              disabled={isLoading}
-              className="w-full"
-              variant="default"
-            >
-              🐺 Deploy Your Wolfemon (Unlocked!)
-            </Button>
-          </div>
-        )}
 
         {gameState.has_wolfemon && (
           <div className="pt-2 border-t">
