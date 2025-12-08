@@ -342,14 +342,15 @@ const NotificationBell = () => {
 
       {/* Dialog for accepting friend requests */}
       <Dialog open={!!selectedRequest} onOpenChange={(open) => !open && setSelectedRequest(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Accept Friend Request</DialogTitle>
             <DialogDescription>
               Choose how you want to add {selectedRequest?.from_profile?.display_name || "this person"} as a friend.
             </DialogDescription>
           </DialogHeader>
           
+          <div className="flex-1 overflow-y-auto pr-2">
           <RadioGroup value={selectedLevel} onValueChange={(v) => setSelectedLevel(v as FriendshipLevel)} className="space-y-3">
             <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
               <RadioGroupItem value="close_friend" id="close_friend" className="mt-1" />
@@ -399,8 +400,9 @@ const NotificationBell = () => {
               </Label>
             </div>
           </RadioGroup>
+          </div>
 
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-2 mt-4 flex-shrink-0">
             <Button onClick={handleAccept} disabled={processing} className="flex-1">
               {processing ? "Accepting..." : "Confirm"}
             </Button>
@@ -413,14 +415,15 @@ const NotificationBell = () => {
 
       {/* Dialog for setting friendship level on accepted requests */}
       <Dialog open={!!selectedPendingFriendship} onOpenChange={(open) => !open && setSelectedPendingFriendship(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Set Friendship Level</DialogTitle>
             <DialogDescription>
               {selectedPendingFriendship?.friend_profile?.display_name || "This person"} accepted your friend request! Now choose what type of friend they are to you.
             </DialogDescription>
           </DialogHeader>
           
+          <div className="flex-1 overflow-y-auto pr-2">
           <RadioGroup value={selectedLevel} onValueChange={(v) => setSelectedLevel(v as FriendshipLevel)} className="space-y-3">
             <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
               <RadioGroupItem value="close_friend" id="pending_close_friend" className="mt-1" />
@@ -454,8 +457,9 @@ const NotificationBell = () => {
               </Label>
             </div>
           </RadioGroup>
+          </div>
 
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-2 mt-4 flex-shrink-0">
             <Button onClick={handleSetFriendshipLevel} disabled={processing} className="flex-1">
               {processing ? "Saving..." : "Confirm"}
             </Button>
