@@ -10,6 +10,7 @@ import { WolfemonGame } from "@/components/WolfemonGame";
 import { ArtIFucked } from "@/components/ArtIFucked";
 import { SlyDoubtGame } from "@/components/SlyDoubtGame";
 import { DreamTripGame } from "@/components/DreamTripGame";
+import CureToLonelinessGame from "@/components/CureToLonelinessGame";
 
 interface Scenario {
   description: string;
@@ -303,6 +304,12 @@ const VerseAdventure = () => {
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Dream Trip</h2>
           <DreamTripGame />
+        </div>
+
+        {/* Cure to Loneliness and Boredom */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">The Cure to Loneliness and Boredom</h2>
+          <CureToLonelinessGame />
         </div>
       </div>
     </div>
