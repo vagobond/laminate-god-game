@@ -11,6 +11,7 @@ import { ArtIFucked } from "@/components/ArtIFucked";
 import { SlyDoubtGame } from "@/components/SlyDoubtGame";
 import { DreamTripGame } from "@/components/DreamTripGame";
 import CureToLonelinessGame from "@/components/CureToLonelinessGame";
+import ResolutionGames from "@/components/ResolutionGames";
 
 interface Scenario {
   description: string;
@@ -310,6 +311,12 @@ const VerseAdventure = () => {
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">The Cure to Loneliness and Boredom</h2>
           <CureToLonelinessGame />
+        </div>
+
+        {/* Resolution Games */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">Resolution Validation Bureau</h2>
+          <ResolutionGames />
         </div>
       </div>
     </div>
