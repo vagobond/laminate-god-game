@@ -347,6 +347,33 @@ export type Database = {
         }
         Relationships: []
       }
+      resolution_game_state: {
+        Row: {
+          created_at: string
+          id: string
+          resolutions_broken: number
+          resolutions_made: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          resolutions_broken?: number
+          resolutions_made?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          resolutions_broken?: number
+          resolutions_made?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sly_doubt_game_state: {
         Row: {
           bloot_collected: number

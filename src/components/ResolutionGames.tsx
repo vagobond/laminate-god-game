@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sparkles, Flame, CheckCircle, XCircle, AlertTriangle, Trophy, Skull } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const makerResponses = {
   valid: [
@@ -77,6 +78,11 @@ const breakerResponses = {
   ],
 };
 
+interface GameState {
+  resolutions_made: number;
+  resolutions_broken: number;
+}
+
 export default function ResolutionGames() {
   const [makerResolution, setMakerResolution] = useState("");
   const [makerReason, setMakerReason] = useState("");
@@ -88,13 +94,67 @@ export default function ResolutionGames() {
   const [breakerResult, setBreakerResult] = useState<{ type: string; message: string } | null>(null);
   const [breakerLoading, setBreakerLoading] = useState(false);
 
+  const [gameState, setGameState] = useState<GameState>({ resolutions_made: 0, resolutions_broken: 0 });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    checkAuthAndLoadState();
+  }, []);
+
+  const checkAuthAndLoadState = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    setIsAuthenticated(!!session);
+    if (session) {
+      loadGameState(session.user.id);
+    }
+  };
+
+  const loadGameState = async (userId: string) => {
+    const { data } = await supabase
+      .from('resolution_game_state')
+      .select('resolutions_made, resolutions_broken')
+      .eq('user_id', userId)
+      .single();
+
+    if (data) {
+      setGameState(data);
+    }
+  };
+
+  const updateGameState = async (field: 'resolutions_made' | 'resolutions_broken') => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const newValue = gameState[field] + 1;
+    const updates = { [field]: newValue };
+
+    const { data: existing } = await supabase
+      .from('resolution_game_state')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .single();
+
+    if (existing) {
+      await supabase
+        .from('resolution_game_state')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('user_id', session.user.id);
+    } else {
+      await supabase
+        .from('resolution_game_state')
+        .insert({ user_id: session.user.id, ...updates });
+    }
+
+    setGameState(prev => ({ ...prev, [field]: newValue }));
+  };
+
   const validateMaker = () => {
     if (!makerResolution.trim() || !makerReason.trim()) return;
     
     setMakerLoading(true);
     setMakerResult(null);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const roll = Math.random();
       let type: string;
       let responses: string[];
@@ -102,6 +162,7 @@ export default function ResolutionGames() {
       if (roll < 0.4) {
         type = "valid";
         responses = makerResponses.valid;
+        if (isAuthenticated) await updateGameState('resolutions_made');
       } else if (roll < 0.8) {
         type = "invalid";
         responses = makerResponses.invalid;
@@ -122,7 +183,7 @@ export default function ResolutionGames() {
     setBreakerLoading(true);
     setBreakerResult(null);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const roll = Math.random();
       let type: string;
       let responses: string[];
@@ -130,6 +191,7 @@ export default function ResolutionGames() {
       if (roll < 0.45) {
         type = "valid";
         responses = breakerResponses.valid;
+        if (isAuthenticated) await updateGameState('resolutions_broken');
       } else if (roll < 0.85) {
         type = "invalid";
         responses = breakerResponses.invalid;
@@ -166,6 +228,18 @@ export default function ResolutionGames() {
         <p className="text-muted-foreground text-sm">
           Official certification for making AND breaking resolutions
         </p>
+        {isAuthenticated && (
+          <div className="flex gap-3 mt-2">
+            <Badge variant="secondary" className="gap-1">
+              <Trophy className="w-3 h-3" />
+              Made: {gameState.resolutions_made}
+            </Badge>
+            <Badge variant="destructive" className="gap-1">
+              <Skull className="w-3 h-3" />
+              Broken: {gameState.resolutions_broken}
+            </Badge>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="maker" className="w-full">
