@@ -281,6 +281,15 @@ const VerseAdventure = () => {
             </CardContent>
           </Card>
         )}
+          
+          <a 
+            href="https://sigil-shift-core.lovable.app" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-primary hover:text-primary/80 underline underline-offset-4 mt-4"
+          >
+            Pax's Sigil Challenge →
+          </a>
         </div>
 
         {/* Wolfemon Game */}
