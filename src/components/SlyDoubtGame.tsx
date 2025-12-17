@@ -100,12 +100,12 @@ const scenes: Record<string, Scene> = {
   // SOLO PATH
   solo_path: {
     id: "solo_path",
-    scenario: "Trusting no one, you venture into Degen-City alone. The streets pulse with neon and desperation. A brothel called 'The Pleasure Dome of Uranus' catches your eye - rumor has it, the monarchy's secrets spill there nightly.",
+    scenario: "Trusting no one, you venture into Degen-City alone. The streets pulse with neon and desperation. A brothel called 'The Pleasure Dome of Uranus' catches your eye - rumor has it, the monarchy's secrets spill there nightly. But you notice guards watching you...",
     location: "Degen-City - Red Light District",
     choices: [
       { text: "Enter The Pleasure Dome as a customer", outcome: "The workers here know everything. For the price of a drink, you learn about a secret Bloot shipment. +1 Bloot, +1 Revolution Act", nextScene: "pleasure_dome" },
-      { text: "Apply for a job at The Pleasure Dome", outcome: "The madam looks you up and down. 'You've got that revolutionary fire in your eyes. We could use someone to... extract information.' +2 Revolution Acts", nextScene: "undercover_worker" },
-      { text: "Stake out the establishment from across the street", outcome: "You watch VIPs come and go. One face matches your father's journal - Lord Frottage of Io. Interesting. +1 Revolution Act", nextScene: "surveillance" }
+      { text: "Attempt to lose the guards in the alleys", outcome: "You duck and weave but they anticipated your move. Captured! +0 Revolution Acts", nextScene: "captured_by_monarchy" },
+      { text: "Confront the guards directly with confidence", outcome: "Your boldness catches them off-guard. They assume you're nobility. You bluff your way to freedom. +1 Revolution Act", nextScene: "oberon_outskirts" }
     ]
   },
 
@@ -184,12 +184,12 @@ const scenes: Record<string, Scene> = {
   // OBERON OUTSKIRTS
   oberon_outskirts: {
     id: "oberon_outskirts",
-    scenario: "You've made it to Oberon, the seat of Jovian power over Uranus. The moon is covered in obscene palaces built on stolen Bloot. Guards patrol everywhere, but the servants' quarters offer... opportunities.",
+    scenario: "You've made it to Oberon, the seat of Jovian power over Uranus. The moon is covered in obscene palaces built on stolen Bloot. Guards patrol everywhere, but the servants' quarters offer... opportunities. A royal messenger approaches with an unexpected invitation.",
     location: "Oberon - Servants' District",
     choices: [
-      { text: "Infiltrate the palace as a servant", outcome: "You learn the intimate details of palace life. The Duke of Io has a foot fetish. The Countess of Europa... doesn't bear mentioning. +2 Revolution Acts", nextScene: "palace_servant" },
-      { text: "Contact the underground resistance here", outcome: "Even on Oberon, Uranians resist. The cell here is small but dedicated. They know all the backdoors. +2 Revolution Acts", nextScene: "oberon_resistance" },
-      { text: "Scout the Royal Shaft pipeline directly", outcome: "Your mother died here. The pipeline is heavily guarded, but you spot weaknesses. Her sacrifice wasn't in vain. +1 Bloot, +2 Revolution Acts", nextScene: "pipeline_recon" }
+      { text: "Infiltrate the palace as a servant", outcome: "You learn the intimate details of palace life. The Duke of Io has a foot fetish. The Countess of Europa... doesn't bear mentioning. +2 Revolution Acts", nextScene: "final_battle" },
+      { text: "Accept the Queen's mysterious invitation", outcome: "The messenger leads you to perfumed chambers. Queen Sphincteria awaits... +1 Bloot", nextScene: "royal_seduction" },
+      { text: "Scout the Royal Shaft pipeline directly", outcome: "Your mother died here. The pipeline is heavily guarded, but you spot weaknesses. Her sacrifice wasn't in vain. +1 Bloot, +2 Revolution Acts", nextScene: "final_battle" }
     ]
   },
 
@@ -199,21 +199,21 @@ const scenes: Record<string, Scene> = {
     scenario: "D-Day. The Myanus Bloot Refinery processes 80% of Uranus's output. Your team approaches under cover of a Blorp storm. Inside, workers toil under brutal conditions. Freeing them could turn the tide, but the guards are alert.",
     location: "Myanus Bloot Refinery - Perimeter",
     choices: [
-      { text: "Create a distraction and free the workers", outcome: "You trigger alarms on the far side. In the chaos, you arm the workers with mining tools. Revolution! +4 Revolution Acts", nextScene: "worker_uprising" },
-      { text: "Plant explosives and evacuate secretly", outcome: "The refinery goes up in a spectacular Uranian Surprise. Bloot prices skyrocket. The monarchy bleeds. +3 Revolution Acts, +2 Bloot", nextScene: "refinery_explosion" },
-      { text: "Capture the refinery intact for the resistance", outcome: "A surgical strike. By dawn, the refinery flies revolutionary colors. You now control the means of production. +5 Revolution Acts", nextScene: "captured_refinery" }
+      { text: "Create a distraction and free the workers", outcome: "You trigger alarms on the far side. In the chaos, you arm the workers with mining tools. Revolution! +4 Revolution Acts", nextScene: "celebration_night" },
+      { text: "Plant explosives and evacuate secretly", outcome: "The refinery goes up in a spectacular Uranian Surprise. Bloot prices skyrocket. The monarchy bleeds. +3 Revolution Acts, +2 Bloot", nextScene: "final_battle" },
+      { text: "Attempt a risky solo infiltration", outcome: "Your bravado gets the better of you. Guards surround you. Captured! +0 Revolution Acts", nextScene: "captured_by_monarchy" }
     ]
   },
 
   // FESTIVAL INFILTRATION
   festival_infiltration: {
     id: "festival_infiltration",
-    scenario: "The Golden Shower of Uranus - the annual festival where Blorp flowers release their yellow pollen across the planet. Tourists come from across the solar system. It's beautiful, romantic, and the perfect cover for revolutionary activity.",
+    scenario: "The Golden Shower of Uranus - the annual festival where Blorp flowers release their yellow pollen across the planet. Tourists come from across the solar system, including a curious Neptunian delegation. It's beautiful, romantic, and the perfect cover for revolutionary activity.",
     location: "Blorp Forest Amphitheater - Festival Grounds",
     choices: [
-      { text: "Hijack the broadcast system", outcome: "For five glorious minutes, the truth about Uranian oppression reaches billions. The monarchy scrambles to respond. +5 Revolution Acts", nextScene: "broadcast_success" },
-      { text: "Assassinate a high-value target in the crowd", outcome: "Lord Frottage of Io won't be exploiting anyone else. His death sends shockwaves through the aristocracy. +3 Revolution Acts", nextScene: "festival_assassination" },
-      { text: "Use the chaos to liberate a Bloot shipment", outcome: "While everyone watches the golden pollen fall, your team relieves a convoy of its precious cargo. +4 Bloot", nextScene: "heist_success" }
+      { text: "Hijack the broadcast system", outcome: "For five glorious minutes, the truth about Uranian oppression reaches billions. The monarchy scrambles to respond. +5 Revolution Acts", nextScene: "humiliation_choice" },
+      { text: "Approach the Neptunian diplomats", outcome: "The alien ambassador seems very interested in your revolutionary cause... and in you. +2 Bloot", nextScene: "alien_encounter" },
+      { text: "Use the chaos to liberate a Bloot shipment", outcome: "While everyone watches the golden pollen fall, your team relieves a convoy of its precious cargo. +4 Bloot", nextScene: "celebration_night" }
     ]
   },
 
@@ -232,16 +232,179 @@ const scenes: Record<string, Scene> = {
   // FINAL CONFRONTATION
   final_battle: {
     id: "final_battle",
-    scenario: "The revolution has reached its climax. Across Uranus, cells rise in coordinated action. The Royal Shaft - the main pipeline draining Uranus's wealth - stands before you. Your mother died trying to reach this point. Now it's your turn to finish what she started.",
+    scenario: "The revolution has reached its climax. Across Uranus, cells rise in coordinated action. The Royal Shaft - the main pipeline draining Uranus's wealth - stands before you. Your mother died trying to reach this point. Now it's your turn to finish what she started. But there are many paths to victory... or defeat.",
     location: "The Royal Shaft - Control Center",
     choices: [
       { text: "Destroy the pipeline entirely", outcome: "The explosion is visible from Neptune. Uranus's Bloot stays in Uranus now. The monarchy crumbles without their supply. VICTORY! +10 Revolution Acts", nextScene: "victory_destruction" },
-      { text: "Seize control and redirect the flow", outcome: "The Bloot now flows to resistance strongholds. You've turned their weapon against them. The people will rebuild. VICTORY! +5 Revolution Acts, +5 Bloot", nextScene: "victory_control" },
-      { text: "Negotiate from a position of strength", outcome: "With your finger on the trigger, you force recognition of Uranian autonomy. A new era begins - messy, imperfect, but free. VICTORY! +7 Revolution Acts, +3 Bloot", nextScene: "victory_diplomatic" }
+      { text: "Humiliate the monarchy publicly", outcome: "You have leverage. Time to make them squirm in front of the entire solar system. +5 Revolution Acts", nextScene: "humiliation_choice" },
+      { text: "Accept the Queen's offer of 'private negotiations'", outcome: "Her Majesty has made it clear she finds revolutionaries... stimulating. +2 Bloot", nextScene: "royal_seduction" },
+      { text: "Demand the monarchy submit to YOUR rule", outcome: "Why destroy power when you can take it? +3 Revolution Acts", nextScene: "domination_path" }
     ]
   },
 
-  // VICTORY ENDINGS
+  // HUMILIATION PATH
+  humiliation_choice: {
+    id: "humiliation_choice",
+    scenario: "You've captured the entire royal family. The broadcasting system is yours. Billions across the solar system are watching. How do you want to humiliate the oppressors who have exploited Uranus for centuries?",
+    location: "The Royal Shaft - Broadcast Chamber",
+    choices: [
+      { text: "Force them to perform the Uranian Dance of Shame", outcome: "The ancient ritual was banned by the monarchy for being 'undignified.' Now they perform it naked on live broadcast. +5 Revolution Acts", nextScene: "ending_humiliation_dance" },
+      { text: "Make them read their own corruption logs aloud", outcome: "Hours of confessions stream across the galaxy. Every dirty deal, every stolen Bloot, every lie - from their own mouths. +5 Revolution Acts", nextScene: "ending_humiliation_confession" },
+      { text: "Let the alien ambassador have a word", outcome: "The Neptunian delegate has been waiting for this moment. They have... interesting requests. +3 Bloot", nextScene: "alien_encounter" }
+    ]
+  },
+
+  // ALIEN ENCOUNTER PATH
+  alien_encounter: {
+    id: "alien_encounter",
+    scenario: "The Neptunian ambassador, a being of shimmering tentacles and incomprehensible beauty, approaches you. 'We have watched your revolution with great interest,' they pulse in colors that somehow translate to words. 'On Neptune, we celebrate liberation in... very physical ways. Would you honor us by participating in our Communion of Victory?'",
+    location: "The Royal Shaft - Diplomatic Suite",
+    choices: [
+      { text: "Accept the alien communion", outcome: "The Neptunian's touch transcends human understanding. Time loses meaning. You experience pleasure across seventeen dimensions. +10 Bloot", nextScene: "ending_alien_communion" },
+      { text: "Politely decline - focus on the revolution", outcome: "The ambassador understands. 'Another time, perhaps.' You return to your duties. +3 Revolution Acts", nextScene: "victory_destruction" },
+      { text: "Invite your resistance comrades to join", outcome: "The Neptunian's eyes (all forty of them) light up. 'A collective experience! How delightfully Uranian!' +5 Revolution Acts", nextScene: "ending_group_alien" }
+    ]
+  },
+
+  // ROYAL SEDUCTION PATH
+  royal_seduction: {
+    id: "royal_seduction",
+    scenario: "Queen Sphincteria of Io awaits you in her private chambers. She's removed her crown and most of her dignity. 'You've won, revolutionary,' she purrs. 'But I can offer you something better than mere victory. Rule beside me. Or...' she gestures to her guards, 'learn what happens to those who refuse a queen.'",
+    location: "Oberon Palace - Royal Bedchamber",
+    choices: [
+      { text: "Accept her offer of partnership", outcome: "Power and pleasure intertwine as you join the monarchy through... merger. +5 Bloot", nextScene: "ending_betrayal_seduction" },
+      { text: "Refuse and face the consequences", outcome: "The Queen's face hardens. 'Then you'll experience the Zigzag.' Guards seize you. +0 Revolution Acts", nextScene: "ending_death_zigzag" },
+      { text: "Turn the tables and seduce HER to the revolution", outcome: "Your revolutionary charisma overcomes her monarchist conditioning. She renounces her crown... among other things. +7 Revolution Acts", nextScene: "ending_humiliation_queen" }
+    ]
+  },
+
+  // DOMINATION PATH
+  domination_path: {
+    id: "domination_path",
+    scenario: "You stand above the kneeling royal family. The power feels intoxicating. 'From now on,' you declare, 'Uranus answers to ME.' The monarchy looks at you with a mixture of fear and... is that arousal? Prince Fissure whispers, 'We were always looking for a strong hand.'",
+    location: "Oberon Palace - Throne Room",
+    choices: [
+      { text: "Embrace your dark side - become the new tyrant", outcome: "You take the throne by force of will alone. The monarchy submits completely to your dominance. +10 Bloot", nextScene: "ending_betrayal_domination" },
+      { text: "This feels wrong - return to revolutionary principles", outcome: "Power corrupts. You step back from the edge and remember why you started this fight. +5 Revolution Acts", nextScene: "victory_destruction" },
+      { text: "Demand they grovel for forgiveness from all Uranians", outcome: "The royal family crawls on their bellies through every mining district, begging forgiveness. Cathartic. +6 Revolution Acts", nextScene: "ending_humiliation_grovel" }
+    ]
+  },
+
+  // CAPTURE/TORTURE PATH
+  captured_by_monarchy: {
+    id: "captured_by_monarchy",
+    scenario: "Your infiltration failed. The Royal Inquisitor, a gaunt figure known as 'The Probing,' stands over you in the dungeon. 'Revolutionary scum. You will tell us everything about your comrades. We have... methods.'",
+    location: "Oberon Palace - The Pit",
+    choices: [
+      { text: "Resist the torture", outcome: "Hours become days. The pain is beyond description. But you reveal nothing. Your body gives out before your spirit. +0 Revolution Acts", nextScene: "ending_death_torture" },
+      { text: "Pretend to break - feed them false information", outcome: "You scream convincingly and give them lies. It buys time for the real attack. +3 Revolution Acts", nextScene: "refinery_assault" },
+      { text: "Offer to betray your comrades", outcome: "The Probing smiles. 'Wise choice.' But is it? -5 Revolution Acts", nextScene: "ending_betrayal_seduction" }
+    ]
+  },
+
+  // GROUP CELEBRATION PATH
+  celebration_night: {
+    id: "celebration_night",
+    scenario: "The revolution has succeeded! In the liberated pleasure houses of Degen-City, your closest comrades gather to celebrate. Backdoor Blake, Velvet, the Sphincter Sisters, and a dozen other revolutionaries look at you with admiration and desire. 'Tonight,' Blake says, 'we celebrate freedom in the most Uranian way possible.'",
+    location: "The Pleasure Dome - Liberation Night",
+    choices: [
+      { text: "Join the revolutionary orgy", outcome: "The celebration lasts until dawn. Bodies intertwine in every combination imaginable. This is what freedom feels like. +5 Revolution Acts, +5 Bloot", nextScene: "ending_group_celebration" },
+      { text: "Celebrate with just Blake", outcome: "Some revolutions are intimate. You and Blake find a quiet corner and make your own fireworks. +3 Revolution Acts", nextScene: "victory_diplomatic" },
+      { text: "Give a rousing speech instead", outcome: "Not every celebration needs to be physical. Your words inspire the crowd. Songs are sung. +4 Revolution Acts", nextScene: "victory_control" }
+    ]
+  },
+
+  // ============ ENDINGS ============
+
+  // HAPPY ENDINGS - MONARCHY HUMILIATED
+  ending_humiliation_dance: {
+    id: "ending_humiliation_dance",
+    scenario: "THE DANCE OF SHAME\n\nThe royal family performs the banned Uranian fertility dance on live broadcast. King Sphincter's rhythmic thrusting, Queen Sphincteria's awkward gyrations, and Prince Fissure's surprisingly enthusiastic participation are witnessed by billions. The monarchy's mystique is shattered forever. Memes of the dance spread across the solar system. Uranians laugh for the first time in centuries. The revolution doesn't just win - it makes tyranny a punchline. You are hailed as the hero who showed the galaxy that emperors have no clothes.",
+    location: "ENDING - The Galaxy Laughs",
+    choices: [
+      { text: "Begin a new adventure", outcome: "The dance lives forever in the collective memory. +10 Revolution Acts", nextScene: "start" }
+    ]
+  },
+
+  ending_humiliation_grovel: {
+    id: "ending_humiliation_grovel",
+    scenario: "THE CRAWL OF PENANCE\n\nFor seven days and seven nights, the royal family crawls naked through every mining district of Uranus. At each stop, workers line up to spit on them, throw rotten Blorp fruit, and deliver detailed accounts of their suffering. By the end, the monarchy is broken - not by violence, but by finally being forced to see what they had done. King Sphincter weeps openly. Queen Sphincteria begs for death. Prince Fissure converts to the revolutionary cause on day three. The images become monuments to justice. Uranus is free, and its oppressors have been drowned in the shame they always deserved.",
+    location: "ENDING - Justice Through Humiliation",
+    choices: [
+      { text: "Begin a new adventure", outcome: "Some punishments are worse than death. +10 Revolution Acts", nextScene: "start" }
+    ]
+  },
+
+  // HAPPY ENDINGS - SEXUAL VICTORY (GROUP)
+  ending_group_celebration: {
+    id: "ending_group_celebration",
+    scenario: "THE ORGY OF LIBERATION\n\nThe celebration becomes legend. In the steamy halls of the liberated Pleasure Dome, you and your comrades explore every possibility of freedom. Backdoor Blake's infiltration skills prove useful in new contexts. The Sphincter Sisters demonstrate why they work so well as a pair. Velvet shows you techniques the pleasure houses never taught customers. By dawn, you've formed bonds deeper than any revolution could forge. The group becomes the new governing council - the Collective of Carnal Liberation. Your first act: declaring that pleasure is a fundamental Uranian right. History will remember this night as the true birth of the new Uranus.",
+    location: "ENDING - Freedom's Embrace",
+    choices: [
+      { text: "Begin a new adventure", outcome: "Some victories are sweeter than others. +10 Bloot, +10 Revolution Acts", nextScene: "start" }
+    ]
+  },
+
+  // HAPPY ENDINGS - SEXUAL VICTORY (ALIEN)
+  ending_alien_communion: {
+    id: "ending_alien_communion",
+    scenario: "THE NEPTUNIAN COMMUNION\n\nThe ambassador's tentacles envelope you in warmth beyond human comprehension. Time fractures. You experience pleasure simultaneously across past, present, and future. Sensations that have no name in any Terran language cascade through your being. The Neptunian shows you the heat death of the universe and somehow makes it feel like coming home. When you finally return to baseline reality, three weeks have passed. Uranus is free. The revolution succeeded without you. But you carry within you something greater - a connection to cosmic ecstasy that transcends politics. The Neptunian Embassy offers you a permanent position as 'Cultural Liaison.' The job duties are exactly what you hope they are.",
+    location: "ENDING - Cosmic Union",
+    choices: [
+      { text: "Begin a new adventure", outcome: "Some pleasures are literally out of this world. +15 Bloot", nextScene: "start" }
+    ]
+  },
+
+  ending_group_alien: {
+    id: "ending_group_alien",
+    scenario: "THE COLLECTIVE COMMUNION\n\nYour comrades join you and the Neptunian ambassador in an experience that redefines the concept of 'group activity.' The ambassador's forty-seven tentacles prove more than sufficient for the dozen revolutionaries present. Backdoor Blake achieves sounds previously unknown to human vocal cords. The Sphincter Sisters finally find something that challenges their flexibility. The collective consciousness that forms during the experience accidentally solves cold fusion, creates three new art forms, and establishes permanent peace between Uranus and Neptune. You wake tangled in a pile of satisfied revolutionaries and gently pulsing tentacles. This is how civilizations should celebrate victory.",
+    location: "ENDING - Interplanetary Harmony",
+    choices: [
+      { text: "Begin a new adventure", outcome: "First contact was... thorough. +10 Revolution Acts, +10 Bloot", nextScene: "start" }
+    ]
+  },
+
+  // DEATH ENDINGS - TORTURE
+  ending_death_torture: {
+    id: "ending_death_torture",
+    scenario: "DEATH BY THE PROBING\n\nYou never break. Through seven days of The Probing's instruments - the Neural Scraper, the Bone Singer, the Thing That Goes In All The Holes - you give them nothing. Your revolutionary spirit burns brighter than any pain they can inflict. On the eighth day, your heart simply stops. But your sacrifice is not in vain. News of your defiance spreads through the resistance like wildfire. Your name becomes a rallying cry. 'Remember the Orphan!' echoes through the mines and slums of Uranus. The revolution you started continues without you, fueled by your martyrdom. Your body dies in chains, but your legend lives free.",
+    location: "DEATH - Martyrdom Through Endurance",
+    choices: [
+      { text: "Begin a new adventure", outcome: "Your spirit inspires thousands. +0 Revolution Acts (but the cause continues)", nextScene: "start" }
+    ]
+  },
+
+  // DEATH ENDINGS - ZIGZAG
+  ending_death_zigzag: {
+    id: "ending_death_zigzag",
+    scenario: "DEATH BY THE ZIGZAG\n\nThe Zigzag. Whispered about in terrified tones. The monarchy's most secret punishment, reserved for those who refuse royal advances. You're strapped to the Oscillating Throne - a device that moves in patterns no human body was meant to endure. The Queen watches with cold satisfaction as the machine activates. 'The Zigzag takes exactly 47 hours,' she explains. 'You'll experience pleasure and pain in alternating waves until your nervous system simply... gives up.' She wasn't lying. The sensations are impossible to describe - ecstasy and agony in perfect balance, zigzagging through your synapses until you can no longer tell them apart. On hour 46, you achieve a state of enlightenment that no living being was meant to reach. Then everything goes white. Your last thought: at least it was interesting.",
+    location: "DEATH - The Mysterious Zigzag",
+    choices: [
+      { text: "Begin a new adventure", outcome: "Some deaths are stranger than others. +0 Revolution Acts", nextScene: "start" }
+    ]
+  },
+
+  // BETRAYAL ENDINGS - SEDUCTION
+  ending_betrayal_seduction: {
+    id: "ending_betrayal_seduction",
+    scenario: "BETRAYAL THROUGH SEDUCTION\n\nQueen Sphincteria's embrace is warm, her promises warmer. You tell yourself you're infiltrating the monarchy from within. You tell yourself you'll help the people eventually. But days become weeks, weeks become months. The silk sheets are so comfortable. The Bloot-infused wines so intoxicating. Your former comrades are captured and executed. You watch from the royal balcony, the Queen's hand on your thigh. 'You made the smart choice,' she whispers. You've become everything you fought against. The revolution dies. Your principles die. But you? You live like a king - or rather, like a king's kept lover. At night, when the Queen sleeps, you sometimes remember the orphanage, the journal, the dreams of freedom. Then she wakes and calls you to her, and you forget again.",
+    location: "ENDING - The Gilded Cage",
+    choices: [
+      { text: "Begin a new adventure (as the villain)", outcome: "Power corrupts. Pleasure corrupts absolutely. -10 Revolution Acts, +10 Bloot", nextScene: "start" }
+    ]
+  },
+
+  // BETRAYAL ENDINGS - DOMINATION
+  ending_betrayal_domination: {
+    id: "ending_betrayal_domination",
+    scenario: "BETRAYAL THROUGH DOMINATION\n\nYou take the throne not through marriage but through sheer force of will. The royal family kneels before you now - not as prisoners, but as willing subjects. Something in your revolutionary fire awakens their submissive nature. King Sphincter calls you 'Master.' Queen Sphincteria begs for your discipline. Prince Fissure becomes your most devoted servant. You rule Uranus with an iron fist, extracting Bloot not for Jupiter but for yourself. The oppressed become the oppressor. The revolutionary becomes the tyrant. Your former comrades stage their own revolution against you. You crush them without mercy. Si Deresk dies cursing your name. But the throne feels so RIGHT beneath you. Perhaps this was your destiny all along - not to destroy the monarchy, but to become it, perfected.",
+    location: "ENDING - The New Tyrant",
+    choices: [
+      { text: "Begin a new adventure (as the new monarch)", outcome: "You became what you fought. -10 Revolution Acts, +15 Bloot", nextScene: "start" }
+    ]
+  },
+
+  // ORIGINAL VICTORY ENDINGS (preserved)
   victory_destruction: {
     id: "victory_destruction",
     scenario: "The Royal Shaft is no more. As the flames die down, Uranians emerge from their hiding places, blinking in the light of freedom. Si Deresk finds you in the rubble. 'Your parents would be proud,' he says. 'Uranus is finally free of penetration by outside forces.' The revolution has come.",
@@ -267,6 +430,24 @@ const scenes: Record<string, Scene> = {
     choices: [
       { text: "Begin a new adventure", outcome: "Politics is just revolution by other means. The work continues. +3 Revolution Acts, +3 Bloot", nextScene: "start" }
     ]
+  },
+
+  ending_humiliation_confession: {
+    id: "ending_humiliation_confession",
+    scenario: "THE GREAT CONFESSION\n\nFor twelve straight hours, the royal family reads aloud from their own encrypted communications. Every bribe, every assassination order, every crude joke about Uranian workers - broadcast to the entire solar system. King Sphincter's voice breaks as he reads his order to massacre the Myanus Miners' Strike of 2799. Queen Sphincteria weeps through her own letters describing Uranians as 'barely human excrement farmers.' The galaxy hears their true nature. Allies abandon them. The Jovian Congress demands their abdication. By morning, the monarchy is politically dead, killed by their own words. No violence was needed - just truth.",
+    location: "ENDING - Truth Is The Ultimate Weapon",
+    choices: [
+      { text: "Begin a new adventure", outcome: "Their own words destroyed them. +10 Revolution Acts", nextScene: "start" }
+    ]
+  },
+
+  ending_humiliation_queen: {
+    id: "ending_humiliation_queen",
+    scenario: "THE QUEEN'S CONVERSION\n\nYour revolutionary charisma proves more powerful than three centuries of royal conditioning. Queen Sphincteria renounces her throne, her wealth, and her clothes - in that order. She broadcasts her conversion live: 'I have seen the truth. I have felt the passion of liberation. I was a tyrant, but now I serve the people... and especially this particular revolutionary.' She becomes your devoted partner, using her knowledge of royal secrets to dismantle the entire Jovian power structure. The former Queen of Io now makes your breakfast and writes revolutionary pamphlets. It's a strange relationship, but effective.",
+    location: "ENDING - Love Conquers Tyranny",
+    choices: [
+      { text: "Begin a new adventure", outcome: "The ultimate humiliation: becoming what she oppressed. +8 Revolution Acts, +5 Bloot", nextScene: "start" }
+    ]
   }
 };
 
@@ -279,7 +460,7 @@ const randomEncounters: Scene[] = [
     choices: [
       { text: "Produce forged documents", outcome: "The forgery holds. The Clench waves you through, though she gives you a look that says she'll remember your face. +1 Revolution Act", nextScene: "continue" },
       { text: "Run through the back alleys", outcome: "You know these passages intimately. The patrol loses you in the twisting corridors. +1 Bloot", nextScene: "continue" },
-      { text: "Fight your way through", outcome: "Bold and stupid. You take down two guards but catch a stun bolt. You wake in a cell. -1 Bloot", nextScene: "prison_break" }
+      { text: "Fight your way through", outcome: "Bold and stupid. You take down two guards but catch a stun bolt. You wake in a cell. -1 Bloot", nextScene: "captured_by_monarchy" }
     ]
   },
   {
