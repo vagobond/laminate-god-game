@@ -72,13 +72,24 @@ export const ArtIFucked = () => {
   const [currentEncounter, setCurrentEncounter] = useState<Encounter | null>(null);
   const [showOutcome, setShowOutcome] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(() => localStorage.getItem("audio-muted") === "true");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     checkAuth();
     initAudio();
+    
+    const handleMuteChange = (e: CustomEvent<boolean>) => {
+      setIsMuted(e.detail);
+      if (audioRef.current) {
+        audioRef.current.muted = e.detail;
+      }
+    };
+    
+    window.addEventListener("audio-mute-changed", handleMuteChange as EventListener);
+    
     return () => {
+      window.removeEventListener("audio-mute-changed", handleMuteChange as EventListener);
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
@@ -90,6 +101,7 @@ export const ArtIFucked = () => {
     audioRef.current = new Audio('/audio/The_Hollow_Road.m4a');
     audioRef.current.loop = true;
     audioRef.current.volume = 0.3;
+    audioRef.current.muted = localStorage.getItem("audio-muted") === "true";
   };
 
   const checkAuth = async () => {

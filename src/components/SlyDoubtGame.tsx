@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Volume2, VolumeX, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface GameState {
@@ -511,8 +511,6 @@ export function SlyDoubtGame() {
   const [currentScene, setCurrentScene] = useState<Scene | null>(null);
   const [outcome, setOutcome] = useState<string | null>(null);
   const [storyProgress, setStoryProgress] = useState<string[]>([]);
-  const [isMuted, setIsMuted] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -567,15 +565,6 @@ export function SlyDoubtGame() {
     setCurrentScene(scenes.start);
     setOutcome(null);
     setStoryProgress(["start"]);
-    
-    if (!audioRef.current) {
-      audioRef.current = new Audio('/audio/The_Hollow_Road.m4a');
-      audioRef.current.loop = true;
-      audioRef.current.volume = 0.3;
-    }
-    if (!isMuted) {
-      audioRef.current.play().catch(console.error);
-    }
   };
 
   const makeChoice = async (choiceIndex: number) => {
@@ -658,25 +647,10 @@ export function SlyDoubtGame() {
     setOutcome(null);
   };
 
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-    if (audioRef.current) {
-      if (isMuted) {
-        audioRef.current.play().catch(console.error);
-      } else {
-        audioRef.current.pause();
-      }
-    }
-  };
-
   const resetGame = () => {
     setCurrentScene(null);
     setOutcome(null);
     setStoryProgress([]);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
   };
 
   if (isAuthenticated === null) {
@@ -762,14 +736,6 @@ export function SlyDoubtGame() {
                     Final Battle Approaches!
                   </Badge>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleMute}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                </Button>
               </div>
             </div>
             
