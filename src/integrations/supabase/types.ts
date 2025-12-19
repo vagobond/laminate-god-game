@@ -281,6 +281,36 @@ export type Database = {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          from_user_id: string
+          id: string
+          platform_suggestion: string | null
+          read_at: string | null
+          to_user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          from_user_id: string
+          id?: string
+          platform_suggestion?: string | null
+          read_at?: string | null
+          to_user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          platform_suggestion?: string | null
+          read_at?: string | null
+          to_user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
