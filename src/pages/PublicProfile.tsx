@@ -8,7 +8,7 @@ import { User, MapPin, Link as LinkIcon, ArrowLeft, ExternalLink, Phone, Mail, M
 import AddFriendButton from "@/components/AddFriendButton";
 import FriendsList from "@/components/FriendsList";
 import { ProfileGameStats } from "@/components/ProfileGameStats";
-
+import SendMessageDialog from "@/components/SendMessageDialog";
 interface Profile {
   id: string;
   display_name: string | null;
@@ -148,7 +148,23 @@ const PublicProfile = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          {userId && <AddFriendButton profileUserId={userId} />}
+          <div className="flex gap-2">
+            {userId && friendshipLevel && (
+              <SendMessageDialog
+                recipientId={userId}
+                recipientName={profile?.display_name || "User"}
+                friendshipLevel={friendshipLevel}
+                availablePlatforms={{
+                  linkedin: !!profile?.linkedin_url,
+                  email: !!profile?.contact_email,
+                  instagram: !!profile?.instagram_url,
+                  whatsapp: !!profile?.whatsapp,
+                  phone: !!profile?.phone_number,
+                }}
+              />
+            )}
+            {userId && <AddFriendButton profileUserId={userId} />}
+          </div>
         </div>
 
         <Card className="overflow-hidden">
