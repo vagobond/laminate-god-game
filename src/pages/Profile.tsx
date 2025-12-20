@@ -380,6 +380,13 @@ const Profile = () => {
                 These fields are only visible to friends based on their friendship level.
               </p>
 
+              {/* Secret Enemy Warning */}
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                <p className="text-sm text-red-400 font-medium">
+                  ⚠️ Secret Enemies see none of your real contact info below. Only share genuine details here.
+                </p>
+              </div>
+
               {/* Close Friends Only */}
               <div className="space-y-4 mb-6">
                 <div className="text-sm font-medium text-primary">Close Friends Only</div>
@@ -390,7 +397,8 @@ const Profile = () => {
                   <Input
                     value={whatsapp}
                     onChange={(e) => setWhatsapp(e.target.value)}
-                    placeholder="+1234567890"
+                    placeholder="Don't give secret enemies your real contact information"
+                    className="placeholder:text-red-400/50 placeholder:italic"
                   />
                 </div>
                 <div>
@@ -400,7 +408,8 @@ const Profile = () => {
                   <Input
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="+1234567890"
+                    placeholder="Don't give secret enemies your real contact information"
+                    className="placeholder:text-red-400/50 placeholder:italic"
                   />
                 </div>
                 <div>
@@ -411,7 +420,8 @@ const Profile = () => {
                     type="email"
                     value={privateEmail}
                     onChange={(e) => setPrivateEmail(e.target.value)}
-                    placeholder="personal@email.com"
+                    placeholder="Don't give secret enemies your real contact information"
+                    className="placeholder:text-red-400/50 placeholder:italic"
                   />
                 </div>
               </div>
@@ -426,7 +436,8 @@ const Profile = () => {
                   <Input
                     value={instagramUrl}
                     onChange={(e) => setInstagramUrl(e.target.value)}
-                    placeholder="https://instagram.com/username"
+                    placeholder="Don't give secret enemies your real contact information"
+                    className="placeholder:text-red-400/50 placeholder:italic"
                   />
                 </div>
               </div>
@@ -441,7 +452,8 @@ const Profile = () => {
                   <Input
                     value={linkedinUrl}
                     onChange={(e) => setLinkedinUrl(e.target.value)}
-                    placeholder="https://linkedin.com/in/username"
+                    placeholder="Don't give secret enemies your real contact information"
+                    className="placeholder:text-red-400/50 placeholder:italic"
                   />
                 </div>
                 <div>
@@ -452,7 +464,8 @@ const Profile = () => {
                     type="email"
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
-                    placeholder="contact@email.com"
+                    placeholder="Don't give secret enemies your real contact information"
+                    className="placeholder:text-red-400/50 placeholder:italic"
                   />
                 </div>
               </div>
