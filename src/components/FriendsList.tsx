@@ -49,7 +49,7 @@ interface FriendsListProps {
   showLevels?: boolean;
 }
 
-type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | "fake_friend";
+type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | "fake_friend" | "secret_enemy";
 
 const levelLabels: Record<string, string> = {
   close_friend: "Close Friend",
@@ -57,6 +57,7 @@ const levelLabels: Record<string, string> = {
   friendly_acquaintance: "Acquaintance",
   secret_friend: "Secret Friend",
   fake_friend: "Friend", // Display as normal friend to the fake friend
+  secret_enemy: "Close Friend", // Display as close friend to the secret enemy
 };
 
 const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps) => {
@@ -102,11 +103,11 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
 
       if (error) throw error;
 
-      // Filter out secret friends and fake friends for non-owners
-      // Fake friends should never appear in the profile owner's list
+      // Filter out secret friends, fake friends, and secret enemies for non-owners
+      // Fake friends and secret enemies should never appear in the profile owner's list
       const visibleFriends = (data || []).filter((f) => {
-        // Never show fake friends in the owner's list (they don't really exist as friends)
-        if (f.level === "fake_friend") return false;
+        // Never show fake friends or secret enemies in the owner's visible list
+        if (f.level === "fake_friend" || f.level === "secret_enemy") return false;
         // Only owner can see secret friends
         if (viewerId === userId) return true;
         return f.level !== "secret_friend";
@@ -366,6 +367,14 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
               <Label htmlFor="edit_fake_friend" className="flex-1 cursor-pointer">
                 <span className="font-medium text-amber-600">Fake Friend</span>
                 <p className="text-sm text-muted-foreground">They'll think you're friends, but they get no access.</p>
+              </Label>
+            </div>
+
+            <div className="flex items-start space-x-3 p-3 rounded-lg border border-red-500/50 hover:bg-red-500/10">
+              <RadioGroupItem value="secret_enemy" id="edit_secret_enemy" className="mt-1" />
+              <Label htmlFor="edit_secret_enemy" className="flex-1 cursor-pointer">
+                <span className="font-medium text-red-600">Secret Enemy</span>
+                <p className="text-sm text-muted-foreground">They'll think you're close friends, but only see generic/fake info.</p>
               </Label>
             </div>
           </RadioGroup>
