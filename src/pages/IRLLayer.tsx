@@ -146,10 +146,10 @@ const IRLLayer = () => {
 
       const { lng, lat } = e.lngLat;
 
-      // Reverse geocode to get city name
+      // Reverse geocode to get city name - use types parameter for city-level results
       try {
         const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${mapboxToken}`
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=place,locality,region&access_token=${mapboxToken}`
         );
         const data = await response.json();
         
@@ -157,11 +157,19 @@ const IRLLayer = () => {
         let country = "Unknown";
         
         if (data.features && data.features.length > 0) {
-          const place = data.features.find((f: any) => f.place_type.includes("place"));
-          const countryFeature = data.features.find((f: any) => f.place_type.includes("country"));
+          // Priority: place (city) > locality > region
+          const cityFeature = data.features.find((f: any) => f.place_type.includes("place")) ||
+                              data.features.find((f: any) => f.place_type.includes("locality")) ||
+                              data.features.find((f: any) => f.place_type.includes("region"));
           
-          if (place) city = place.text;
-          if (countryFeature) country = countryFeature.text;
+          if (cityFeature) {
+            city = cityFeature.text;
+            // Extract country from the context array
+            const countryContext = cityFeature.context?.find((ctx: any) => ctx.id?.startsWith("country"));
+            if (countryContext) {
+              country = countryContext.text;
+            }
+          }
         }
 
         setSelectedLocation({ lng, lat, city, country });
