@@ -46,13 +46,19 @@ const PLATFORMS = [
 ];
 
 const FRIENDSHIP_LEVELS = [
-  { value: "close_friend", label: "Close Friends Only" },
-  { value: "buddy", label: "Buddies & Above" },
-  { value: "friendly_acquaintance", label: "Acquaintances & Above" },
+  { value: "close_friend", label: "Close Friends Only", description: "Only visible to your closest friends" },
+  { value: "buddy", label: "Buddies & Above", description: "Visible to buddies and close friends" },
+  { value: "friendly_acquaintance", label: "Acquaintances & Above", description: "Visible to all friends" },
 ];
 
 interface SocialLinksManagerProps {
   userId: string;
+}
+
+interface AddFormState {
+  platform: string;
+  url: string;
+  label: string;
 }
 
 export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
@@ -60,12 +66,13 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
 
-  // New link form state
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newPlatform, setNewPlatform] = useState("");
-  const [newUrl, setNewUrl] = useState("");
-  const [newLabel, setNewLabel] = useState("");
-  const [newLevel, setNewLevel] = useState("friendly_acquaintance");
+  // Track which section's add form is open
+  const [activeAddForm, setActiveAddForm] = useState<string | null>(null);
+  const [addFormState, setAddFormState] = useState<AddFormState>({
+    platform: "",
+    url: "",
+    label: "",
+  });
 
   useEffect(() => {
     loadLinks();
@@ -88,8 +95,8 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
     }
   };
 
-  const handleAddLink = async () => {
-    if (!newPlatform || !newUrl) {
+  const handleAddLink = async (friendshipLevel: string) => {
+    if (!addFormState.platform || !addFormState.url) {
       toast.error("Please select a platform and enter a URL");
       return;
     }
@@ -100,10 +107,10 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
         .from("social_links")
         .insert({
           user_id: userId,
-          platform: newPlatform,
-          url: newUrl,
-          label: newLabel || null,
-          friendship_level_required: newLevel,
+          platform: addFormState.platform,
+          url: addFormState.url,
+          label: addFormState.label || null,
+          friendship_level_required: friendshipLevel,
         })
         .select()
         .single();
@@ -111,11 +118,8 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
       if (error) throw error;
 
       setLinks([...links, data]);
-      setNewPlatform("");
-      setNewUrl("");
-      setNewLabel("");
-      setNewLevel("friendly_acquaintance");
-      setShowAddForm(false);
+      setAddFormState({ platform: "", url: "", label: "" });
+      setActiveAddForm(null);
       toast.success("Social link added!");
     } catch (error) {
       console.error("Error adding social link:", error);
@@ -145,21 +149,22 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
     }
   };
 
-  const handleUpdateLink = async (id: string, updates: Partial<SocialLink>) => {
+  const handleUpdateLinkLevel = async (id: string, newLevel: string) => {
     setSaving(id);
     try {
       const { error } = await supabase
         .from("social_links")
-        .update(updates)
+        .update({ friendship_level_required: newLevel })
         .eq("id", id);
 
       if (error) throw error;
 
       setLinks(
         links.map((link) =>
-          link.id === id ? { ...link, ...updates } : link
+          link.id === id ? { ...link, friendship_level_required: newLevel } : link
         )
       );
+      toast.success("Link visibility updated");
     } catch (error) {
       console.error("Error updating social link:", error);
       toast.error("Failed to update social link");
@@ -172,15 +177,15 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
     return PLATFORMS.find((p) => p.value === platform)?.label || platform;
   };
 
-  const getLevelLabel = (level: string) => {
-    return FRIENDSHIP_LEVELS.find((l) => l.value === level)?.label || level;
+  const openAddForm = (level: string) => {
+    setActiveAddForm(level);
+    setAddFormState({ platform: "", url: "", label: "" });
   };
 
-  // Group links by friendship level
-  const groupedLinks = FRIENDSHIP_LEVELS.map((level) => ({
-    ...level,
-    links: links.filter((link) => link.friendship_level_required === level.value),
-  }));
+  const closeAddForm = () => {
+    setActiveAddForm(null);
+    setAddFormState({ platform: "", url: "", label: "" });
+  };
 
   if (loading) {
     return <div className="text-muted-foreground">Loading social links...</div>;
@@ -190,171 +195,170 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Additional Social Links</h3>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowAddForm(!showAddForm)}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Link
-        </Button>
       </div>
 
-      {/* Add New Link Form */}
-      {showAddForm && (
-        <div className="p-4 border border-border rounded-lg space-y-4 bg-card">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                Platform
-              </label>
-              <Select value={newPlatform} onValueChange={setNewPlatform}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select platform" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PLATFORMS.map((platform) => (
-                    <SelectItem key={platform.value} value={platform.value}>
-                      {platform.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <p className="text-sm text-muted-foreground">
+        Add social links for each friendship level. Links are only visible to friends at that level or higher.
+      </p>
 
-            <div>
-              <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                Visibility
-              </label>
-              <Select value={newLevel} onValueChange={setNewLevel}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {FRIENDSHIP_LEVELS.map((level) => (
-                    <SelectItem key={level.value} value={level.value}>
-                      {level.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+      {/* Render a section for each friendship level */}
+      {FRIENDSHIP_LEVELS.map((level) => {
+        const levelLinks = links.filter(
+          (link) => link.friendship_level_required === level.value
+        );
+        const isFormOpen = activeAddForm === level.value;
 
-          <div>
-            <label className="text-sm font-medium text-muted-foreground mb-2 block">
-              URL
-            </label>
-            <Input
-              value={newUrl}
-              onChange={(e) => setNewUrl(e.target.value)}
-              placeholder="https://..."
-            />
-          </div>
-
-          {newPlatform === "other" && (
-            <div>
-              <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                Custom Label (optional)
-              </label>
-              <Input
-                value={newLabel}
-                onChange={(e) => setNewLabel(e.target.value)}
-                placeholder="e.g., My Blog, Portfolio"
-              />
-            </div>
-          )}
-
-          <div className="flex gap-2">
-            <Button
-              onClick={handleAddLink}
-              disabled={saving === "new"}
-              size="sm"
-            >
-              {saving === "new" ? "Adding..." : "Add Link"}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setShowAddForm(false);
-                setNewPlatform("");
-                setNewUrl("");
-                setNewLabel("");
-              }}
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Display grouped links */}
-      {groupedLinks.map(
-        (group) =>
-          group.links.length > 0 && (
-            <div key={group.value} className="space-y-3">
-              <div className="text-sm font-medium text-primary">
-                {group.label}
+        return (
+          <div
+            key={level.value}
+            className="p-4 border border-border rounded-lg space-y-4 bg-card/50"
+          >
+            {/* Section Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium text-primary">{level.label}</div>
+                <div className="text-xs text-muted-foreground">{level.description}</div>
               </div>
-              {group.links.map((link) => (
-                <div
-                  key={link.id}
-                  className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">
-                      {link.label || getPlatformLabel(link.platform)}
-                    </div>
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 truncate"
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => isFormOpen ? closeAddForm() : openAddForm(level.value)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Link
+              </Button>
+            </div>
+
+            {/* Add Form for this section */}
+            {isFormOpen && (
+              <div className="p-4 border border-border/50 rounded-lg space-y-4 bg-secondary/20">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                      Platform
+                    </label>
+                    <Select
+                      value={addFormState.platform}
+                      onValueChange={(value) =>
+                        setAddFormState({ ...addFormState, platform: value })
+                      }
                     >
-                      {link.url}
-                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                    </a>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select platform" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PLATFORMS.map((platform) => (
+                          <SelectItem key={platform.value} value={platform.value}>
+                            {platform.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Select
-                    value={link.friendship_level_required}
-                    onValueChange={(value) =>
-                      handleUpdateLink(link.id, {
-                        friendship_level_required: value,
-                      })
+
+                  {addFormState.platform === "other" && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                        Custom Label
+                      </label>
+                      <Input
+                        value={addFormState.label}
+                        onChange={(e) =>
+                          setAddFormState({ ...addFormState, label: e.target.value })
+                        }
+                        placeholder="e.g., My Blog, Portfolio"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                    URL
+                  </label>
+                  <Input
+                    value={addFormState.url}
+                    onChange={(e) =>
+                      setAddFormState({ ...addFormState, url: e.target.value })
                     }
-                  >
-                    <SelectTrigger className="w-[140px] h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FRIENDSHIP_LEVELS.map((level) => (
-                        <SelectItem key={level.value} value={level.value}>
-                          {level.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="https://..."
+                  />
+                </div>
+
+                <div className="flex gap-2">
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                    onClick={() => handleDeleteLink(link.id)}
-                    disabled={saving === link.id}
+                    onClick={() => handleAddLink(level.value)}
+                    disabled={saving === "new"}
+                    size="sm"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    {saving === "new" ? "Adding..." : "Add Link"}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={closeAddForm}>
+                    Cancel
                   </Button>
                 </div>
-              ))}
-            </div>
-          )
-      )}
+              </div>
+            )}
 
-      {links.length === 0 && !showAddForm && (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          No additional social links added yet. Click "Add Link" to get started.
-        </p>
-      )}
+            {/* Links in this section */}
+            {levelLinks.length > 0 ? (
+              <div className="space-y-2">
+                {levelLinks.map((link) => (
+                  <div
+                    key={link.id}
+                    className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm">
+                        {link.label || getPlatformLabel(link.platform)}
+                      </div>
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 truncate"
+                      >
+                        {link.url}
+                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                      </a>
+                    </div>
+                    <Select
+                      value={link.friendship_level_required}
+                      onValueChange={(value) => handleUpdateLinkLevel(link.id, value)}
+                    >
+                      <SelectTrigger className="w-[140px] h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FRIENDSHIP_LEVELS.map((lvl) => (
+                          <SelectItem key={lvl.value} value={lvl.value}>
+                            {lvl.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={() => handleDeleteLink(link.id)}
+                      disabled={saving === link.id}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              !isFormOpen && (
+                <p className="text-sm text-muted-foreground text-center py-2">
+                  No links added for this level yet.
+                </p>
+              )
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };
