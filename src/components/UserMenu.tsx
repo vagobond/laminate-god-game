@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { User as UserIcon, LogIn, LogOut, Settings, Shield } from "lucide-react";
+import { User as UserIcon, LogIn, LogOut, Settings, Shield, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 const UserMenu = () => {
@@ -123,6 +123,10 @@ const UserMenu = () => {
         <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer">
           <UserIcon className="w-4 h-4 mr-2" />
           My Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate("/profile#messages")} className="cursor-pointer">
+          <Mail className="w-4 h-4 mr-2" />
+          Messages
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
           <Settings className="w-4 h-4 mr-2" />
