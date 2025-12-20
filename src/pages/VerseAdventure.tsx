@@ -12,7 +12,7 @@ import { SlyDoubtGame } from "@/components/SlyDoubtGame";
 import { DreamTripGame } from "@/components/DreamTripGame";
 import CureToLonelinessGame from "@/components/CureToLonelinessGame";
 import ResolutionGames from "@/components/ResolutionGames";
-
+import { EveryCountryGame } from "@/components/EveryCountryGame";
 interface Scenario {
   description: string;
   choices: string[];
@@ -326,6 +326,12 @@ const VerseAdventure = () => {
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Resolution Validation Bureau</h2>
           <ResolutionGames />
+        </div>
+
+        {/* Every Country Game */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">Every Country in the World</h2>
+          <EveryCountryGame />
         </div>
       </div>
     </div>

@@ -41,6 +41,45 @@ export type Database = {
         }
         Relationships: []
       }
+      country_invites: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          invite_code: string
+          invitee_email: string
+          invitee_id: string | null
+          inviter_id: string
+          is_new_country: boolean
+          status: string
+          target_country: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          invite_code?: string
+          invitee_email: string
+          invitee_id?: string | null
+          inviter_id: string
+          is_new_country?: boolean
+          status?: string
+          target_country?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          invite_code?: string
+          invitee_email?: string
+          invitee_id?: string | null
+          inviter_id?: string
+          is_new_country?: boolean
+          status?: string
+          target_country?: string | null
+        }
+        Relationships: []
+      }
       dream_trips: {
         Row: {
           created_at: string
@@ -577,6 +616,13 @@ export type Database = {
         Returns: boolean
       }
       calculate_layer_points: { Args: { layer_id: string }; Returns: number }
+      get_available_invites: {
+        Args: { user_id: string }
+        Returns: {
+          existing_country_remaining: number
+          new_country_remaining: number
+        }[]
+      }
       get_friendship_level: {
         Args: { profile_id: string; viewer_id: string }
         Returns: Database["public"]["Enums"]["friendship_level"]
