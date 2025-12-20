@@ -80,10 +80,25 @@ export default {
             height: "0",
           },
         },
+        "scroll-unfurl": {
+          "0%": {
+            opacity: "0",
+            transform: "scaleY(0.3) rotateX(60deg)",
+          },
+          "50%": {
+            opacity: "1",
+            transform: "scaleY(1) rotateX(0deg)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "scaleY(1) rotateX(0deg)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "scroll-unfurl": "scroll-unfurl 0.6s ease-out forwards",
       },
     },
   },
