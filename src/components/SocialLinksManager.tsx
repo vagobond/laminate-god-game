@@ -9,7 +9,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, ExternalLink } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Plus, Trash2, ExternalLink, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 interface SocialLink {
@@ -21,6 +26,12 @@ interface SocialLink {
 }
 
 const PLATFORMS = [
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "phone", label: "Phone Number" },
+  { value: "private_email", label: "Private Email" },
+  { value: "instagram", label: "Instagram" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "contact_email", label: "Contact Email" },
   { value: "twitter", label: "Twitter / X" },
   { value: "facebook", label: "Facebook" },
   { value: "youtube", label: "YouTube" },
@@ -45,10 +56,44 @@ const PLATFORMS = [
   { value: "other", label: "Other" },
 ];
 
-const FRIENDSHIP_LEVELS = [
-  { value: "close_friend", label: "Close Friends Only", description: "Only visible to your closest friends" },
-  { value: "buddy", label: "Buddies & Above", description: "Visible to buddies and close friends" },
-  { value: "friendly_acquaintance", label: "Acquaintances & Above", description: "Visible to all friends" },
+const FRIENDSHIP_SECTIONS = [
+  {
+    value: "close_friend",
+    label: "Close Friends",
+    description: "Only your closest friends can see these links",
+    color: "text-green-500",
+  },
+  {
+    value: "buddy",
+    label: "Buddies",
+    description: "Buddies and close friends can see these links",
+    color: "text-blue-500",
+  },
+  {
+    value: "friendly_acquaintance",
+    label: "Friendly Acquaintances",
+    description: "All friends at acquaintance level or higher can see these links",
+    color: "text-yellow-500",
+  },
+  {
+    value: "secret_friend",
+    label: "Secret Friends",
+    description: "Secret friends see the same as close friends - your hidden inner circle",
+    color: "text-purple-500",
+  },
+  {
+    value: "fake_friend",
+    label: "Fake Friends",
+    description: "People you've accepted as friends but don't fully trust. They'll only see public info.",
+    color: "text-orange-500",
+  },
+  {
+    value: "secret_enemy",
+    label: "Secret Enemies",
+    description: "They think they're your friend, but you can give them decoy information here.",
+    color: "text-red-500",
+    warning: "⚠️ Don't give secret enemies your real contact information! Enter fake/decoy info here.",
+  },
 ];
 
 interface SocialLinksManagerProps {
@@ -65,6 +110,7 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
   const [links, setLinks] = useState<SocialLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [openSections, setOpenSections] = useState<string[]>(["close_friend", "buddy", "friendly_acquaintance"]);
 
   // Track which section's add form is open
   const [activeAddForm, setActiveAddForm] = useState<string | null>(null);
@@ -97,7 +143,7 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
 
   const handleAddLink = async (friendshipLevel: string) => {
     if (!addFormState.platform || !addFormState.url) {
-      toast.error("Please select a platform and enter a URL");
+      toast.error("Please select a platform and enter a value");
       return;
     }
 
@@ -120,10 +166,10 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
       setLinks([...links, data]);
       setAddFormState({ platform: "", url: "", label: "" });
       setActiveAddForm(null);
-      toast.success("Social link added!");
+      toast.success("Link added!");
     } catch (error) {
       console.error("Error adding social link:", error);
-      toast.error("Failed to add social link");
+      toast.error("Failed to add link");
     } finally {
       setSaving(null);
     }
@@ -140,34 +186,10 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
       if (error) throw error;
 
       setLinks(links.filter((link) => link.id !== id));
-      toast.success("Social link removed");
+      toast.success("Link removed");
     } catch (error) {
       console.error("Error deleting social link:", error);
-      toast.error("Failed to remove social link");
-    } finally {
-      setSaving(null);
-    }
-  };
-
-  const handleUpdateLinkLevel = async (id: string, newLevel: string) => {
-    setSaving(id);
-    try {
-      const { error } = await supabase
-        .from("social_links")
-        .update({ friendship_level_required: newLevel })
-        .eq("id", id);
-
-      if (error) throw error;
-
-      setLinks(
-        links.map((link) =>
-          link.id === id ? { ...link, friendship_level_required: newLevel } : link
-        )
-      );
-      toast.success("Link visibility updated");
-    } catch (error) {
-      console.error("Error updating social link:", error);
-      toast.error("Failed to update social link");
+      toast.error("Failed to remove link");
     } finally {
       setSaving(null);
     }
@@ -177,9 +199,30 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
     return PLATFORMS.find((p) => p.value === platform)?.label || platform;
   };
 
+  const getPlaceholderForPlatform = (platform: string) => {
+    switch (platform) {
+      case "whatsapp":
+      case "phone":
+        return "+1 555-123-4567";
+      case "private_email":
+      case "contact_email":
+        return "email@example.com";
+      case "instagram":
+        return "@username or https://instagram.com/...";
+      case "linkedin":
+        return "https://linkedin.com/in/...";
+      default:
+        return "https://...";
+    }
+  };
+
   const openAddForm = (level: string) => {
     setActiveAddForm(level);
     setAddFormState({ platform: "", url: "", label: "" });
+    // Ensure section is open
+    if (!openSections.includes(level)) {
+      setOpenSections([...openSections, level]);
+    }
   };
 
   const closeAddForm = () => {
@@ -187,176 +230,212 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
     setAddFormState({ platform: "", url: "", label: "" });
   };
 
+  const toggleSection = (level: string) => {
+    setOpenSections((prev) =>
+      prev.includes(level)
+        ? prev.filter((l) => l !== level)
+        : [...prev, level]
+    );
+  };
+
   if (loading) {
-    return <div className="text-muted-foreground">Loading social links...</div>;
+    return <div className="text-muted-foreground">Loading...</div>;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Additional Social Links</h3>
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-lg font-semibold">Contact Info & Social Links</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Add different contact info and links for each friendship level. Friends will only see what you've added to their level (or lower).
+        </p>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        Add social links for each friendship level. Links are only visible to friends at that level or higher.
-      </p>
-
       {/* Render a section for each friendship level */}
-      {FRIENDSHIP_LEVELS.map((level) => {
+      {FRIENDSHIP_SECTIONS.map((section) => {
         const levelLinks = links.filter(
-          (link) => link.friendship_level_required === level.value
+          (link) => link.friendship_level_required === section.value
         );
-        const isFormOpen = activeAddForm === level.value;
+        const isFormOpen = activeAddForm === section.value;
+        const isOpen = openSections.includes(section.value);
 
         return (
-          <div
-            key={level.value}
-            className="p-4 border border-border rounded-lg space-y-4 bg-card/50"
+          <Collapsible
+            key={section.value}
+            open={isOpen}
+            onOpenChange={() => toggleSection(section.value)}
           >
-            {/* Section Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium text-primary">{level.label}</div>
-                <div className="text-xs text-muted-foreground">{level.description}</div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => isFormOpen ? closeAddForm() : openAddForm(level.value)}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Link
-              </Button>
-            </div>
-
-            {/* Add Form for this section */}
-            {isFormOpen && (
-              <div className="p-4 border border-border/50 rounded-lg space-y-4 bg-secondary/20">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                      Platform
-                    </label>
-                    <Select
-                      value={addFormState.platform}
-                      onValueChange={(value) =>
-                        setAddFormState({ ...addFormState, platform: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select platform" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PLATFORMS.map((platform) => (
-                          <SelectItem key={platform.value} value={platform.value}>
-                            {platform.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {addFormState.platform === "other" && (
+            <div className="border border-border rounded-lg overflow-hidden">
+              {/* Section Header */}
+              <CollapsibleTrigger asChild>
+                <div className="flex items-center justify-between p-4 bg-card/50 cursor-pointer hover:bg-card/80 transition-colors">
+                  <div className="flex items-center gap-3">
+                    {isOpen ? (
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    )}
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                        Custom Label
-                      </label>
-                      <Input
-                        value={addFormState.label}
-                        onChange={(e) =>
-                          setAddFormState({ ...addFormState, label: e.target.value })
-                        }
-                        placeholder="e.g., My Blog, Portfolio"
-                      />
+                      <div className={`font-medium ${section.color}`}>{section.label}</div>
+                      <div className="text-xs text-muted-foreground">{section.description}</div>
                     </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                    URL
-                  </label>
-                  <Input
-                    value={addFormState.url}
-                    onChange={(e) =>
-                      setAddFormState({ ...addFormState, url: e.target.value })
-                    }
-                    placeholder="https://..."
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => handleAddLink(level.value)}
-                    disabled={saving === "new"}
-                    size="sm"
-                  >
-                    {saving === "new" ? "Adding..." : "Add Link"}
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={closeAddForm}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Links in this section */}
-            {levelLinks.length > 0 ? (
-              <div className="space-y-2">
-                {levelLinks.map((link) => (
-                  <div
-                    key={link.id}
-                    className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm">
-                        {link.label || getPlatformLabel(link.platform)}
-                      </div>
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 truncate"
-                      >
-                        {link.url}
-                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                      </a>
-                    </div>
-                    <Select
-                      value={link.friendship_level_required}
-                      onValueChange={(value) => handleUpdateLinkLevel(link.id, value)}
-                    >
-                      <SelectTrigger className="w-[140px] h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FRIENDSHIP_LEVELS.map((lvl) => (
-                          <SelectItem key={lvl.value} value={lvl.value}>
-                            {lvl.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {levelLinks.length > 0 && (
+                      <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
+                        {levelLinks.length} link{levelLinks.length !== 1 ? "s" : ""}
+                      </span>
+                    )}
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => handleDeleteLink(link.id)}
-                      disabled={saving === link.id}
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        isFormOpen ? closeAddForm() : openAddForm(section.value);
+                      }}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add
                     </Button>
                   </div>
-                ))}
-              </div>
-            ) : (
-              !isFormOpen && (
-                <p className="text-sm text-muted-foreground text-center py-2">
-                  No links added for this level yet.
-                </p>
-              )
-            )}
-          </div>
+                </div>
+              </CollapsibleTrigger>
+
+              <CollapsibleContent>
+                <div className="p-4 space-y-4 border-t border-border">
+                  {/* Secret Enemy Warning - only in this section */}
+                  {section.warning && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                      <p className="text-sm text-red-400 font-medium">{section.warning}</p>
+                    </div>
+                  )}
+
+                  {/* Add Form for this section */}
+                  {isFormOpen && (
+                    <div className="p-4 border border-border/50 rounded-lg space-y-4 bg-secondary/20">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                            Platform / Type
+                          </label>
+                          <Select
+                            value={addFormState.platform}
+                            onValueChange={(value) =>
+                              setAddFormState({ ...addFormState, platform: value, url: "" })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select platform" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PLATFORMS.map((platform) => (
+                                <SelectItem key={platform.value} value={platform.value}>
+                                  {platform.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {addFormState.platform === "other" && (
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                              Custom Label
+                            </label>
+                            <Input
+                              value={addFormState.label}
+                              onChange={(e) =>
+                                setAddFormState({ ...addFormState, label: e.target.value })
+                              }
+                              placeholder="e.g., My Blog, Portfolio"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                          {["whatsapp", "phone"].includes(addFormState.platform)
+                            ? "Number"
+                            : ["private_email", "contact_email"].includes(addFormState.platform)
+                            ? "Email Address"
+                            : "URL / Handle"}
+                        </label>
+                        <Input
+                          value={addFormState.url}
+                          onChange={(e) =>
+                            setAddFormState({ ...addFormState, url: e.target.value })
+                          }
+                          placeholder={getPlaceholderForPlatform(addFormState.platform)}
+                        />
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handleAddLink(section.value)}
+                          disabled={saving === "new"}
+                          size="sm"
+                        >
+                          {saving === "new" ? "Adding..." : "Add"}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={closeAddForm}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Links in this section */}
+                  {levelLinks.length > 0 ? (
+                    <div className="space-y-2">
+                      {levelLinks.map((link) => (
+                        <div
+                          key={link.id}
+                          className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm">
+                              {link.label || getPlatformLabel(link.platform)}
+                            </div>
+                            {link.url.startsWith("http") ? (
+                              <a
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 truncate"
+                              >
+                                {link.url}
+                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                              </a>
+                            ) : (
+                              <span className="text-xs text-muted-foreground truncate block">
+                                {link.url}
+                              </span>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteLink(link.id)}
+                            disabled={saving === link.id}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    !isFormOpen && (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        No links added for {section.label.toLowerCase()} yet.
+                      </p>
+                    )
+                  )}
+                </div>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
         );
       })}
     </div>
