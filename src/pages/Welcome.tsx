@@ -10,7 +10,7 @@ const Welcome = () => {
       <div className="text-center space-y-12 animate-fade-in">
         <div className="space-y-6">
           <h1 className="text-7xl md:text-9xl font-bold text-glow tracking-wider animate-pulse-slow">
-            THE LAMINATE
+            XCROL
           </h1>
           <div className="space-y-4 max-w-2xl mx-auto">
             <p className="text-2xl md:text-3xl text-foreground/90 font-light leading-relaxed">

@@ -524,7 +524,7 @@ const Auth = () => {
     <div className="min-h-screen p-4 md:p-8 flex items-center justify-center">
       <div className="max-w-md w-full animate-fade-in space-y-8">
         <h1 className="text-4xl md:text-5xl font-bold text-center text-glow">
-          Join The Laminate
+          Join XCROL
         </h1>
 
         <Card className="p-8 bg-card/60 backdrop-blur-sm border-primary/30 mystical-glow-teal">
