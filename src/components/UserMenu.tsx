@@ -20,6 +20,7 @@ const UserMenu = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -27,10 +28,12 @@ const UserMenu = () => {
       if (session?.user) {
         loadProfile(session.user.id);
         checkAdminStatus(session.user.id);
+        loadUnreadCount(session.user.id);
       } else {
         setAvatarUrl(null);
         setDisplayName(null);
         setIsAdmin(false);
+        setUnreadCount(0);
       }
     });
 
@@ -39,11 +42,22 @@ const UserMenu = () => {
       if (session?.user) {
         loadProfile(session.user.id);
         checkAdminStatus(session.user.id);
+        loadUnreadCount(session.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const loadUnreadCount = async (userId: string) => {
+    const { count } = await supabase
+      .from("messages")
+      .select("*", { count: "exact", head: true })
+      .eq("to_user_id", userId)
+      .is("read_at", null);
+    
+    setUnreadCount(count || 0);
+  };
 
   const loadProfile = async (userId: string) => {
     const { data } = await supabase
@@ -127,6 +141,11 @@ const UserMenu = () => {
         <DropdownMenuItem onClick={() => navigate("/profile#messages")} className="cursor-pointer">
           <Mail className="w-4 h-4 mr-2" />
           Messages
+          {unreadCount > 0 && (
+            <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-medium px-1.5 py-0.5 rounded-full">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
           <Settings className="w-4 h-4 mr-2" />
