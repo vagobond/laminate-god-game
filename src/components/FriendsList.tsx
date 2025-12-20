@@ -95,7 +95,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
 
   const loadFriends = async () => {
     try {
-      // Get friendships where this user has added friends (excluding secret friends unless it's the owner)
+      // Get friendships where this user has added friends
       const { data, error } = await supabase
         .from("friendships")
         .select("id, friend_id, level")
@@ -103,14 +103,12 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
 
       if (error) throw error;
 
-      // Filter out secret friends, fake friends, and secret enemies for non-owners
-      // Fake friends and secret enemies should never appear in the profile owner's list
+      // For non-owners: hide secret_friend, fake_friend, secret_enemy
+      // For owners: show all friends
       const visibleFriends = (data || []).filter((f) => {
-        // Never show fake friends or secret enemies in the owner's visible list
-        if (f.level === "fake_friend" || f.level === "secret_enemy") return false;
-        // Only owner can see secret friends
-        if (viewerId === userId) return true;
-        return f.level !== "secret_friend";
+        if (viewerId === userId) return true; // Owner sees all
+        // Non-owners don't see secret categories
+        return !["secret_friend", "fake_friend", "secret_enemy"].includes(f.level);
       });
 
       // Load profiles
@@ -224,98 +222,142 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
     );
   }
 
+  // Separate regular friends from hidden categories for the owner
+  const regularFriends = friends.filter(f => !["secret_friend", "fake_friend", "secret_enemy"].includes(f.level));
+  const secretFriends = friends.filter(f => f.level === "secret_friend");
+  const fakeFriends = friends.filter(f => f.level === "fake_friend");
+  const secretEnemies = friends.filter(f => f.level === "secret_enemy");
+
+  const renderFriendItem = (friend: Friend, showBadge = true) => (
+    <div
+      key={friend.id}
+      className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors"
+    >
+      <div
+        className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+        onClick={() => navigate(`/u/${friend.friend_id}`)}
+      >
+        <Avatar className="h-10 w-10">
+          <AvatarImage src={friend.profile?.avatar_url || undefined} />
+          <AvatarFallback>
+            {(friend.profile?.display_name || "?").slice(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <p className="font-medium truncate">
+            {friend.profile?.display_name || "Unknown"}
+          </p>
+        </div>
+        {showBadge && (showLevels || canSeeLevels) && !["secret_friend", "fake_friend", "secret_enemy"].includes(friend.level) && (
+          <Badge variant="secondary" className="text-xs">
+            {levelLabels[friend.level] || friend.level}
+          </Badge>
+        )}
+      </div>
+      {isOwnProfile && (
+        <div className="flex gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMessagingFriend(friend);
+                }}
+              >
+                <MessageSquare className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Send message</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEditLevel(friend);
+                }}
+              >
+                <Edit2 className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Edit friendship level</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setUnfriendingFriend(friend);
+                }}
+              >
+                <UserMinus className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Unfriend</TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <Users className="w-5 h-5" />
-            Friends ({friends.length})
+            Friends ({regularFriends.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            {friends.map((friend) => (
-              <div
-                key={friend.id}
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors"
-              >
-                <div
-                  className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
-                  onClick={() => navigate(`/u/${friend.friend_id}`)}
-                >
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={friend.profile?.avatar_url || undefined} />
-                    <AvatarFallback>
-                      {(friend.profile?.display_name || "?").slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">
-                      {friend.profile?.display_name || "Unknown"}
-                    </p>
-                  </div>
-                  {(showLevels || canSeeLevels) && friend.level !== "secret_friend" && (
-                    <Badge variant="secondary" className="text-xs">
-                      {levelLabels[friend.level] || friend.level}
-                    </Badge>
-                  )}
-                </div>
-                {isOwnProfile && (
-                  <div className="flex gap-1">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-muted-foreground hover:text-foreground"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setMessagingFriend(friend);
-                          }}
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Send message</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-muted-foreground hover:text-foreground"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditLevel(friend);
-                          }}
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Edit friendship level</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setUnfriendingFriend(friend);
-                          }}
-                        >
-                          <UserMinus className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Unfriend</TooltipContent>
-                    </Tooltip>
-                  </div>
-                )}
+          {regularFriends.length > 0 ? (
+            <div className="space-y-2">
+              {regularFriends.map((friend) => renderFriendItem(friend))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">No friends yet</p>
+          )}
+
+          {/* Owner-only: Secret Friends */}
+          {isOwnProfile && secretFriends.length > 0 && (
+            <div className="mt-6 pt-4 border-t border-border">
+              <h4 className="text-sm font-medium text-purple-500 mb-3">Secret Friends ({secretFriends.length})</h4>
+              <div className="space-y-2">
+                {secretFriends.map((friend) => renderFriendItem(friend, false))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+
+          {/* Owner-only: Fake Friends */}
+          {isOwnProfile && fakeFriends.length > 0 && (
+            <div className="mt-6 pt-4 border-t border-border">
+              <h4 className="text-sm font-medium text-orange-500 mb-3">Fake Friends ({fakeFriends.length})</h4>
+              <p className="text-xs text-muted-foreground mb-2">They think they're your friend, but get no real access.</p>
+              <div className="space-y-2">
+                {fakeFriends.map((friend) => renderFriendItem(friend, false))}
+              </div>
+            </div>
+          )}
+
+          {/* Owner-only: Secret Enemies */}
+          {isOwnProfile && secretEnemies.length > 0 && (
+            <div className="mt-6 pt-4 border-t border-border">
+              <h4 className="text-sm font-medium text-red-500 mb-3">Secret Enemies ({secretEnemies.length})</h4>
+              <p className="text-xs text-muted-foreground mb-2">They think they're close friends, but see decoy info.</p>
+              <div className="space-y-2">
+                {secretEnemies.map((friend) => renderFriendItem(friend, false))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
