@@ -11,6 +11,7 @@ import { User, MapPin, Link as LinkIcon, Save, ArrowLeft, Upload, Loader2, Eye, 
 import BlockedUsersManager from "@/components/BlockedUsersManager";
 import FriendsList from "@/components/FriendsList";
 import { ProfileGameStats } from "@/components/ProfileGameStats";
+import { SocialLinksManager } from "@/components/SocialLinksManager";
 
 
 interface Profile {
@@ -455,6 +456,11 @@ const Profile = () => {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Dynamic Social Links */}
+            <div className="pt-4 border-t border-border">
+              <SocialLinksManager userId={user.id} />
             </div>
 
             {/* Save Button */}
