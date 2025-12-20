@@ -23,6 +23,7 @@ import Profile from "./pages/Profile";
 import PublicProfile from "./pages/PublicProfile";
 import Settings from "./pages/Settings";
 import AdminDashboard from "./pages/AdminDashboard";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 import AppHeader from "./components/AppHeader";
 
@@ -53,6 +54,7 @@ const App = () => (
           <Route path="/death-history" element={<DeathHistory />} />
           <Route path="/irl-layer" element={<IRLLayer />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/messages" element={<Messages />} />
           <Route path="/u/:userId" element={<PublicProfile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<AdminDashboard />} />

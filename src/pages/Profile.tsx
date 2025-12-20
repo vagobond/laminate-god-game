@@ -11,7 +11,7 @@ import { User, MapPin, Link as LinkIcon, Save, ArrowLeft, Upload, Loader2, Eye, 
 import BlockedUsersManager from "@/components/BlockedUsersManager";
 import FriendsList from "@/components/FriendsList";
 import { ProfileGameStats } from "@/components/ProfileGameStats";
-import MessagesInbox from "@/components/MessagesInbox";
+
 
 interface Profile {
   id: string;
@@ -469,9 +469,6 @@ const Profile = () => {
             </Button>
           </CardContent>
         </Card>
-
-        {/* Messages Inbox */}
-        {user && <MessagesInbox />}
 
         {/* Friends List */}
         {user && (
