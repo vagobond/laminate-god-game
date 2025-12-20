@@ -138,7 +138,7 @@ const UserMenu = () => {
           <UserIcon className="w-4 h-4 mr-2" />
           My Profile
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate("/profile#messages")} className="cursor-pointer">
+        <DropdownMenuItem onClick={() => navigate("/messages")} className="cursor-pointer">
           <Mail className="w-4 h-4 mr-2" />
           Messages
           {unreadCount > 0 && (

@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MessageSquare, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | null;
+type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | "fake_friend" | "not_friend" | null;
 
 interface Platform {
   id: string;
@@ -19,46 +19,71 @@ interface Platform {
 interface SendMessageDialogProps {
   recipientId: string;
   recipientName: string;
-  friendshipLevel: FriendshipLevel;
-  availablePlatforms: {
+  friendshipLevel: FriendshipLevel | string;
+  availablePlatforms?: {
     linkedin: boolean;
     email: boolean;
     instagram: boolean;
     whatsapp: boolean;
     phone: boolean;
   };
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const SendMessageDialog = ({ 
   recipientId, 
   recipientName, 
   friendshipLevel,
-  availablePlatforms 
+  availablePlatforms,
+  open: controlledOpen,
+  onOpenChange,
 }: SendMessageDialogProps) => {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
   const [message, setMessage] = useState("");
   const [platformSuggestion, setPlatformSuggestion] = useState<string>("");
   const [sending, setSending] = useState(false);
   const { toast } = useToast();
 
-  // Build platforms list based on what the recipient has AND what the sender can see
+  // Build platforms list based on friendship level if availablePlatforms not provided
   const getPlatforms = (): Platform[] => {
     const platforms: Platform[] = [];
     
-    if (availablePlatforms.linkedin) {
-      platforms.push({ id: "linkedin", label: "LinkedIn", available: true });
-    }
-    if (availablePlatforms.email) {
-      platforms.push({ id: "email", label: "Email", available: true });
-    }
-    if (availablePlatforms.instagram) {
-      platforms.push({ id: "instagram", label: "Instagram", available: true });
-    }
-    if (availablePlatforms.whatsapp) {
-      platforms.push({ id: "whatsapp", label: "WhatsApp", available: true });
-    }
-    if (availablePlatforms.phone) {
-      platforms.push({ id: "phone", label: "Phone", available: true });
+    if (availablePlatforms) {
+      if (availablePlatforms.linkedin) {
+        platforms.push({ id: "linkedin", label: "LinkedIn", available: true });
+      }
+      if (availablePlatforms.email) {
+        platforms.push({ id: "email", label: "Email", available: true });
+      }
+      if (availablePlatforms.instagram) {
+        platforms.push({ id: "instagram", label: "Instagram", available: true });
+      }
+      if (availablePlatforms.whatsapp) {
+        platforms.push({ id: "whatsapp", label: "WhatsApp", available: true });
+      }
+      if (availablePlatforms.phone) {
+        platforms.push({ id: "phone", label: "Phone", available: true });
+      }
+    } else {
+      // Infer based on friendship level
+      const level = friendshipLevel as FriendshipLevel;
+      if (level === "close_friend" || level === "secret_friend") {
+        platforms.push({ id: "whatsapp", label: "WhatsApp", available: true });
+        platforms.push({ id: "phone", label: "Phone", available: true });
+        platforms.push({ id: "instagram", label: "Instagram", available: true });
+        platforms.push({ id: "linkedin", label: "LinkedIn", available: true });
+        platforms.push({ id: "email", label: "Email", available: true });
+      } else if (level === "buddy") {
+        platforms.push({ id: "instagram", label: "Instagram", available: true });
+        platforms.push({ id: "linkedin", label: "LinkedIn", available: true });
+        platforms.push({ id: "email", label: "Email", available: true });
+      } else if (level === "friendly_acquaintance") {
+        platforms.push({ id: "linkedin", label: "LinkedIn", available: true });
+        platforms.push({ id: "email", label: "Email", available: true });
+      }
     }
     
     return platforms;
@@ -126,19 +151,23 @@ const SendMessageDialog = ({
     }
   };
 
-  // Only show if there's any friendship level (users must be friends to message)
-  if (!friendshipLevel) {
+  // Only show if there's any valid friendship level
+  if (!friendshipLevel || friendshipLevel === "not_friend" || friendshipLevel === "fake_friend") {
     return null;
   }
 
+  const isControlled = controlledOpen !== undefined;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <MessageSquare className="w-4 h-4" />
-          Message
-        </Button>
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2">
+            <MessageSquare className="w-4 h-4" />
+            Message
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Send a message to {recipientName}</DialogTitle>

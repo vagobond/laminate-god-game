@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, UserMinus, Edit2 } from "lucide-react";
+import { Users, UserMinus, Edit2, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -31,6 +31,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import SendMessageDialog from "@/components/SendMessageDialog";
 
 interface Friend {
   id: string;
@@ -65,6 +66,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
   const [canSeeLevels, setCanSeeLevels] = useState(false);
   const [editingFriend, setEditingFriend] = useState<Friend | null>(null);
   const [unfriendingFriend, setUnfriendingFriend] = useState<Friend | null>(null);
+  const [messagingFriend, setMessagingFriend] = useState<Friend | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<FriendshipLevel>("buddy");
   const [processing, setProcessing] = useState(false);
   const isOwnProfile = viewerId === userId;
@@ -268,6 +270,22 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
                           className="text-muted-foreground hover:text-foreground"
                           onClick={(e) => {
                             e.stopPropagation();
+                            setMessagingFriend(friend);
+                          }}
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Send message</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-foreground"
+                          onClick={(e) => {
+                            e.stopPropagation();
                             handleEditLevel(friend);
                           }}
                         >
@@ -383,6 +401,17 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Message dialog */}
+      {messagingFriend && (
+        <SendMessageDialog
+          recipientId={messagingFriend.friend_id}
+          recipientName={messagingFriend.profile?.display_name || "Unknown"}
+          friendshipLevel={messagingFriend.level}
+          open={!!messagingFriend}
+          onOpenChange={(open) => !open && setMessagingFriend(null)}
+        />
+      )}
     </>
   );
 };
