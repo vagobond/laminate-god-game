@@ -22,6 +22,21 @@ interface Profile {
   link: string | null;
   hometown_city: string | null;
   hometown_country: string | null;
+  whatsapp: string | null;
+  phone_number: string | null;
+  private_email: string | null;
+  instagram_url: string | null;
+  linkedin_url: string | null;
+  contact_email: string | null;
+}
+
+interface ProfileContactData {
+  whatsapp: string;
+  phone_number: string;
+  private_email: string;
+  instagram_url: string;
+  linkedin_url: string;
+  contact_email: string;
 }
 
 const Profile = () => {
@@ -37,6 +52,20 @@ const Profile = () => {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [bio, setBio] = useState("");
   const [link, setLink] = useState("");
+  
+  // Contact fields for friend-only information
+  const [contactData, setContactData] = useState<ProfileContactData>({
+    whatsapp: "",
+    phone_number: "",
+    private_email: "",
+    instagram_url: "",
+    linkedin_url: "",
+    contact_email: "",
+  });
+
+  const handleContactChange = (field: keyof ProfileContactData, value: string) => {
+    setContactData(prev => ({ ...prev, [field]: value }));
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -64,7 +93,7 @@ const Profile = () => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, bio, link, hometown_city, hometown_country")
+        .select("id, display_name, avatar_url, bio, link, hometown_city, hometown_country, whatsapp, phone_number, private_email, instagram_url, linkedin_url, contact_email")
         .eq("id", userId)
         .maybeSingle();
 
@@ -76,6 +105,14 @@ const Profile = () => {
         setAvatarUrl(data.avatar_url || "");
         setBio(data.bio || "");
         setLink(data.link || "");
+        setContactData({
+          whatsapp: data.whatsapp || "",
+          phone_number: data.phone_number || "",
+          private_email: data.private_email || "",
+          instagram_url: data.instagram_url || "",
+          linkedin_url: data.linkedin_url || "",
+          contact_email: data.contact_email || "",
+        });
       }
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -166,6 +203,12 @@ const Profile = () => {
           avatar_url: avatarUrl,
           bio: bio,
           link: link,
+          whatsapp: contactData.whatsapp || null,
+          phone_number: contactData.phone_number || null,
+          private_email: contactData.private_email || null,
+          instagram_url: contactData.instagram_url || null,
+          linkedin_url: contactData.linkedin_url || null,
+          contact_email: contactData.contact_email || null,
         })
         .eq("id", user.id);
 
@@ -351,7 +394,11 @@ const Profile = () => {
 
             {/* Contact Info & Social Links by Friendship Level */}
             <div className="pt-4 border-t border-border">
-              <SocialLinksManager userId={user.id} />
+              <SocialLinksManager 
+                userId={user.id} 
+                profileData={contactData}
+                onProfileChange={handleContactChange}
+              />
             </div>
 
             {/* Save Button */}

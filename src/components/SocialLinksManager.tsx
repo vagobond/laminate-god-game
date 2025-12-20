@@ -25,6 +25,15 @@ interface SocialLink {
   friendship_level_required: string;
 }
 
+interface ProfileData {
+  whatsapp: string;
+  phone_number: string;
+  private_email: string;
+  instagram_url: string;
+  linkedin_url: string;
+  contact_email: string;
+}
+
 const PLATFORMS = [
   { value: "whatsapp", label: "WhatsApp" },
   { value: "phone", label: "Phone Number" },
@@ -55,6 +64,25 @@ const PLATFORMS = [
   { value: "signal", label: "Signal" },
   { value: "other", label: "Other" },
 ];
+
+// Define which built-in fields appear in which section
+const SECTION_BUILTIN_FIELDS: Record<string, { key: keyof ProfileData; label: string; placeholder: string; type?: string }[]> = {
+  close_friend: [
+    { key: "whatsapp", label: "WhatsApp Number", placeholder: "+1 555-123-4567" },
+    { key: "phone_number", label: "Phone Number", placeholder: "+1 555-123-4567" },
+    { key: "private_email", label: "Private Email", placeholder: "personal@example.com", type: "email" },
+  ],
+  buddy: [
+    { key: "instagram_url", label: "Instagram", placeholder: "@username or https://instagram.com/..." },
+  ],
+  friendly_acquaintance: [
+    { key: "linkedin_url", label: "LinkedIn", placeholder: "https://linkedin.com/in/..." },
+    { key: "contact_email", label: "Contact Email", placeholder: "contact@example.com", type: "email" },
+  ],
+  secret_friend: [],
+  fake_friend: [],
+  secret_enemy: [],
+};
 
 const FRIENDSHIP_SECTIONS = [
   {
@@ -98,6 +126,8 @@ const FRIENDSHIP_SECTIONS = [
 
 interface SocialLinksManagerProps {
   userId: string;
+  profileData: ProfileData;
+  onProfileChange: (field: keyof ProfileData, value: string) => void;
 }
 
 interface AddFormState {
@@ -106,7 +136,7 @@ interface AddFormState {
   label: string;
 }
 
-export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
+export const SocialLinksManager = ({ userId, profileData, onProfileChange }: SocialLinksManagerProps) => {
   const [links, setLinks] = useState<SocialLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -256,8 +286,10 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
         const levelLinks = links.filter(
           (link) => link.friendship_level_required === section.value
         );
+        const builtinFields = SECTION_BUILTIN_FIELDS[section.value] || [];
         const isFormOpen = activeAddForm === section.value;
         const isOpen = openSections.includes(section.value);
+        const totalItems = levelLinks.length + builtinFields.filter(f => profileData[f.key]).length;
 
         return (
           <Collapsible
@@ -281,9 +313,9 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {levelLinks.length > 0 && (
+                    {totalItems > 0 && (
                       <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
-                        {levelLinks.length} link{levelLinks.length !== 1 ? "s" : ""}
+                        {totalItems} item{totalItems !== 1 ? "s" : ""}
                       </span>
                     )}
                     <Button
@@ -310,9 +342,29 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
                     </div>
                   )}
 
+                  {/* Built-in fields for this section */}
+                  {builtinFields.length > 0 && (
+                    <div className="space-y-4">
+                      {builtinFields.map((field) => (
+                        <div key={field.key}>
+                          <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                            {field.label}
+                          </label>
+                          <Input
+                            type={field.type || "text"}
+                            value={profileData[field.key]}
+                            onChange={(e) => onProfileChange(field.key, e.target.value)}
+                            placeholder={field.placeholder}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Add Form for this section */}
                   {isFormOpen && (
                     <div className="p-4 border border-border/50 rounded-lg space-y-4 bg-secondary/20">
+                      <div className="text-sm font-medium text-muted-foreground">Add Custom Link</div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label className="text-sm font-medium text-muted-foreground mb-2 block">
@@ -385,9 +437,10 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
                     </div>
                   )}
 
-                  {/* Links in this section */}
-                  {levelLinks.length > 0 ? (
+                  {/* Custom Links in this section */}
+                  {levelLinks.length > 0 && (
                     <div className="space-y-2">
+                      <div className="text-sm font-medium text-muted-foreground">Additional Links</div>
                       {levelLinks.map((link) => (
                         <div
                           key={link.id}
@@ -425,12 +478,13 @@ export const SocialLinksManager = ({ userId }: SocialLinksManagerProps) => {
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    !isFormOpen && (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        No links added for {section.label.toLowerCase()} yet.
-                      </p>
-                    )
+                  )}
+
+                  {/* Empty state */}
+                  {builtinFields.length === 0 && levelLinks.length === 0 && !isFormOpen && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No links added for {section.label.toLowerCase()} yet. Click "Add" to get started.
+                    </p>
                   )}
                 </div>
               </CollapsibleContent>
