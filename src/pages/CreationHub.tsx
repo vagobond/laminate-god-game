@@ -52,13 +52,20 @@ const CreationHub = () => {
           </Card>
         </div>
 
-        <div className="flex justify-center pt-8">
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-8">
           <Button 
             variant="outline" 
             size="lg"
             onClick={() => navigate("/powers")}
           >
             Back
+          </Button>
+          <Button 
+            variant="mystical" 
+            size="lg"
+            onClick={() => navigate("/about-laminate")}
+          >
+            WHAT IS THE LAMINATE?
           </Button>
         </div>
       </div>
