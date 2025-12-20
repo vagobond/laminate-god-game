@@ -79,7 +79,11 @@ const SECTION_BUILTIN_FIELDS: Record<string, { key: keyof ProfileData; label: st
     { key: "linkedin_url", label: "LinkedIn", placeholder: "https://linkedin.com/in/..." },
     { key: "contact_email", label: "Contact Email", placeholder: "contact@example.com", type: "email" },
   ],
-  secret_friend: [],
+  secret_friend: [
+    { key: "whatsapp", label: "WhatsApp Number", placeholder: "+1 555-123-4567" },
+    { key: "phone_number", label: "Phone Number", placeholder: "+1 555-123-4567" },
+    { key: "private_email", label: "Private Email", placeholder: "personal@example.com", type: "email" },
+  ],
   fake_friend: [],
   secret_enemy: [],
 };
