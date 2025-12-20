@@ -431,6 +431,39 @@ export type Database = {
         }
         Relationships: []
       }
+      social_links: {
+        Row: {
+          created_at: string
+          friendship_level_required: string
+          id: string
+          label: string | null
+          platform: string
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friendship_level_required?: string
+          id?: string
+          label?: string | null
+          platform: string
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friendship_level_required?: string
+          id?: string
+          label?: string | null
+          platform?: string
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_blocks: {
         Row: {
           blocked_id: string
