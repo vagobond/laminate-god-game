@@ -228,7 +228,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
   const fakeFriends = friends.filter(f => f.level === "fake_friend");
   const secretEnemies = friends.filter(f => f.level === "secret_enemy");
 
-  const renderFriendItem = (friend: Friend, showBadge = true) => (
+  const renderFriendItem = (friend: Friend, showLevelBadge = false) => (
     <div
       key={friend.id}
       className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors"
@@ -248,7 +248,8 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
             {friend.profile?.display_name || "Unknown"}
           </p>
         </div>
-        {showBadge && (showLevels || canSeeLevels) && !["secret_friend", "fake_friend", "secret_enemy"].includes(friend.level) && (
+        {/* Only show level badges to the profile owner */}
+        {showLevelBadge && isOwnProfile && !["secret_friend", "fake_friend", "secret_enemy"].includes(friend.level) && (
           <Badge variant="secondary" className="text-xs">
             {levelLabels[friend.level] || friend.level}
           </Badge>
@@ -321,7 +322,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
         <CardContent>
           {regularFriends.length > 0 ? (
             <div className="space-y-2">
-              {regularFriends.map((friend) => renderFriendItem(friend))}
+              {regularFriends.map((friend) => renderFriendItem(friend, isOwnProfile))}
             </div>
           ) : (
             <p className="text-muted-foreground text-sm">No friends yet</p>
