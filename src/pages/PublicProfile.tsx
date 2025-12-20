@@ -4,7 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { User, MapPin, Link as LinkIcon, ArrowLeft, ExternalLink, Phone, Mail, MessageCircle } from "lucide-react";
+import { User, MapPin, Link as LinkIcon, ArrowLeft, ExternalLink, Phone, Mail, MessageCircle, Ban } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import AddFriendButton from "@/components/AddFriendButton";
 import FriendsList from "@/components/FriendsList";
 import { ProfileGameStats } from "@/components/ProfileGameStats";
@@ -35,6 +46,8 @@ const PublicProfile = () => {
   const [notFound, setNotFound] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [friendshipLevel, setFriendshipLevel] = useState<FriendshipLevel>(null);
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
+  const [blocking, setBlocking] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -103,6 +116,33 @@ const PublicProfile = () => {
   const canSeeBuddyFields = canSeeCloseFriendFields || friendshipLevel === "buddy";
   const canSeeAcquaintanceFields = canSeeBuddyFields || friendshipLevel === "friendly_acquaintance";
 
+  const isOwnProfile = currentUser?.id === userId;
+
+  const handleBlockUser = async () => {
+    if (!currentUser || !userId) return;
+    
+    setBlocking(true);
+    try {
+      const { error } = await supabase
+        .from("user_blocks")
+        .insert({
+          blocker_id: currentUser.id,
+          blocked_id: userId,
+        });
+
+      if (error) throw error;
+
+      toast.success(`Blocked ${profile?.display_name || "this user"}`);
+      setShowBlockDialog(false);
+      navigate("/irl-layer");
+    } catch (error) {
+      console.error("Error blocking user:", error);
+      toast.error("Failed to block user");
+    } finally {
+      setBlocking(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center">
@@ -164,6 +204,17 @@ const PublicProfile = () => {
               />
             )}
             {userId && <AddFriendButton profileUserId={userId} />}
+            {currentUser && !isOwnProfile && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => setShowBlockDialog(true)}
+              >
+                <Ban className="w-4 h-4 mr-2" />
+                Block
+              </Button>
+            )}
           </div>
         </div>
 
@@ -320,6 +371,28 @@ const PublicProfile = () => {
           <ProfileGameStats userId={userId} />
         )}
       </div>
+
+      {/* Block User Confirmation Dialog */}
+      <AlertDialog open={showBlockDialog} onOpenChange={setShowBlockDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Block {profile?.display_name || "this user"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to block this user? They won't be able to see your profile, send you messages, or add you as a friend. You can unblock them later from your profile settings.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={blocking}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBlockUser}
+              disabled={blocking}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {blocking ? "Blocking..." : "Block User"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
