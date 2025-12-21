@@ -143,14 +143,14 @@ export function PersonalInfoManager({ userId, data, onChange }: PersonalInfoMana
               </SelectContent>
             </Select>
             <Select
-              value={data.birthday_year?.toString() || ""}
-              onValueChange={(v) => handleChange("birthday_year", v ? parseInt(v) : null)}
+              value={data.birthday_year?.toString() || "no_year"}
+              onValueChange={(v) => handleChange("birthday_year", v === "no_year" ? null : parseInt(v))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Year (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No year</SelectItem>
+                <SelectItem value="no_year">No year</SelectItem>
                 {years.map((year) => (
                   <SelectItem key={year} value={year.toString()}>
                     {year}
