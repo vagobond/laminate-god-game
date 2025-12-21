@@ -292,6 +292,30 @@ const VerseAdventure = () => {
           </a>
         </div>
 
+        {/* Every Country Game */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold mb-4">Every Country in the World</h2>
+          <EveryCountryGame />
+        </div>
+
+        {/* Cure to Loneliness and Boredom */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold mb-4">The Cure to Loneliness and Boredom</h2>
+          <CureToLonelinessGame />
+        </div>
+
+        {/* Sly Doubt of Uranus Game */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold mb-4">Sly Doubt of Uranus</h2>
+          <SlyDoubtGame />
+        </div>
+
+        {/* Dream Trip Game */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold mb-4">Dream Trip</h2>
+          <DreamTripGame />
+        </div>
+
         {/* Wolfemon Game */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold mb-4">Wolfemon</h2>
@@ -304,34 +328,10 @@ const VerseAdventure = () => {
           <ArtIFucked />
         </div>
 
-        {/* Sly Doubt of Uranus Game */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">Sly Doubt of Uranus</h2>
-          <SlyDoubtGame />
-        </div>
-
-        {/* Dream Trip Game */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">Dream Trip</h2>
-          <DreamTripGame />
-        </div>
-
-        {/* Cure to Loneliness and Boredom */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">The Cure to Loneliness and Boredom</h2>
-          <CureToLonelinessGame />
-        </div>
-
         {/* Resolution Games */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Resolution Validation Bureau</h2>
           <ResolutionGames />
-        </div>
-
-        {/* Every Country Game */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">Every Country in the World</h2>
-          <EveryCountryGame />
         </div>
       </div>
     </div>
