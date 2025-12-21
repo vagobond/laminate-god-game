@@ -334,7 +334,12 @@ const IRLLayer = () => {
           <div className="flex items-center gap-3">
             <Globe className="w-6 h-6 text-primary animate-pulse" />
             <div>
-              <p className="text-lg font-semibold text-foreground">A person from every country in the world...</p>
+              <p className="text-lg font-semibold text-foreground">
+                A person from every country in the world...
+                <span className="ml-2 inline-block px-2 py-0.5 text-sm bg-primary text-primary-foreground rounded animate-pulse">
+                  &lt;click here&gt;
+                </span>
+              </p>
             </div>
           </div>
           <ChevronRight className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform" />
