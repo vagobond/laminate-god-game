@@ -337,7 +337,7 @@ const IRLLayer = () => {
               <p className="text-lg font-semibold text-foreground">
                 A person from every country in the world...
                 <span className="ml-2 inline-block px-2 py-0.5 text-sm bg-primary text-primary-foreground rounded animate-pulse">
-                  &lt;click here&gt;
+                  click here
                 </span>
               </p>
             </div>
