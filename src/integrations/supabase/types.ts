@@ -645,9 +645,13 @@ export type Database = {
         Returns: {
           avatar_url: string
           bio: string
+          birthday_day: number
+          birthday_month: number
+          birthday_year: number
           contact_email: string
           display_name: string
           friendship_level: string
+          home_address: string
           hometown_city: string
           hometown_country: string
           hometown_description: string
@@ -657,6 +661,8 @@ export type Database = {
           instagram_url: string
           link: string
           linkedin_url: string
+          mailing_address: string
+          nicknames: string
           phone_number: string
           private_email: string
           whatsapp: string

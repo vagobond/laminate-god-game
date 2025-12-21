@@ -34,6 +34,12 @@ interface Profile {
   instagram_url: string | null;
   linkedin_url: string | null;
   contact_email: string | null;
+  birthday_day: number | null;
+  birthday_month: number | null;
+  birthday_year: number | null;
+  home_address: string | null;
+  mailing_address: string | null;
+  nicknames: string | null;
 }
 
 type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | null;
@@ -97,6 +103,12 @@ const PublicProfile = () => {
           instagram_url: profileData.instagram_url,
           linkedin_url: profileData.linkedin_url,
           contact_email: profileData.contact_email,
+          birthday_day: profileData.birthday_day,
+          birthday_month: profileData.birthday_month,
+          birthday_year: profileData.birthday_year,
+          home_address: profileData.home_address,
+          mailing_address: profileData.mailing_address,
+          nicknames: profileData.nicknames,
         });
         // Friendship level is returned from the secure function
         setFriendshipLevel(profileData.friendship_level as FriendshipLevel);
@@ -247,6 +259,21 @@ const PublicProfile = () => {
               </button>
             )}
 
+            {/* Nicknames */}
+            {profile.nicknames && (
+              <p className="text-center text-muted-foreground italic">
+                aka "{profile.nicknames}"
+              </p>
+            )}
+
+            {/* Birthday */}
+            {(profile.birthday_month && profile.birthday_day) && (
+              <p className="text-center text-sm text-muted-foreground">
+                🎂 {new Date(2000, profile.birthday_month - 1, profile.birthday_day).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                {profile.birthday_year && `, ${profile.birthday_year}`}
+              </p>
+            )}
+
             {/* Bio */}
             {profile.bio && (
               <div className="mt-6 p-4 bg-secondary/30 rounded-lg">
@@ -319,9 +346,19 @@ const PublicProfile = () => {
                 )}
 
                 {/* Close friend fields */}
-                {canSeeCloseFriendFields && (profile.whatsapp || profile.phone_number || profile.private_email) && (
+                {canSeeCloseFriendFields && (profile.whatsapp || profile.phone_number || profile.private_email || profile.home_address || profile.mailing_address) && (
                   <div className="p-4 bg-primary/10 rounded-lg space-y-2">
                     <p className="text-xs text-primary uppercase tracking-wide">Private Contact</p>
+                    {profile.home_address && (
+                      <p className="flex items-center gap-2 text-sm text-foreground">
+                        🏠 {profile.home_address}
+                      </p>
+                    )}
+                    {profile.mailing_address && (
+                      <p className="flex items-center gap-2 text-sm text-foreground">
+                        📬 {profile.mailing_address}
+                      </p>
+                    )}
                     {profile.whatsapp && (
                       <a
                         href={`https://wa.me/${profile.whatsapp.replace(/\D/g, "")}`}
