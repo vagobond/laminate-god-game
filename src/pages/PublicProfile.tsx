@@ -175,7 +175,7 @@ const PublicProfile = () => {
     ? `${profile.hometown_city}, ${profile.hometown_country}`
     : null;
 
-  const displayName = profile.display_name || "Anonymous Laminater";
+  const displayName = profile.display_name || "Anonymous Xcroler";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 p-4 pt-20">

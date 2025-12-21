@@ -395,7 +395,7 @@ const IRLLayer = () => {
                   Explore Hometowns
                 </h2>
                 <p className="text-foreground/70 text-sm mt-1">
-                  {allHometowns.length} Laminater{allHometowns.length !== 1 ? 's' : ''} across {sortedHometowns.length} location{sortedHometowns.length !== 1 ? 's' : ''}
+                  {allHometowns.length} Xcroler{allHometowns.length !== 1 ? 's' : ''} across {sortedHometowns.length} location{sortedHometowns.length !== 1 ? 's' : ''}
                 </p>
               </div>
               <Button
@@ -470,7 +470,7 @@ const IRLLayer = () => {
                                   </AvatarFallback>
                                 </Avatar>
                                 <span className="text-sm truncate">
-                                  {profile.display_name || "Anonymous Laminater"}
+                                  {profile.display_name || "Anonymous Xcroler"}
                                 </span>
                               </div>
                             ))}
@@ -505,7 +505,7 @@ const IRLLayer = () => {
                 <h2 className="text-2xl font-bold">{selectedHometown.city}</h2>
                 <p className="text-foreground/70">{selectedHometown.country}</p>
                 <p className="text-sm text-primary mt-1">
-                  {selectedHometown.profiles.length} Laminater{selectedHometown.profiles.length !== 1 ? 's' : ''}
+                  {selectedHometown.profiles.length} Xcroler{selectedHometown.profiles.length !== 1 ? 's' : ''}
                 </p>
               </div>
               <Button
@@ -532,7 +532,7 @@ const IRLLayer = () => {
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">
-                      {profile.display_name || "Anonymous Laminater"}
+                      {profile.display_name || "Anonymous Xcroler"}
                     </p>
                     {profile.hometown_description && (
                       <p className="text-sm text-foreground/60 italic mt-1">
@@ -559,7 +559,7 @@ const IRLLayer = () => {
               <Textarea
                 value={hometownDescription}
                 onChange={(e) => setHometownDescription(e.target.value)}
-                placeholder="Tell other Laminaters what you love about your hometown"
+                placeholder="Tell other Xcrolers what you love about your hometown"
                 className="min-h-[120px]"
               />
             </div>
