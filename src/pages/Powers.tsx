@@ -54,7 +54,7 @@ const Powers = () => {
           <Button 
             variant="divine" 
             size="xl"
-            onClick={() => navigate("/verse-adventure")}
+            onClick={() => navigate("/mini-games-hub")}
             className="w-full sm:w-auto min-w-[250px]"
           >
             ADVENTURE
