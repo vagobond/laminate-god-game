@@ -2,15 +2,32 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Welcome = () => {
   const navigate = useNavigate();
   const [animationPhase, setAnimationPhase] = useState<"video" | "dissolve" | "complete">("video");
   const [isMuted, setIsMuted] = useState(() => localStorage.getItem("audio-muted") !== "false");
   const [isVideoLoading, setIsVideoLoading] = useState(true);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Check if user is already logged in - redirect to powers
   useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        navigate("/powers", { replace: true });
+      } else {
+        setCheckingAuth(false);
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (checkingAuth) return;
+    
     const video = videoRef.current;
     if (!video) return;
 
@@ -35,7 +52,7 @@ const Welcome = () => {
       video.removeEventListener("timeupdate", handleTimeUpdate);
       video.removeEventListener("ended", handleEnded);
     };
-  }, []);
+  }, [checkingAuth]);
 
   useEffect(() => {
     const handleMuteChange = (e: CustomEvent<boolean>) => {
@@ -51,6 +68,15 @@ const Welcome = () => {
       videoRef.current.muted = isMuted;
     }
   }, [isMuted]);
+
+  // Show nothing while checking auth to prevent flash
+  if (checkingAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 overflow-hidden">
