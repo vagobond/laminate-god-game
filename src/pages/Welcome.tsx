@@ -3,11 +3,32 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import scrollImage from "@/assets/scroll-unfurl.png";
 
+const Sparkle = ({ delay, x, y }: { delay: number; x: number; y: number }) => (
+  <div
+    className="absolute w-2 h-2 bg-primary rounded-full animate-sparkle"
+    style={{
+      left: `${x}%`,
+      top: `${y}%`,
+      animationDelay: `${delay}ms`,
+    }}
+  />
+);
+
 const Welcome = () => {
   const navigate = useNavigate();
   const [animationPhase, setAnimationPhase] = useState<"scroll" | "reveal" | "complete">("scroll");
+  const [sparkles, setSparkles] = useState<Array<{ id: number; x: number; y: number; delay: number }>>([]);
 
   useEffect(() => {
+    // Generate random sparkles
+    const newSparkles = Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      x: 20 + Math.random() * 60,
+      y: 10 + Math.random() * 80,
+      delay: Math.random() * 2000,
+    }));
+    setSparkles(newSparkles);
+
     // Scroll unfurl animation (3 seconds)
     const revealTimer = setTimeout(() => {
       setAnimationPhase("reveal");
@@ -25,19 +46,27 @@ const Welcome = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 overflow-hidden">
-      <div className="text-center space-y-12 relative">
-        {/* Scroll Animation */}
+      <div className="text-center space-y-12 relative w-full h-full">
+        {/* Scroll Animation - Full Page */}
         <div 
-          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ease-out ${
+          className={`fixed inset-0 flex items-center justify-center transition-all duration-700 ease-out z-10 ${
             animationPhase === "scroll" 
               ? "opacity-100 scale-100" 
-              : "opacity-0 scale-110"
+              : "opacity-0 scale-110 pointer-events-none"
           }`}
         >
+          {/* Sparkles */}
+          {sparkles.map((sparkle) => (
+            <Sparkle key={sparkle.id} delay={sparkle.delay} x={sparkle.x} y={sparkle.y} />
+          ))}
+          
+          {/* Glow backdrop */}
+          <div className="absolute inset-0 bg-gradient-radial from-primary/20 via-transparent to-transparent" />
+          
           <img 
             src={scrollImage} 
             alt="Magical scroll" 
-            className={`w-48 h-48 md:w-64 md:h-64 object-contain drop-shadow-[0_0_30px_rgba(139,92,246,0.5)] ${
+            className={`w-[80vmin] h-[80vmin] max-w-[600px] max-h-[600px] object-contain drop-shadow-[0_0_60px_rgba(139,92,246,0.6)] ${
               animationPhase === "scroll" ? "animate-scroll-unfurl" : ""
             }`}
           />

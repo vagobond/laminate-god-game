@@ -94,11 +94,25 @@ export default {
             transform: "scaleY(1) rotateX(0deg)",
           },
         },
+        "sparkle": {
+          "0%, 100%": {
+            opacity: "0",
+            transform: "scale(0)",
+          },
+          "50%": {
+            opacity: "1",
+            transform: "scale(1)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "scroll-unfurl": "scroll-unfurl 0.6s ease-out forwards",
+        "sparkle": "sparkle 1.5s ease-in-out infinite",
+      },
+      backgroundImage: {
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
       },
     },
   },
