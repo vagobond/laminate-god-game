@@ -335,7 +335,6 @@ const IRLLayer = () => {
             <Globe className="w-6 h-6 text-primary animate-pulse" />
             <div>
               <p className="text-lg font-semibold text-foreground">A person from every country in the world...</p>
-              <p className="text-sm text-muted-foreground">Help us reach this goal! Invite friends from unrepresented countries.</p>
             </div>
           </div>
           <ChevronRight className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform" />
