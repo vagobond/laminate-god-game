@@ -12,6 +12,7 @@ import BlockedUsersManager from "@/components/BlockedUsersManager";
 import FriendsList from "@/components/FriendsList";
 import { ProfileGameStats } from "@/components/ProfileGameStats";
 import { SocialLinksManager } from "@/components/SocialLinksManager";
+import { PersonalInfoManager, PersonalInfoData, VisibilityLevel } from "@/components/PersonalInfoManager";
 import { z } from "zod";
 
 // Validation constants
@@ -21,6 +22,8 @@ const MAX_LINK_LENGTH = 200;
 const MAX_PHONE_LENGTH = 20;
 const MAX_EMAIL_LENGTH = 255;
 const MAX_URL_LENGTH = 200;
+const MAX_ADDRESS_LENGTH = 500;
+const MAX_NICKNAMES_LENGTH = 200;
 
 // Validation schemas
 const urlSchema = z.string().max(MAX_URL_LENGTH, "URL is too long").optional().or(z.literal(""));
@@ -42,6 +45,17 @@ interface Profile {
   instagram_url: string | null;
   linkedin_url: string | null;
   contact_email: string | null;
+  birthday_day: number | null;
+  birthday_month: number | null;
+  birthday_year: number | null;
+  home_address: string | null;
+  mailing_address: string | null;
+  nicknames: string | null;
+  birthday_no_year_visibility: VisibilityLevel;
+  birthday_year_visibility: VisibilityLevel;
+  home_address_visibility: VisibilityLevel;
+  mailing_address_visibility: VisibilityLevel;
+  nicknames_visibility: VisibilityLevel;
 }
 
 interface ProfileContactData {
@@ -77,6 +91,21 @@ const Profile = () => {
     contact_email: "",
   });
 
+  // Personal info fields with visibility controls
+  const [personalInfo, setPersonalInfo] = useState<PersonalInfoData>({
+    birthday_day: null,
+    birthday_month: null,
+    birthday_year: null,
+    home_address: null,
+    mailing_address: null,
+    nicknames: null,
+    birthday_no_year_visibility: "buddy",
+    birthday_year_visibility: "close_friend",
+    home_address_visibility: "close_friend",
+    mailing_address_visibility: "close_friend",
+    nicknames_visibility: "friendly_acquaintance",
+  });
+
   const handleContactChange = (field: keyof ProfileContactData, value: string) => {
     setContactData(prev => ({ ...prev, [field]: value }));
   };
@@ -107,25 +136,39 @@ const Profile = () => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, bio, link, hometown_city, hometown_country, whatsapp, phone_number, private_email, instagram_url, linkedin_url, contact_email")
+        .select("*")
         .eq("id", userId)
         .maybeSingle();
 
       if (error) throw error;
 
       if (data) {
-        setProfile(data);
-        setDisplayName(data.display_name || "");
-        setAvatarUrl(data.avatar_url || "");
-        setBio(data.bio || "");
-        setLink(data.link || "");
+        const profileData = data as unknown as Profile;
+        setProfile(profileData);
+        setDisplayName(profileData.display_name || "");
+        setAvatarUrl(profileData.avatar_url || "");
+        setBio(profileData.bio || "");
+        setLink(profileData.link || "");
         setContactData({
-          whatsapp: data.whatsapp || "",
-          phone_number: data.phone_number || "",
-          private_email: data.private_email || "",
-          instagram_url: data.instagram_url || "",
-          linkedin_url: data.linkedin_url || "",
-          contact_email: data.contact_email || "",
+          whatsapp: profileData.whatsapp || "",
+          phone_number: profileData.phone_number || "",
+          private_email: profileData.private_email || "",
+          instagram_url: profileData.instagram_url || "",
+          linkedin_url: profileData.linkedin_url || "",
+          contact_email: profileData.contact_email || "",
+        });
+        setPersonalInfo({
+          birthday_day: profileData.birthday_day,
+          birthday_month: profileData.birthday_month,
+          birthday_year: profileData.birthday_year,
+          home_address: profileData.home_address,
+          mailing_address: profileData.mailing_address,
+          nicknames: profileData.nicknames,
+          birthday_no_year_visibility: (profileData.birthday_no_year_visibility as VisibilityLevel) || "buddy",
+          birthday_year_visibility: (profileData.birthday_year_visibility as VisibilityLevel) || "close_friend",
+          home_address_visibility: (profileData.home_address_visibility as VisibilityLevel) || "close_friend",
+          mailing_address_visibility: (profileData.mailing_address_visibility as VisibilityLevel) || "close_friend",
+          nicknames_visibility: (profileData.nicknames_visibility as VisibilityLevel) || "friendly_acquaintance",
         });
       }
     } catch (error) {
@@ -289,6 +332,18 @@ const Profile = () => {
           instagram_url: contactData.instagram_url.trim().slice(0, MAX_URL_LENGTH) || null,
           linkedin_url: contactData.linkedin_url.trim().slice(0, MAX_URL_LENGTH) || null,
           contact_email: contactData.contact_email.trim().slice(0, MAX_EMAIL_LENGTH) || null,
+          // Personal info fields
+          birthday_day: personalInfo.birthday_day,
+          birthday_month: personalInfo.birthday_month,
+          birthday_year: personalInfo.birthday_year,
+          home_address: personalInfo.home_address?.trim().slice(0, MAX_ADDRESS_LENGTH) || null,
+          mailing_address: personalInfo.mailing_address?.trim().slice(0, MAX_ADDRESS_LENGTH) || null,
+          nicknames: personalInfo.nicknames?.trim().slice(0, MAX_NICKNAMES_LENGTH) || null,
+          birthday_no_year_visibility: personalInfo.birthday_no_year_visibility,
+          birthday_year_visibility: personalInfo.birthday_year_visibility,
+          home_address_visibility: personalInfo.home_address_visibility,
+          mailing_address_visibility: personalInfo.mailing_address_visibility,
+          nicknames_visibility: personalInfo.nicknames_visibility,
         })
         .eq("id", user.id);
 
@@ -469,6 +524,15 @@ const Profile = () => {
                 value={link}
                 onChange={(e) => setLink(e.target.value)}
                 placeholder="What is the most important link to get to know you?"
+              />
+            </div>
+
+            {/* Personal Information with Visibility Controls */}
+            <div className="pt-4 border-t border-border">
+              <PersonalInfoManager
+                userId={user.id}
+                data={personalInfo}
+                onChange={setPersonalInfo}
               />
             </div>
 
