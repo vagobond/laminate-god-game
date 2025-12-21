@@ -25,7 +25,7 @@ const ExploreLayers = () => {
     <div className="min-h-screen p-4 md:p-8 flex items-center justify-center">
       <div className="max-w-5xl w-full animate-fade-in space-y-8">
         <h1 className="text-4xl md:text-6xl font-bold text-center text-glow mb-8">
-          Explore The Laminate
+          Explore XCROL
         </h1>
 
         <div className="text-center space-y-4 mb-8">
@@ -121,7 +121,7 @@ const ExploreLayers = () => {
               <div className="text-5xl">🔮</div>
               <h3 className="text-2xl font-bold text-muted-foreground">No Layers Yet</h3>
               <p className="text-muted-foreground">
-                Be the first to create a layer in The Laminate!
+                Be the first to create a layer in XCROL!
               </p>
             </div>
           </Card>
