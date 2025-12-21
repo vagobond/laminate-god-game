@@ -627,6 +627,19 @@ export type Database = {
         Args: { profile_id: string; viewer_id: string }
         Returns: Database["public"]["Enums"]["friendship_level"]
       }
+      get_public_hometowns: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          display_name: string
+          hometown_city: string
+          hometown_country: string
+          hometown_description: string
+          hometown_latitude: number
+          hometown_longitude: number
+          id: string
+        }[]
+      }
       get_visible_profile: {
         Args: { profile_id: string; viewer_id: string }
         Returns: {

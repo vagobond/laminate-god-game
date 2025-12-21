@@ -81,10 +81,8 @@ const IRLLayer = () => {
   };
 
   const loadAllHometowns = async () => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, display_name, avatar_url, hometown_city, hometown_country, hometown_latitude, hometown_longitude, hometown_description")
-      .not("hometown_city", "is", null);
+    // Use secure function that only returns non-sensitive hometown data
+    const { data, error } = await supabase.rpc("get_public_hometowns");
 
     if (error) {
       console.error("Error loading hometowns:", error);
