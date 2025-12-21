@@ -13,6 +13,8 @@ const Welcome = () => {
 
     const handleCanPlay = () => {
       setAnimationPhase("video");
+      // Try to unmute after playback starts
+      video.muted = false;
     };
 
     const handleEnded = () => {
@@ -21,6 +23,10 @@ const Welcome = () => {
         setAnimationPhase("complete");
       }, 800);
     };
+
+    // Start muted to allow autoplay, then unmute
+    video.muted = true;
+    video.play().catch(() => {});
 
     video.addEventListener("canplaythrough", handleCanPlay);
     video.addEventListener("ended", handleEnded);
@@ -59,7 +65,6 @@ const Welcome = () => {
           <video 
             ref={videoRef}
             src="/video/xcrol.mp4"
-            autoPlay
             playsInline
             className="w-[80vmin] h-[80vmin] max-w-[600px] max-h-[600px] object-contain drop-shadow-[0_0_60px_rgba(139,92,246,0.6)]"
           />
