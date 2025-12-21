@@ -8,14 +8,14 @@ const Welcome = () => {
   const [animationPhase, setAnimationPhase] = useState<"scroll" | "reveal" | "complete">("scroll");
 
   useEffect(() => {
-    // Scroll unfurl animation (fast)
+    // Scroll unfurl animation (3 seconds)
     const revealTimer = setTimeout(() => {
       setAnimationPhase("reveal");
-    }, 800);
+    }, 3000);
 
     const completeTimer = setTimeout(() => {
       setAnimationPhase("complete");
-    }, 1600);
+    }, 3800);
 
     return () => {
       clearTimeout(revealTimer);
