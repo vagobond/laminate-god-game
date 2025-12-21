@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 const Welcome = () => {
   const navigate = useNavigate();
   const [animationPhase, setAnimationPhase] = useState<"video" | "dissolve" | "complete">("video");
   const [isMuted, setIsMuted] = useState(() => localStorage.getItem("audio-muted") !== "false");
+  const [isVideoLoading, setIsVideoLoading] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -64,13 +66,23 @@ const Welcome = () => {
           {/* Glow backdrop */}
           <div className="absolute inset-0 bg-gradient-radial from-primary/20 via-transparent to-transparent" />
           
+          {/* Loading spinner */}
+          {isVideoLoading && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+          )}
+          
           <video 
             ref={videoRef}
             src="/video/xcrol.mp4"
             autoPlay
             muted={isMuted}
             playsInline
-            className="w-[80vmin] h-[80vmin] max-w-[600px] max-h-[600px] object-contain drop-shadow-[0_0_60px_rgba(139,92,246,0.6)]"
+            onCanPlay={() => setIsVideoLoading(false)}
+            className={`w-[80vmin] h-[80vmin] max-w-[600px] max-h-[600px] object-contain drop-shadow-[0_0_60px_rgba(139,92,246,0.6)] transition-opacity duration-300 ${
+              isVideoLoading ? "opacity-0" : "opacity-100"
+            }`}
           />
         </div>
 
