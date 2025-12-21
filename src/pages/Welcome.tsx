@@ -12,6 +12,14 @@ const Welcome = () => {
     const video = videoRef.current;
     if (!video) return;
 
+    const handleTimeUpdate = () => {
+      const timeRemaining = video.duration - video.currentTime;
+      // Fade out audio over the last 0.8 seconds
+      if (timeRemaining <= 0.8 && timeRemaining > 0) {
+        video.volume = Math.max(0, timeRemaining / 0.8);
+      }
+    };
+
     const handleEnded = () => {
       setAnimationPhase("dissolve");
       setTimeout(() => {
@@ -19,8 +27,12 @@ const Welcome = () => {
       }, 800);
     };
 
+    video.addEventListener("timeupdate", handleTimeUpdate);
     video.addEventListener("ended", handleEnded);
-    return () => video.removeEventListener("ended", handleEnded);
+    return () => {
+      video.removeEventListener("timeupdate", handleTimeUpdate);
+      video.removeEventListener("ended", handleEnded);
+    };
   }, []);
 
   useEffect(() => {
