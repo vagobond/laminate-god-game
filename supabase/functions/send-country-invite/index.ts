@@ -1,0 +1,120 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
+
+interface InviteEmailRequest {
+  inviteeEmail: string;
+  inviterName: string;
+  targetCountry: string | null;
+  inviteCode: string;
+  isNewCountry: boolean;
+}
+
+const handler = async (req: Request): Promise<Response> => {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    if (!RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY is not configured");
+    }
+
+    const { inviteeEmail, inviterName, targetCountry, inviteCode, isNewCountry }: InviteEmailRequest = await req.json();
+
+    console.log(`Sending invite email to ${inviteeEmail} from ${inviterName}`);
+
+    const countryText = targetCountry 
+      ? `to represent ${targetCountry}` 
+      : "to join the community";
+
+    const specialMessage = isNewCountry 
+      ? `This is a special invitation - you'll be the first person representing a new country!` 
+      : "";
+
+    const emailResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "Laminate <onboarding@resend.dev>",
+        to: [inviteeEmail],
+        subject: `${inviterName} invited you to join Laminate!`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background: #0a0a0a; }
+              .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+              .card { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 16px; padding: 40px; border: 1px solid rgba(139, 92, 246, 0.3); }
+              h1 { color: #ffffff; font-size: 28px; margin-bottom: 20px; }
+              p { color: #a0a0a0; font-size: 16px; line-height: 1.6; margin-bottom: 16px; }
+              .highlight { color: #a78bfa; font-weight: 600; }
+              .special { background: rgba(139, 92, 246, 0.2); border-radius: 8px; padding: 16px; margin: 20px 0; border-left: 4px solid #8b5cf6; }
+              .special p { color: #c4b5fd; margin: 0; }
+              .code { background: rgba(139, 92, 246, 0.3); color: #e9d5ff; padding: 12px 24px; border-radius: 8px; font-family: monospace; font-size: 18px; display: inline-block; margin: 20px 0; letter-spacing: 2px; }
+              .cta { display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 20px; }
+              .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+              .footer p { color: #666; font-size: 14px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="card">
+                <h1>You've Been Invited! 🌍</h1>
+                <p><span class="highlight">${inviterName}</span> has invited you ${countryText} on Laminate.</p>
+                ${specialMessage ? `<div class="special"><p>✨ ${specialMessage}</p></div>` : ''}
+                <p>Use this invite code when you sign up:</p>
+                <div class="code">${inviteCode}</div>
+                <p>Join us to explore layers, connect with people from around the world, and build your presence on Laminate.</p>
+                <a href="https://laminate.lovable.app/auth?invite=${inviteCode}" class="cta">Join Laminate</a>
+                <div class="footer">
+                  <p>If you didn't expect this invitation, you can safely ignore this email.</p>
+                </div>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+      }),
+    });
+
+    const data = await emailResponse.json();
+
+    if (!emailResponse.ok) {
+      console.error("Resend API error:", data);
+      throw new Error(data.message || "Failed to send email");
+    }
+
+    console.log("Email sent successfully:", data);
+
+    return new Response(JSON.stringify({ success: true, data }), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        ...corsHeaders,
+      },
+    });
+  } catch (error: any) {
+    console.error("Error in send-country-invite function:", error);
+    return new Response(
+      JSON.stringify({ success: false, error: error.message }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
+  }
+};
+
+serve(handler);
