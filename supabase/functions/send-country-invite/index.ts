@@ -46,9 +46,9 @@ const handler = async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Laminate <noreply@invites.xcrol.com>",
+        from: "Xcrol <noreply@invites.xcrol.com>",
         to: [inviteeEmail],
-        subject: `${inviterName} invited you to join Laminate!`,
+        subject: `${inviterName} invited you to join Xcrol!`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -72,12 +72,12 @@ const handler = async (req: Request): Promise<Response> => {
             <div class="container">
               <div class="card">
                 <h1>You've Been Invited! 🌍</h1>
-                <p><span class="highlight">${inviterName}</span> has invited you ${countryText} on Laminate.</p>
+                <p><span class="highlight">${inviterName}</span> has invited you ${countryText} on Xcrol.</p>
                 ${specialMessage ? `<div class="special"><p>✨ ${specialMessage}</p></div>` : ''}
                 <p>Use this invite code when you sign up:</p>
                 <div class="code">${inviteCode}</div>
-                <p>Join us to explore layers, connect with people from around the world, and build your presence on Laminate.</p>
-                <a href="https://laminate.lovable.app/auth?invite=${inviteCode}" class="cta">Join Laminate</a>
+                <p>Join us to explore layers, connect with people from around the world, and build your presence on Xcrol.</p>
+                <a href="https://xcrol.com/auth?invite=${inviteCode}" class="cta">Join Xcrol</a>
                 <div class="footer">
                   <p>If you didn't expect this invitation, you can safely ignore this email.</p>
                 </div>
