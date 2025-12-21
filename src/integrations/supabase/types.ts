@@ -354,10 +354,17 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          birthday_day: number | null
+          birthday_month: number | null
+          birthday_no_year_visibility: string | null
+          birthday_year: number | null
+          birthday_year_visibility: string | null
           contact_email: string | null
           created_at: string
           display_name: string | null
           email: string | null
+          home_address: string | null
+          home_address_visibility: string | null
           hometown_city: string | null
           hometown_country: string | null
           hometown_description: string | null
@@ -367,6 +374,10 @@ export type Database = {
           instagram_url: string | null
           link: string | null
           linkedin_url: string | null
+          mailing_address: string | null
+          mailing_address_visibility: string | null
+          nicknames: string | null
+          nicknames_visibility: string | null
           phone_number: string | null
           private_email: string | null
           updated_at: string
@@ -375,10 +386,17 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          birthday_day?: number | null
+          birthday_month?: number | null
+          birthday_no_year_visibility?: string | null
+          birthday_year?: number | null
+          birthday_year_visibility?: string | null
           contact_email?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
+          home_address?: string | null
+          home_address_visibility?: string | null
           hometown_city?: string | null
           hometown_country?: string | null
           hometown_description?: string | null
@@ -388,6 +406,10 @@ export type Database = {
           instagram_url?: string | null
           link?: string | null
           linkedin_url?: string | null
+          mailing_address?: string | null
+          mailing_address_visibility?: string | null
+          nicknames?: string | null
+          nicknames_visibility?: string | null
           phone_number?: string | null
           private_email?: string | null
           updated_at?: string
@@ -396,10 +418,17 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          birthday_day?: number | null
+          birthday_month?: number | null
+          birthday_no_year_visibility?: string | null
+          birthday_year?: number | null
+          birthday_year_visibility?: string | null
           contact_email?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
+          home_address?: string | null
+          home_address_visibility?: string | null
           hometown_city?: string | null
           hometown_country?: string | null
           hometown_description?: string | null
@@ -409,6 +438,10 @@ export type Database = {
           instagram_url?: string | null
           link?: string | null
           linkedin_url?: string | null
+          mailing_address?: string | null
+          mailing_address_visibility?: string | null
+          nicknames?: string | null
+          nicknames_visibility?: string | null
           phone_number?: string | null
           private_email?: string | null
           updated_at?: string
