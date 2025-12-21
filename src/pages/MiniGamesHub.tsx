@@ -163,135 +163,6 @@ const VerseAdventure = () => {
           </p>
         </div>
 
-        {/* Verse Adventure Stats */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-4">Verse Adventure</h2>
-          <div className="flex justify-start gap-4 mb-6 flex-wrap">
-          <Badge variant="secondary" className="text-lg px-4 py-2">
-            <Trophy className="w-4 h-4 mr-2" />
-            Streak: {stats.survival_streak}
-          </Badge>
-          <Badge variant="secondary" className="text-lg px-4 py-2">
-            <Zap className="w-4 h-4 mr-2" />
-            Total: {stats.total_scenarios}
-          </Badge>
-          {isAuthenticated && (
-            <Badge 
-              variant="destructive" 
-              className="text-lg px-4 py-2 cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => navigate('/death-history')}
-            >
-              <Skull className="w-4 h-4 mr-2" />
-              Deaths: {deathCount}
-            </Badge>
-          )}
-          </div>
-
-        {/* Death Screen */}
-        {death && (
-          <Card className="mb-8 border-destructive">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-destructive">
-                <Skull className="w-6 h-6" />
-                You Died!
-              </CardTitle>
-              <CardDescription className="text-lg font-semibold">
-                {death.cause}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-lg leading-relaxed">{death.description}</p>
-              
-              <div className="bg-muted p-4 rounded-lg">
-                <p className="text-sm font-semibold mb-2">Historical Basis:</p>
-                <p className="text-sm text-muted-foreground">{death.historicalBasis}</p>
-              </div>
-
-              <div className="text-center pt-4">
-                <p className="text-muted-foreground mb-4">
-                  Final Stats: {stats.survival_streak} scenarios survived
-                </p>
-                <Button onClick={startGame} disabled={isLoading} size="lg">
-                  Try Again
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Game Scenario */}
-        {!gameStarted && !death && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Ready to Enter the Verse?</CardTitle>
-              <CardDescription>
-                Choose your path through infinite creative layers. But beware - obscure deaths await around every corner. 
-                Each death is unique and based on real historical events. Will you survive?
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isAuthenticated === false && (
-                <p className="text-sm text-muted-foreground mb-4">
-                  Please sign in to play the adventure.
-                </p>
-              )}
-              <Button 
-                onClick={startGame} 
-                disabled={isLoading}
-                size="lg"
-                className="w-full"
-              >
-                {isLoading ? "Generating Adventure..." : isAuthenticated === false ? "Sign In to Play" : "Begin Adventure"}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {scenario && gameStarted && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Journey Continues...</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <p className="text-lg leading-relaxed whitespace-pre-line">
-                {scenario.description}
-              </p>
-
-              <div className="space-y-3">
-                <p className="font-semibold text-muted-foreground">What do you do?</p>
-                {scenario.choices.map((choice, index) => (
-                  <Button
-                    key={index}
-                    onClick={() => makeChoice(index)}
-                    disabled={isLoading}
-                    variant="outline"
-                    className="w-full justify-start text-left h-auto py-4 px-6 hover:bg-primary/10"
-                  >
-                    <span className="font-semibold mr-3">{index + 1}.</span>
-                    <span>{choice}</span>
-                  </Button>
-                ))}
-              </div>
-
-              {isLoading && (
-                <div className="text-center text-muted-foreground animate-pulse">
-                  Determining your fate...
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-          
-          <a 
-            href="https://sigil-shift-core.lovable.app" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-flex items-center text-primary hover:text-primary/80 underline underline-offset-4 mt-4"
-          >
-            Pax's Sigil Challenge →
-          </a>
-        </div>
-
         {/* Every Country Game */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold mb-4">Every Country in the World</h2>
@@ -308,6 +179,135 @@ const VerseAdventure = () => {
         <div className="mb-12">
           <h2 className="text-2xl font-bold mb-4">Sly Doubt of Uranus</h2>
           <SlyDoubtGame />
+        </div>
+
+        {/* Verse Adventure */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold mb-4">Verse Adventure</h2>
+          <div className="flex justify-start gap-4 mb-6 flex-wrap">
+            <Badge variant="secondary" className="text-lg px-4 py-2">
+              <Trophy className="w-4 h-4 mr-2" />
+              Streak: {stats.survival_streak}
+            </Badge>
+            <Badge variant="secondary" className="text-lg px-4 py-2">
+              <Zap className="w-4 h-4 mr-2" />
+              Total: {stats.total_scenarios}
+            </Badge>
+            {isAuthenticated && (
+              <Badge 
+                variant="destructive" 
+                className="text-lg px-4 py-2 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => navigate('/death-history')}
+              >
+                <Skull className="w-4 h-4 mr-2" />
+                Deaths: {deathCount}
+              </Badge>
+            )}
+          </div>
+
+          {/* Death Screen */}
+          {death && (
+            <Card className="mb-8 border-destructive">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                  <Skull className="w-6 h-6" />
+                  You Died!
+                </CardTitle>
+                <CardDescription className="text-lg font-semibold">
+                  {death.cause}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-lg leading-relaxed">{death.description}</p>
+                
+                <div className="bg-muted p-4 rounded-lg">
+                  <p className="text-sm font-semibold mb-2">Historical Basis:</p>
+                  <p className="text-sm text-muted-foreground">{death.historicalBasis}</p>
+                </div>
+
+                <div className="text-center pt-4">
+                  <p className="text-muted-foreground mb-4">
+                    Final Stats: {stats.survival_streak} scenarios survived
+                  </p>
+                  <Button onClick={startGame} disabled={isLoading} size="lg">
+                    Try Again
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Game Scenario */}
+          {!gameStarted && !death && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Ready to Enter the Verse?</CardTitle>
+                <CardDescription>
+                  Choose your path through infinite creative layers. But beware - obscure deaths await around every corner. 
+                  Each death is unique and based on real historical events. Will you survive?
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isAuthenticated === false && (
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Please sign in to play the adventure.
+                  </p>
+                )}
+                <Button 
+                  onClick={startGame} 
+                  disabled={isLoading}
+                  size="lg"
+                  className="w-full"
+                >
+                  {isLoading ? "Generating Adventure..." : isAuthenticated === false ? "Sign In to Play" : "Begin Adventure"}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {scenario && gameStarted && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Journey Continues...</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <p className="text-lg leading-relaxed whitespace-pre-line">
+                  {scenario.description}
+                </p>
+
+                <div className="space-y-3">
+                  <p className="font-semibold text-muted-foreground">What do you do?</p>
+                  {scenario.choices.map((choice, index) => (
+                    <Button
+                      key={index}
+                      onClick={() => makeChoice(index)}
+                      disabled={isLoading}
+                      variant="outline"
+                      className="w-full justify-start text-left h-auto py-4 px-6 hover:bg-primary/10"
+                    >
+                      <span className="font-semibold mr-3">{index + 1}.</span>
+                      <span>{choice}</span>
+                    </Button>
+                  ))}
+                </div>
+
+                {isLoading && (
+                  <div className="text-center text-muted-foreground animate-pulse">
+                    Determining your fate...
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+            
+          <a 
+            href="https://sigil-shift-core.lovable.app" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-primary hover:text-primary/80 underline underline-offset-4 mt-4"
+          >
+            Pax's Sigil Challenge →
+          </a>
         </div>
 
         {/* Dream Trip Game */}
