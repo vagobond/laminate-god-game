@@ -66,7 +66,7 @@ const DeathHistory = () => {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={() => navigate("/verse-adventure")}
+            onClick={() => navigate("/mini-games-hub")}
             className="gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -100,7 +100,7 @@ const DeathHistory = () => {
               <Button 
                 variant="outline" 
                 className="mt-6"
-                onClick={() => navigate("/verse-adventure")}
+                onClick={() => navigate("/mini-games-hub")}
               >
                 Start Your Adventure
               </Button>
@@ -144,7 +144,7 @@ const DeathHistory = () => {
           <Button 
             variant="outline" 
             size="lg"
-            onClick={() => navigate("/verse-adventure")}
+            onClick={() => navigate("/mini-games-hub")}
           >
             Return to Adventure
           </Button>

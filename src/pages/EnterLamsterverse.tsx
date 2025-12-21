@@ -81,7 +81,7 @@ const EnterLamsterverse = () => {
           <Button 
             variant="divine" 
             size="lg"
-            onClick={() => navigate("/verse-adventure")}
+            onClick={() => navigate("/mini-games-hub")}
           >
             Begin Exploration
           </Button>
