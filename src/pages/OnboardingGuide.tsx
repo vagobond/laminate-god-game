@@ -125,7 +125,7 @@ const OnboardingGuide = () => {
             size="lg"
             onClick={() => navigate("/powers")}
           >
-            Back to Hub
+            Back to Powers
           </Button>
           <Button 
             variant="divine" 

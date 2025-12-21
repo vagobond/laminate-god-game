@@ -153,7 +153,7 @@ const DeathHistory = () => {
             size="lg"
             onClick={() => navigate("/powers")}
           >
-            Back to Hub
+            Back to Powers
           </Button>
         </div>
       </div>
