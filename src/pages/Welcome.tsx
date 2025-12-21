@@ -40,7 +40,6 @@ const Welcome = () => {
             ref={videoRef}
             src="/video/xcrol.mp4"
             autoPlay
-            muted
             playsInline
             className="w-[80vmin] h-[80vmin] max-w-[600px] max-h-[600px] object-contain drop-shadow-[0_0_60px_rgba(139,92,246,0.6)]"
           />
