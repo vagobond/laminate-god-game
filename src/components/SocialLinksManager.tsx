@@ -17,6 +17,10 @@ import {
 import { Plus, Trash2, ExternalLink, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
+// Validation constants
+const MAX_URL_LENGTH = 500;
+const MAX_LABEL_LENGTH = 50;
+
 interface SocialLink {
   id: string;
   platform: string;
@@ -181,6 +185,18 @@ export const SocialLinksManager = ({ userId, profileData, onProfileChange }: Soc
       return;
     }
 
+    // Validate URL length
+    if (addFormState.url.length > MAX_URL_LENGTH) {
+      toast.error(`URL/value must be less than ${MAX_URL_LENGTH} characters`);
+      return;
+    }
+
+    // Validate label length
+    if (addFormState.label && addFormState.label.length > MAX_LABEL_LENGTH) {
+      toast.error(`Label must be less than ${MAX_LABEL_LENGTH} characters`);
+      return;
+    }
+
     setSaving("new");
     try {
       const { data, error } = await supabase
@@ -188,8 +204,8 @@ export const SocialLinksManager = ({ userId, profileData, onProfileChange }: Soc
         .insert({
           user_id: userId,
           platform: addFormState.platform,
-          url: addFormState.url,
-          label: addFormState.label || null,
+          url: addFormState.url.trim().slice(0, MAX_URL_LENGTH),
+          label: addFormState.label?.trim().slice(0, MAX_LABEL_LENGTH) || null,
           friendship_level_required: friendshipLevel,
         })
         .select()

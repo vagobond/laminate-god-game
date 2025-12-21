@@ -12,6 +12,20 @@ import BlockedUsersManager from "@/components/BlockedUsersManager";
 import FriendsList from "@/components/FriendsList";
 import { ProfileGameStats } from "@/components/ProfileGameStats";
 import { SocialLinksManager } from "@/components/SocialLinksManager";
+import { z } from "zod";
+
+// Validation constants
+const MAX_DISPLAY_NAME_LENGTH = 50;
+const MAX_BIO_LENGTH = 1000;
+const MAX_LINK_LENGTH = 200;
+const MAX_PHONE_LENGTH = 20;
+const MAX_EMAIL_LENGTH = 255;
+const MAX_URL_LENGTH = 200;
+
+// Validation schemas
+const urlSchema = z.string().max(MAX_URL_LENGTH, "URL is too long").optional().or(z.literal(""));
+const emailSchema = z.string().email("Invalid email format").max(MAX_EMAIL_LENGTH, "Email is too long").optional().or(z.literal(""));
+const phoneSchema = z.string().max(MAX_PHONE_LENGTH, "Phone number is too long").optional().or(z.literal(""));
 
 
 interface Profile {
@@ -191,24 +205,90 @@ const Profile = () => {
     }
   };
 
+  const validateProfileData = (): boolean => {
+    // Validate display name
+    if (displayName.length > MAX_DISPLAY_NAME_LENGTH) {
+      toast.error(`Name must be less than ${MAX_DISPLAY_NAME_LENGTH} characters`);
+      return false;
+    }
+
+    // Validate bio
+    if (bio.length > MAX_BIO_LENGTH) {
+      toast.error(`Bio must be less than ${MAX_BIO_LENGTH} characters`);
+      return false;
+    }
+
+    // Validate link
+    if (link && link.length > MAX_LINK_LENGTH) {
+      toast.error(`Link must be less than ${MAX_LINK_LENGTH} characters`);
+      return false;
+    }
+
+    // Validate email fields
+    if (contactData.private_email) {
+      const result = emailSchema.safeParse(contactData.private_email);
+      if (!result.success) {
+        toast.error("Invalid private email format");
+        return false;
+      }
+    }
+
+    if (contactData.contact_email) {
+      const result = emailSchema.safeParse(contactData.contact_email);
+      if (!result.success) {
+        toast.error("Invalid contact email format");
+        return false;
+      }
+    }
+
+    // Validate phone fields
+    if (contactData.phone_number && contactData.phone_number.length > MAX_PHONE_LENGTH) {
+      toast.error(`Phone number must be less than ${MAX_PHONE_LENGTH} characters`);
+      return false;
+    }
+
+    if (contactData.whatsapp && contactData.whatsapp.length > MAX_PHONE_LENGTH) {
+      toast.error(`WhatsApp number must be less than ${MAX_PHONE_LENGTH} characters`);
+      return false;
+    }
+
+    // Validate URL fields
+    if (contactData.instagram_url && contactData.instagram_url.length > MAX_URL_LENGTH) {
+      toast.error(`Instagram URL must be less than ${MAX_URL_LENGTH} characters`);
+      return false;
+    }
+
+    if (contactData.linkedin_url && contactData.linkedin_url.length > MAX_URL_LENGTH) {
+      toast.error(`LinkedIn URL must be less than ${MAX_URL_LENGTH} characters`);
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSave = async () => {
     if (!user) return;
+
+    // Validate before saving
+    if (!validateProfileData()) {
+      return;
+    }
 
     setSaving(true);
     try {
       const { error } = await supabase
         .from("profiles")
         .update({
-          display_name: displayName,
+          display_name: displayName.trim().slice(0, MAX_DISPLAY_NAME_LENGTH),
           avatar_url: avatarUrl,
-          bio: bio,
-          link: link,
-          whatsapp: contactData.whatsapp || null,
-          phone_number: contactData.phone_number || null,
-          private_email: contactData.private_email || null,
-          instagram_url: contactData.instagram_url || null,
-          linkedin_url: contactData.linkedin_url || null,
-          contact_email: contactData.contact_email || null,
+          bio: bio.trim().slice(0, MAX_BIO_LENGTH),
+          link: link.trim().slice(0, MAX_LINK_LENGTH) || null,
+          whatsapp: contactData.whatsapp.trim().slice(0, MAX_PHONE_LENGTH) || null,
+          phone_number: contactData.phone_number.trim().slice(0, MAX_PHONE_LENGTH) || null,
+          private_email: contactData.private_email.trim().slice(0, MAX_EMAIL_LENGTH) || null,
+          instagram_url: contactData.instagram_url.trim().slice(0, MAX_URL_LENGTH) || null,
+          linkedin_url: contactData.linkedin_url.trim().slice(0, MAX_URL_LENGTH) || null,
+          contact_email: contactData.contact_email.trim().slice(0, MAX_EMAIL_LENGTH) || null,
         })
         .eq("id", user.id);
 

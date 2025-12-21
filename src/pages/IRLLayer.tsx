@@ -35,7 +35,7 @@ const IRLLayer = () => {
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [user, setUser] = useState<User | null>(null);
-  const mapboxToken = "pk.eyJ1IjoiY2QtaW5kaWduaWZpZWQiLCJhIjoiY21pcDkydzdyMGJidDNkb2s0YTBybzA3cyJ9.LjvGRHio9ZXGWWOYIZmYIQ";
+  const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const [showClaimForm, setShowClaimForm] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{ lng: number; lat: number; city: string; country: string } | null>(null);
   const [hometownDescription, setHometownDescription] = useState("");
@@ -91,6 +91,21 @@ const IRLLayer = () => {
 
     setAllHometowns((data || []) as ProfileData[]);
   };
+
+  // Fetch Mapbox token from edge function
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("get-mapbox-token");
+        if (error) throw error;
+        setMapboxToken(data.token);
+      } catch (err) {
+        console.error("Failed to fetch Mapbox token:", err);
+        toast.error("Failed to load map");
+      }
+    };
+    fetchToken();
+  }, []);
 
   useEffect(() => {
     loadAllHometowns();
