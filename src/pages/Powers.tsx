@@ -33,11 +33,11 @@ const Powers = () => {
       <div className="text-center space-y-16 animate-fade-in max-w-4xl">
         <div className="space-y-6">
           <h1 className="text-5xl md:text-7xl font-bold text-glow">
-            Your Divine Powers Await
+            Your Powers Await
           </h1>
           <p className="text-xl md:text-2xl text-foreground/80 leading-relaxed max-w-2xl mx-auto">
-            As a newly appointed deity, you hold the power to shape reality itself. 
-            What will you do with this cosmic gift?
+            You hold the power to shape your networks and build your world. 
+            What will you create?
           </p>
         </div>
 

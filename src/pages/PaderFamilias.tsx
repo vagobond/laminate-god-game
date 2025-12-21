@@ -16,7 +16,7 @@ const PaderFamilias = () => {
           <div className="relative rounded-xl overflow-hidden mystical-glow border-2 border-primary/40">
             <img 
               src={paderImage} 
-              alt="Pader Familias - The First Order deity surrounded by mystical mushrooms"
+              alt="Pader Familias - The First Order creator surrounded by mystical mushrooms"
               className="w-full h-auto"
             />
           </div>
@@ -25,7 +25,7 @@ const PaderFamilias = () => {
             <div className="text-foreground/90 text-lg leading-relaxed space-y-4">
               <p>
                 <span className="text-primary font-semibold text-xl">Pader Familias</span>, 
-                the First Order, created the primordial Verse Layer—the foundation of all reality in The Laminate.
+                the First Order, created the primordial Verse Layer—the foundation of all reality in XCROL.
               </p>
               
               <p>

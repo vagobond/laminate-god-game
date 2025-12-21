@@ -509,7 +509,7 @@ const Profile = () => {
               <Textarea
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                placeholder="Tell the Laminate about you. What are your passions? What are your special skills? What is your mission in life?"
+                placeholder="Tell us about you. What are your passions? What are your special skills? What is your mission in life?"
                 className="min-h-[120px]"
               />
             </div>

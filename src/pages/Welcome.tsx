@@ -126,10 +126,10 @@ const Welcome = () => {
             </h1>
             <div className="space-y-4 max-w-2xl mx-auto">
               <p className="text-2xl md:text-3xl text-foreground/90 font-light leading-relaxed">
-                You've been made a god that can build worlds.
+                Take control of your own networks.
               </p>
               <p className="text-3xl md:text-4xl text-primary font-semibold">
-                Congratulations.
+                Build your world.
               </p>
             </div>
           </div>

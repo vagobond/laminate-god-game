@@ -9,25 +9,25 @@ const AboutLaminate = () => {
     <div className="min-h-screen p-4 md:p-8 flex items-center justify-center">
       <div className="max-w-4xl w-full animate-fade-in space-y-8">
         <h1 className="text-5xl md:text-6xl font-bold text-center text-glow mb-8">
-          What is The Laminate?
+          What is XCROL?
         </h1>
 
         <Card className="p-8 bg-card/60 backdrop-blur-sm border-primary/30 mystical-glow-teal">
           <div className="space-y-6 text-foreground/90 leading-relaxed">
             <div className="space-y-4">
               <h2 className="text-3xl font-bold text-primary">
-                The Laminate — A Multilayered Modular Metaverse
+                XCROL — Take Control of Your Own Networks
               </h2>
               
               <p className="text-lg">
-                The Laminate is an ever-expanding, collaborative world-building engine where creators of all kinds—writers, 
+                XCROL is an ever-expanding, collaborative world-building engine where creators of all kinds—writers, 
                 coders, filmmakers, musicians, designers, or anyone with a spark—craft modular "nodes" that stack, snap, 
                 and fuse together into infinite realities. Every new creation becomes a layer in a vast, living lattice of 
                 interconnected stories, systems, and worlds.
               </p>
 
               <div className="text-center py-4 space-y-2 text-xl font-semibold text-secondary italic">
-                <p>In The Laminate, imagination is not linear. It is stratified.</p>
+                <p>In XCROL, imagination is not linear. It is stratified.</p>
                 <p>Every idea becomes a module.</p>
                 <p>Every module becomes a node.</p>
                 <p>Every node becomes a layer.</p>
@@ -37,14 +37,14 @@ const AboutLaminate = () => {
 
             <div className="space-y-4 border-l-2 border-primary/50 pl-6">
               <h3 className="text-2xl font-bold text-primary">Core Concept</h3>
-              <p>At its foundation, The Laminate is a combinable, interoperable metaverse:</p>
+              <p>At its foundation, XCROL is a combinable, interoperable metaverse:</p>
               
               <ul className="space-y-2 list-none">
                 <li><strong className="text-accent">Modular</strong> — Every contribution is a discrete component that plugs into others.</li>
                 <li><strong className="text-accent">Multimedia</strong> — Story, code, art, video, audio, games, software systems—anything can be a node.</li>
                 <li><strong className="text-accent">Collaborative</strong> — Anyone can build on anyone else&apos;s work.</li>
                 <li><strong className="text-accent">Interoperable</strong> — Nodes obey universal structures so they can fit together, remix, extend, and evolve.</li>
-                <li><strong className="text-accent">AI-Harmonized</strong> — The Laminate Engine uses AI to "smooth" the seams between modules, ensuring continuity, aesthetic cohesion, and functional interoperability across wildly different media and styles.</li>
+                <li><strong className="text-accent">AI-Harmonized</strong> — The XCROL Engine uses AI to "smooth" the seams between modules, ensuring continuity, aesthetic cohesion, and functional interoperability across wildly different media and styles.</li>
               </ul>
 
               <p className="text-muted-foreground italic">
@@ -61,11 +61,11 @@ const AboutLaminate = () => {
             <div className="space-y-4 border-l-2 border-secondary/50 pl-6">
               <h3 className="text-2xl font-bold text-secondary">The Layers</h3>
               <p>
-                A layer is a unique pathway through the Laminate—a branching reality grown from one or more existing nodes. 
+                A layer is a unique pathway through XCROL—a branching reality grown from one or more existing nodes. 
                 Every layer is a playable or explorable chain of creative modules.
               </p>
               
-              <p>Because layers can branch infinitely, The Laminate contains:</p>
+              <p>Because layers can branch infinitely, XCROL contains:</p>
               <ul className="space-y-1 list-disc list-inside pl-4">
                 <li>fantasy worlds evolving into sci-fi futures</li>
                 <li>platforms built inside stories</li>
@@ -83,7 +83,7 @@ const AboutLaminate = () => {
 
             <div className="space-y-4 bg-muted/20 p-6 rounded-lg border border-accent/30">
               <h3 className="text-2xl font-bold text-accent">Points & Ecosystem Growth</h3>
-              <p>The Laminate rewards creators who seed popular worlds or foundational modules.</p>
+              <p>XCROL rewards creators who seed popular worlds or foundational modules.</p>
               
               <h4 className="text-xl font-semibold text-primary mt-4">Branch Points System:</h4>
               <ul className="space-y-2 list-disc list-inside pl-4">
@@ -122,7 +122,7 @@ const AboutLaminate = () => {
             </div>
 
             <div className="space-y-4 border-l-2 border-primary/50 pl-6">
-              <h3 className="text-2xl font-bold text-primary">The Laminate Engine</h3>
+              <h3 className="text-2xl font-bold text-primary">The XCROL Engine</h3>
               <p>At the center is a modular AI harmonization engine that:</p>
               
               <ul className="space-y-1 list-disc list-inside pl-4">
@@ -143,18 +143,18 @@ const AboutLaminate = () => {
 
             <div className="space-y-4 bg-primary/10 p-6 rounded-lg border border-primary/50 mt-6">
               <h3 className="text-2xl font-bold text-primary">The Vision</h3>
-              <p>The Laminate aims to be:</p>
+              <p>XCROL aims to be:</p>
               
               <ul className="space-y-2 list-disc list-inside pl-4">
                 <li>the first open metaverse built from player contributions instead of corporate silos</li>
                 <li>a place where creators keep their rights while enabling limitless remixing and transformation</li>
                 <li>a playground where no medium is excluded</li>
                 <li>a platform where stories, software, and worlds grow organically</li>
-                <li>a living record of collaborative creation, pressed together like the layers of a cosmic laminate</li>
+                <li>a living record of collaborative creation, layered together into something greater</li>
               </ul>
 
               <p className="text-xl font-bold text-center text-glow-gold mt-6">
-                Worlds aren&apos;t just built—they&apos;re laminated: infinite, overlapping, interoperable, and alive.
+                Worlds aren&apos;t just built—they&apos;re layered: infinite, overlapping, interoperable, and alive.
               </p>
             </div>
           </div>

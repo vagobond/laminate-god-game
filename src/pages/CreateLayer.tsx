@@ -99,7 +99,7 @@ const CreateLayer = () => {
 
         if (error) throw error;
 
-        toast.success("Your layer has been created and added to The Laminate!");
+        toast.success("Your layer has been created and added to XCROL!");
         navigate("/explore-layers");
       } catch (error) {
         console.error("Error creating layer:", error);
@@ -125,11 +125,11 @@ const CreateLayer = () => {
             <div className="space-y-6 pt-4">
               <div className="space-y-3">
                 <Label htmlFor="godName" className="text-lg font-semibold text-foreground">
-                  What is your divine name?
+                  What is your creator name?
                 </Label>
                 <Input
                   id="godName"
-                  placeholder="Enter your name as a deity..."
+                  placeholder="Enter your name as a creator..."
                   value={godName}
                   onChange={(e) => setGodName(e.target.value)}
                   className="bg-muted/20 border-primary/30 text-lg"
@@ -157,17 +157,17 @@ const CreateLayer = () => {
               {domain && (
                 <div className="space-y-3 animate-fade-in">
                   <Label htmlFor="philosophy" className="text-lg font-semibold text-foreground">
-                    What is your divine philosophy?
+                    What is your creative philosophy?
                   </Label>
                   <Textarea
                     id="philosophy"
-                    placeholder="What principles guide your actions? What do you believe in?"
+                    placeholder="What principles guide your work? What do you believe in?"
                     value={philosophy}
                     onChange={(e) => setPhilosophy(e.target.value)}
                     className="bg-muted/20 border-primary/30 min-h-[100px] text-lg"
                   />
                   <p className="text-sm text-muted-foreground">
-                    Like Baoism's "Stop doing Tox, Start doing Rox" or Pax's controlled chaos—what drives you?
+                    What drives your creative vision? What principles guide you?
                   </p>
                 </div>
               )}
@@ -211,7 +211,7 @@ const CreateLayer = () => {
                   )}
                   <p className="text-sm text-muted-foreground">
                     Connect your Lovable project via GitHub. After creating your project in Lovable, 
-                    connect it to GitHub and paste the repository URL here to link your build to the Laminate.
+                    connect it to GitHub and paste the repository URL here to link your build to XCROL.
                   </p>
                 </div>
               )}
@@ -220,7 +220,7 @@ const CreateLayer = () => {
             {godName && domain && philosophy && vision && githubUrl && (
               <div className="pt-6 animate-fade-in">
                 <Card className="p-6 bg-primary/10 border-primary/50">
-                  <h3 className="text-2xl font-bold text-primary mb-4">Your Divine Essence</h3>
+                  <h3 className="text-2xl font-bold text-primary mb-4">Your Creative Essence</h3>
                   <div className="space-y-2 text-foreground/90">
                     <p><strong className="text-primary">Name:</strong> {godName}</p>
                     <p><strong className="text-primary">Domain:</strong> {domain}</p>
