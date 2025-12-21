@@ -69,6 +69,13 @@ const Powers = () => {
             CREATE
           </Button>
         </div>
+
+        <button 
+          onClick={() => navigate("/getting-started")}
+          className="text-foreground/60 hover:text-foreground transition-colors underline underline-offset-4 text-sm"
+        >
+          Getting Started / FAQ
+        </button>
       </div>
     </div>
   );
