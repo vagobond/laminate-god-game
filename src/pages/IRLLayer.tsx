@@ -325,6 +325,23 @@ const IRLLayer = () => {
 
   return (
     <div className="min-h-screen p-4 space-y-6">
+      {/* Every Country Banner */}
+      <div 
+        onClick={() => navigate("/mini-games-hub")}
+        className="max-w-7xl mx-auto bg-gradient-to-r from-primary/20 via-purple-600/20 to-primary/20 border border-primary/30 rounded-lg p-4 cursor-pointer hover:bg-primary/30 transition-all group"
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Globe className="w-6 h-6 text-primary animate-pulse" />
+            <div>
+              <p className="text-lg font-semibold text-foreground">A person from every country in the world...</p>
+              <p className="text-sm text-muted-foreground">Help us reach this goal! Invite friends from unrepresented countries.</p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform" />
+        </div>
+      </div>
+
       <div className="flex justify-between items-center max-w-7xl mx-auto flex-wrap gap-4">
         <div>
           <h1 className="text-4xl md:text-5xl font-bold text-glow">The IRL Layer</h1>
