@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 const Welcome = () => {
   const navigate = useNavigate();
   const [animationPhase, setAnimationPhase] = useState<"video" | "dissolve" | "complete">("video");
+  const [isMuted, setIsMuted] = useState(() => localStorage.getItem("audio-muted") !== "false");
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -21,6 +22,21 @@ const Welcome = () => {
     video.addEventListener("ended", handleEnded);
     return () => video.removeEventListener("ended", handleEnded);
   }, []);
+
+  useEffect(() => {
+    const handleMuteChange = (e: CustomEvent<boolean>) => {
+      setIsMuted(e.detail);
+    };
+
+    window.addEventListener("audio-mute-changed", handleMuteChange as EventListener);
+    return () => window.removeEventListener("audio-mute-changed", handleMuteChange as EventListener);
+  }, []);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 overflow-hidden">
@@ -40,7 +56,7 @@ const Welcome = () => {
             ref={videoRef}
             src="/video/xcrol.mp4"
             autoPlay
-            muted
+            muted={isMuted}
             playsInline
             className="w-[80vmin] h-[80vmin] max-w-[600px] max-h-[600px] object-contain drop-shadow-[0_0_60px_rgba(139,92,246,0.6)]"
           />
