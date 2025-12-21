@@ -232,7 +232,7 @@ const BranchFromVerse = () => {
             size="lg"
             onClick={() => navigate("/powers")}
           >
-            Back to Hub
+            Back to Powers
           </Button>
           {branchName && connection && branchConcept && githubUrl && (
             <Button 

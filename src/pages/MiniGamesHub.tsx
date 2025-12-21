@@ -151,7 +151,7 @@ const VerseAdventure = () => {
             className="gap-2"
           >
             <Home className="w-4 h-4" />
-            Back to Hub
+            Back to Powers
           </Button>
         </div>
         <div className="text-center mb-8">

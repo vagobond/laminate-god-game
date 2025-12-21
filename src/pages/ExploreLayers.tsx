@@ -133,7 +133,7 @@ const ExploreLayers = () => {
             size="lg"
             onClick={() => navigate("/creation-hub")}
           >
-            Back to Hub
+            Back to Creation Hub
           </Button>
         </div>
       </div>

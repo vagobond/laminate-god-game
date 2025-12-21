@@ -240,7 +240,7 @@ const CreateLayer = () => {
             size="lg"
             onClick={() => navigate("/creation-hub")}
           >
-            Back to Hub
+            Back to Creation Hub
           </Button>
           {godName && domain && philosophy && vision && githubUrl && (
             <Button 
