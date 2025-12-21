@@ -23,31 +23,37 @@ const UserMenu = () => {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const reset = () => {
+      setAvatarUrl(null);
+      setDisplayName(null);
+      setIsAdmin(false);
+      setUnreadCount(0);
+    };
+
+    // IMPORTANT: keep auth change handler synchronous to avoid auth deadlocks
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
-        checkAdminStatus(session.user.id);
-        loadUnreadCount(session.user.id);
-      } else {
-        setAvatarUrl(null);
-        setDisplayName(null);
-        setIsAdmin(false);
-        setUnreadCount(0);
-      }
+      if (!session?.user) reset();
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
-        checkAdminStatus(session.user.id);
-        loadUnreadCount(session.user.id);
-      }
+      if (!session?.user) reset();
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    // Defer data fetches outside onAuthStateChange to avoid deadlocks
+    loadProfile(user.id);
+    checkAdminStatus(user.id);
+    loadUnreadCount(user.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const loadUnreadCount = async (userId: string) => {
     const { count } = await supabase
