@@ -8,6 +8,13 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// Validation constants
+const MAX_NAME_LENGTH = 100;
+const MAX_DOMAIN_LENGTH = 200;
+const MAX_PHILOSOPHY_LENGTH = 1000;
+const MAX_VISION_LENGTH = 2000;
+const MAX_GITHUB_URL_LENGTH = 200;
+
 const CreateLayer = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -33,9 +40,37 @@ const CreateLayer = () => {
     return true;
   };
 
+  const validateInputs = (): boolean => {
+    if (godName.length > MAX_NAME_LENGTH) {
+      toast.error(`Name must be less than ${MAX_NAME_LENGTH} characters`);
+      return false;
+    }
+    if (domain.length > MAX_DOMAIN_LENGTH) {
+      toast.error(`Domain must be less than ${MAX_DOMAIN_LENGTH} characters`);
+      return false;
+    }
+    if (philosophy.length > MAX_PHILOSOPHY_LENGTH) {
+      toast.error(`Philosophy must be less than ${MAX_PHILOSOPHY_LENGTH} characters`);
+      return false;
+    }
+    if (vision.length > MAX_VISION_LENGTH) {
+      toast.error(`Vision must be less than ${MAX_VISION_LENGTH} characters`);
+      return false;
+    }
+    if (githubUrl.length > MAX_GITHUB_URL_LENGTH) {
+      toast.error(`GitHub URL must be less than ${MAX_GITHUB_URL_LENGTH} characters`);
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async () => {
     if (!validateGithubUrl(githubUrl)) {
       toast.error("Please enter a valid GitHub repository URL");
+      return;
+    }
+
+    if (!validateInputs()) {
       return;
     }
 
@@ -52,13 +87,13 @@ const CreateLayer = () => {
         const { error } = await supabase
           .from('layers')
           .insert({
-            name: godName,
-            creator_name: godName,
-            domain: domain,
-            philosophy: philosophy,
-            vision: vision,
-            github_repo_url: githubUrl,
-            description: `${domain} - ${philosophy}`,
+            name: godName.trim().slice(0, MAX_NAME_LENGTH),
+            creator_name: godName.trim().slice(0, MAX_NAME_LENGTH),
+            domain: domain.trim().slice(0, MAX_DOMAIN_LENGTH),
+            philosophy: philosophy.trim().slice(0, MAX_PHILOSOPHY_LENGTH),
+            vision: vision.trim().slice(0, MAX_VISION_LENGTH),
+            github_repo_url: githubUrl.trim().slice(0, MAX_GITHUB_URL_LENGTH),
+            description: `${domain.trim().slice(0, 200)} - ${philosophy.trim().slice(0, 200)}`,
             user_id: session.user.id
           });
 
