@@ -142,12 +142,22 @@ export const EveryCountryGame = () => {
 
     setSending(true);
 
-    const { error } = await supabase.from("country_invites").insert({
+    // First get user's display name for the email
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("display_name, email")
+      .eq("id", user.id)
+      .single();
+
+    const inviterName = profile?.display_name || profile?.email?.split("@")[0] || "A Laminate user";
+
+    // Insert the invite
+    const { data: inviteData, error } = await supabase.from("country_invites").insert({
       inviter_id: user.id,
       invitee_email: inviteeEmail.trim().toLowerCase(),
       target_country: inviteType === "existing" ? selectedCountry : null,
       is_new_country: inviteType === "new"
-    });
+    }).select().single();
 
     if (error) {
       if (error.code === "23505") {
@@ -155,15 +165,47 @@ export const EveryCountryGame = () => {
       } else {
         toast({ title: "Failed to send invite", description: error.message, variant: "destructive" });
       }
-    } else {
-      toast({ title: "Invite sent!", description: `Invitation sent to ${inviteeEmail}` });
-      setInviteeEmail("");
-      setSelectedCountry("");
-      await Promise.all([
-        loadInvites(user.id),
-        loadAvailableInvites(user.id)
-      ]);
+      setSending(false);
+      return;
     }
+
+    // Send the email via edge function
+    try {
+      const { error: emailError } = await supabase.functions.invoke("send-country-invite", {
+        body: {
+          inviteeEmail: inviteeEmail.trim().toLowerCase(),
+          inviterName,
+          targetCountry: inviteType === "existing" ? selectedCountry : null,
+          inviteCode: inviteData.invite_code,
+          isNewCountry: inviteType === "new"
+        }
+      });
+
+      if (emailError) {
+        console.error("Email sending failed:", emailError);
+        toast({ 
+          title: "Invite created but email failed", 
+          description: "The invite was saved but the email couldn't be sent. You can share the invite code manually.",
+          variant: "destructive" 
+        });
+      } else {
+        toast({ title: "Invite sent!", description: `Invitation email sent to ${inviteeEmail}` });
+      }
+    } catch (emailErr) {
+      console.error("Email function error:", emailErr);
+      toast({ 
+        title: "Invite created", 
+        description: "The invite was saved but the email couldn't be sent.",
+        variant: "destructive" 
+      });
+    }
+
+    setInviteeEmail("");
+    setSelectedCountry("");
+    await Promise.all([
+      loadInvites(user.id),
+      loadAvailableInvites(user.id)
+    ]);
 
     setSending(false);
   };
