@@ -57,6 +57,7 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/u/:userId" element={<PublicProfile />} />
+          <Route path="/@:username" element={<PublicProfile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/getting-started" element={<GettingStarted />} />
