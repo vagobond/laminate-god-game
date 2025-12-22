@@ -147,7 +147,7 @@ export function RoughLivingGame() {
   const scenes: Record<string, Scene> = {
     intro: {
       title: "The Call of the Road",
-      description: `You wake up in a park in Portland, Oregon. The mist drifts through the trees like something out of a novel. You have $${gameState.cash.toFixed(2)} in your pocket, a Swiss Army knife, a lighter, and a wool blanket. Your destination: ${gameState.destination}.\n\nAs Chris Damitio wrote: "The call of the road is irresistible. I am seduced by the desire to see what lies beyond the bend."\n\nYou're a grasshopper in an ant's world. Time to learn the art of rough living.`,
+      description: `You wake up in a park in Portland, Oregon. The mist drifts through the trees like something out of a novel. You have $${gameState.cash.toFixed(2)} in your pocket, a Swiss Army knife, a lighter, and a wool blanket. Your destination: ${gameState.destination}.\n\nAs CD Damitio wrote: "The call of the road is irresistible. I am seduced by the desire to see what lies beyond the bend."\n\nYou're a grasshopper in an ant's world. Time to learn the art of rough living.`,
       lesson: "LESSON: The Three A's - Abilities (what you can do), Accumulations (your stuff), and Access (who you know and where you can go). These are your tools for survival.",
       choices: [
         {
@@ -1195,7 +1195,7 @@ export function RoughLivingGame() {
             Rough Living: The Life of a Vagabond
           </CardTitle>
           <CardDescription className="text-amber-200/70">
-            An Oregon Trail-style adventure based on Chris Damitio's urban survival manual
+            An Oregon Trail-style adventure based on CD Damitio's urban survival manual
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
