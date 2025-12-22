@@ -74,11 +74,20 @@ const PublicProfile = () => {
       if (userId) {
         setResolvedUserId(userId);
       } else if (username) {
+        const handle = username.trim();
+        if (!handle.startsWith("@")) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
+
+        const normalizedUsername = handle.slice(1).toLowerCase();
+
         // Use secure RPC function to resolve username (works without authentication)
         const { data, error } = await supabase.rpc("resolve_username_to_id", {
-          target_username: username,
+          target_username: normalizedUsername,
         });
-        
+
         if (error || !data) {
           console.error("Username resolution failed:", error);
           setNotFound(true);
