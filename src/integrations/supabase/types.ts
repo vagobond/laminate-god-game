@@ -381,6 +381,7 @@ export type Database = {
           phone_number: string | null
           private_email: string | null
           updated_at: string
+          username: string | null
           whatsapp: string | null
         }
         Insert: {
@@ -413,6 +414,7 @@ export type Database = {
           phone_number?: string | null
           private_email?: string | null
           updated_at?: string
+          username?: string | null
           whatsapp?: string | null
         }
         Update: {
@@ -445,6 +447,7 @@ export type Database = {
           phone_number?: string | null
           private_email?: string | null
           updated_at?: string
+          username?: string | null
           whatsapp?: string | null
         }
         Relationships: []

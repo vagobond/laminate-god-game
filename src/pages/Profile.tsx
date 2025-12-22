@@ -34,6 +34,7 @@ const phoneSchema = z.string().max(MAX_PHONE_LENGTH, "Phone number is too long")
 interface Profile {
   id: string;
   display_name: string | null;
+  username: string | null;
   avatar_url: string | null;
   bio: string | null;
   link: string | null;
@@ -77,6 +78,8 @@ const Profile = () => {
   const [uploading, setUploading] = useState(false);
   
   const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
+  const [usernameError, setUsernameError] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [bio, setBio] = useState("");
   const [link, setLink] = useState("");
@@ -154,6 +157,7 @@ const Profile = () => {
         const profileData = data as unknown as Profile;
         setProfile(profileData);
         setDisplayName(profileData.display_name || "");
+        setUsername(profileData.username || "");
         setAvatarUrl(profileData.avatar_url || "");
         setBio(profileData.bio || "");
         setLink(profileData.link || "");
@@ -256,22 +260,31 @@ const Profile = () => {
     }
   };
 
+  const validateUsername = (value: string): string | null => {
+    if (!value) return null; // Empty is allowed
+    if (value.length < 3) return "Username must be at least 3 characters";
+    if (value.length > 30) return "Username must be less than 30 characters";
+    if (!/^[a-z0-9_]+$/.test(value)) return "Only lowercase letters, numbers, and underscores allowed";
+    return null;
+  };
+
+  const handleUsernameChange = (value: string) => {
+    const lowercased = value.toLowerCase();
+    setUsername(lowercased);
+    setUsernameError(validateUsername(lowercased));
+  };
+
   const validateProfileData = (): boolean => {
+    // Validate username
+    const usernameValidation = validateUsername(username);
+    if (usernameValidation) {
+      toast.error(usernameValidation);
+      return false;
+    }
+
     // Validate display name
     if (displayName.length > MAX_DISPLAY_NAME_LENGTH) {
       toast.error(`Name must be less than ${MAX_DISPLAY_NAME_LENGTH} characters`);
-      return false;
-    }
-
-    // Validate bio
-    if (bio.length > MAX_BIO_LENGTH) {
-      toast.error(`Bio must be less than ${MAX_BIO_LENGTH} characters`);
-      return false;
-    }
-
-    // Validate link
-    if (link && link.length > MAX_LINK_LENGTH) {
-      toast.error(`Link must be less than ${MAX_LINK_LENGTH} characters`);
       return false;
     }
 
@@ -331,6 +344,7 @@ const Profile = () => {
         .from("profiles")
         .update({
           display_name: displayName.trim().slice(0, MAX_DISPLAY_NAME_LENGTH),
+          username: username.trim() || null,
           avatar_url: avatarUrl,
           bio: bio.trim().slice(0, MAX_BIO_LENGTH),
           link: link.trim().slice(0, MAX_LINK_LENGTH) || null,
@@ -355,7 +369,13 @@ const Profile = () => {
         })
         .eq("id", user.id);
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          toast.error("This username is already taken");
+          return;
+        }
+        throw error;
+      }
 
       toast.success("Profile saved successfully!");
     } catch (error) {
@@ -399,7 +419,9 @@ const Profile = () => {
     : null;
 
   const copyProfileLink = () => {
-    const profileUrl = `${window.location.origin}/u/${user.id}`;
+    const profileUrl = username 
+      ? `${window.location.origin}/@${username}`
+      : `${window.location.origin}/u/${user.id}`;
     navigator.clipboard.writeText(profileUrl);
     toast.success("Profile link copied to clipboard!");
   };
@@ -419,7 +441,7 @@ const Profile = () => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => navigate(`/u/${user.id}`)}
+              onClick={() => navigate(username ? `/@${username}` : `/u/${user.id}`)}
             >
               <Eye className="w-4 h-4 mr-2" />
               View Profile
@@ -485,7 +507,29 @@ const Profile = () => {
               />
             </div>
 
-            {/* Hometown (Read-only, from IRL Layer) */}
+            {/* Username */}
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                Username
+              </label>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">@</span>
+                <Input
+                  value={username}
+                  onChange={(e) => handleUsernameChange(e.target.value)}
+                  placeholder="your_username"
+                  className={usernameError ? "border-destructive" : ""}
+                />
+              </div>
+              {usernameError && (
+                <p className="text-sm text-destructive mt-1">{usernameError}</p>
+              )}
+              {username && !usernameError && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Your profile will be available at xcrol.com/@{username}
+                </p>
+              )}
+            </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-2 block flex items-center gap-2">
                 <MapPin className="w-4 h-4" />

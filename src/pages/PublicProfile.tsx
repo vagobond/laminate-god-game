@@ -45,7 +45,7 @@ interface Profile {
 type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | null;
 
 const PublicProfile = () => {
-  const { userId } = useParams<{ userId: string }>();
+  const { userId, username } = useParams<{ userId?: string; username?: string }>();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,6 +54,7 @@ const PublicProfile = () => {
   const [friendshipLevel, setFriendshipLevel] = useState<FriendshipLevel>(null);
   const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [blocking, setBlocking] = useState(false);
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -67,13 +68,36 @@ const PublicProfile = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Resolve username to userId if needed
+  useEffect(() => {
+    const resolveUser = async () => {
+      if (userId) {
+        setResolvedUserId(userId);
+      } else if (username) {
+        // Look up user by username
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("username", username.toLowerCase())
+          .maybeSingle();
+        
+        if (error || !data) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
+        setResolvedUserId(data.id);
+      }
+    };
+    resolveUser();
+  }, [userId, username]);
+
   // Load profile with secure function when we have user context
   useEffect(() => {
-    if (userId) {
-      // Wait a bit for auth to initialize, then load profile
-      loadSecureProfile(userId, currentUser?.id);
+    if (resolvedUserId) {
+      loadSecureProfile(resolvedUserId, currentUser?.id);
     }
-  }, [userId, currentUser]);
+  }, [resolvedUserId, currentUser]);
 
   const loadSecureProfile = async (profileId: string, viewerId: string | null) => {
     try {
@@ -128,10 +152,10 @@ const PublicProfile = () => {
   const canSeeBuddyFields = canSeeCloseFriendFields || friendshipLevel === "buddy";
   const canSeeAcquaintanceFields = canSeeBuddyFields || friendshipLevel === "friendly_acquaintance";
 
-  const isOwnProfile = currentUser?.id === userId;
+  const isOwnProfile = currentUser?.id === resolvedUserId;
 
   const handleBlockUser = async () => {
-    if (!currentUser || !userId) return;
+    if (!currentUser || !resolvedUserId) return;
     
     setBlocking(true);
     try {
@@ -139,7 +163,7 @@ const PublicProfile = () => {
         .from("user_blocks")
         .insert({
           blocker_id: currentUser.id,
-          blocked_id: userId,
+          blocked_id: resolvedUserId,
         });
 
       if (error) throw error;
@@ -201,9 +225,9 @@ const PublicProfile = () => {
             Back
           </Button>
           <div className="flex gap-2">
-            {userId && friendshipLevel && (
+            {resolvedUserId && friendshipLevel && (
               <SendMessageDialog
-                recipientId={userId}
+                recipientId={resolvedUserId}
                 recipientName={profile?.display_name || "User"}
                 friendshipLevel={friendshipLevel}
                 availablePlatforms={{
@@ -215,7 +239,7 @@ const PublicProfile = () => {
                 }}
               />
             )}
-            {userId && <AddFriendButton profileUserId={userId} />}
+            {resolvedUserId && <AddFriendButton profileUserId={resolvedUserId} />}
             {currentUser && !isOwnProfile && (
               <Button
                 variant="outline"
@@ -396,16 +420,16 @@ const PublicProfile = () => {
         </Card>
 
         {/* Friends List */}
-        {userId && (
+        {resolvedUserId && (
           <FriendsList 
-            userId={userId} 
+            userId={resolvedUserId} 
             viewerId={currentUser?.id || null}
           />
         )}
 
         {/* Mini-Game Stats */}
-        {userId && (
-          <ProfileGameStats userId={userId} />
+        {resolvedUserId && (
+          <ProfileGameStats userId={resolvedUserId} />
         )}
       </div>
 
