@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Skull, Trophy, Zap, Home, Globe, Heart, Sparkles, Plane, CircleDot, Award, Play } from "lucide-react";
+import { Skull, Trophy, Zap, Home, Globe, Heart, Sparkles, Plane, CircleDot, Award, Play, Tent } from "lucide-react";
 import { WolfemonGame } from "@/components/WolfemonGame";
 import { ArtIFucked } from "@/components/ArtIFucked";
 import { SlyDoubtGame } from "@/components/SlyDoubtGame";
@@ -15,6 +15,7 @@ import ResolutionGames from "@/components/ResolutionGames";
 import { EveryCountryGame } from "@/components/EveryCountryGame";
 import { GameModal } from "@/components/GameModal";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { RoughLivingGame } from "@/components/RoughLivingGame";
 
 interface Scenario {
   description: string;
@@ -32,7 +33,7 @@ interface GameStats {
   total_scenarios: number;
 }
 
-type GameType = "country" | "loneliness" | "slyDoubt" | "verse" | "dreamTrip" | "wolfemon" | "artIFucked" | "resolution" | null;
+type GameType = "country" | "loneliness" | "slyDoubt" | "verse" | "dreamTrip" | "wolfemon" | "artIFucked" | "resolution" | "roughLiving" | null;
 
 interface GameCardProps {
   title: string;
@@ -372,6 +373,13 @@ const MiniGamesHub = () => {
       description: "Official certification for making AND breaking resolutions.",
       icon: <Trophy className="w-5 h-5" />,
       badge: "Comedy"
+    },
+    {
+      id: "roughLiving" as GameType,
+      title: "Rough Living",
+      description: "Navigate the challenges of being a vagabond. Manage health, hunger, warmth, and morale to survive.",
+      icon: <Tent className="w-5 h-5" />,
+      badge: "Survival"
     }
   ];
 
@@ -393,6 +401,8 @@ const MiniGamesHub = () => {
         return <ArtIFucked />;
       case "resolution":
         return <ResolutionGames />;
+      case "roughLiving":
+        return <RoughLivingGame />;
       default:
         return null;
     }
