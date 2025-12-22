@@ -100,7 +100,9 @@ export function RoughLivingGame() {
       }
       
       // Check for victory
-      if (newState.journeyProgress >= 100) {
+      // For Hawaii, must have Ocean Passage to complete the journey
+      const canReachDestination = newState.destination !== "Hawaii" || newState.inventory.includes("Ocean Passage");
+      if (newState.journeyProgress >= 100 && canReachDestination) {
         setGameWon(true);
         toast.success(`You made it to ${newState.destination}! You're living like a prince now.`);
       }
@@ -136,11 +138,22 @@ export function RoughLivingGame() {
     const warmthLoss = gameState.location.includes("Oregon") ? 15 : 5;
     const hungerIncrease = 20;
     
+    let newProgress = gameState.journeyProgress + 8 + Math.floor(Math.random() * 5);
+    
+    // For Hawaii, cap progress at 70% until player has Ocean Passage
+    if (gameState.destination === "Hawaii" && !hasItem("Ocean Passage") && newProgress >= 70) {
+      newProgress = 70;
+    }
+    
     updateState({
       day: gameState.day + 1,
       warmth: Math.max(0, gameState.warmth - warmthLoss + (hasItem("Wool Blanket") ? 10 : 0)),
       hunger: Math.min(100, gameState.hunger + hungerIncrease),
-      journeyProgress: Math.min(100, gameState.journeyProgress + 8 + Math.floor(Math.random() * 5)),
+      journeyProgress: Math.min(100, newProgress),
+      // Auto-redirect to Pacific crossing when reaching the coast for Hawaii
+      currentScene: (gameState.destination === "Hawaii" && !hasItem("Ocean Passage") && newProgress >= 70) 
+        ? "pacific_crossing" 
+        : gameState.currentScene,
     });
   };
 
@@ -1148,6 +1161,289 @@ export function RoughLivingGame() {
       description: "No one needs help today. That's okay. Tomorrow's another day.",
       choices: [
         { text: "Try something else", outcome: () => updateState({ currentScene: "work_hunt" }) },
+      ],
+    },
+    
+    // Hawaii-specific scenes - crossing the Pacific
+    pacific_crossing: {
+      title: "The Edge of the Continent",
+      description: `You've made it to the West Coast. The Pacific Ocean stretches endlessly before you. ${gameState.destination} lies 2,400 miles across open water.\n\nYou can't exactly hitchhike across the Pacific. You're going to need another way to cross: a boat ride, a plane ticket, a very long swim, advanced alien technology, or magic.\n\nA weathered sailor at the marina eyes you. 'Looking to get to Hawaii, kid? There are ways... if you're creative.'`,
+      lesson: "LESSON: Sometimes the road ends at the ocean. A true vagabond adapts and finds another way.",
+      choices: [
+        {
+          text: "Ask the sailor about working on a boat",
+          outcome: () => updateState({ currentScene: "sailor_offer" }),
+        },
+        {
+          text: "Look for cheap flights at the library",
+          outcome: () => updateState({ currentScene: "flight_search" }),
+        },
+        {
+          text: "Search the docks for opportunities",
+          outcome: () => updateState({ currentScene: "dock_search" }),
+        },
+        {
+          text: "Attempt to swim (not recommended)",
+          outcome: () => {
+            if (gameState.skills.survival >= 8) {
+              updateState({ currentScene: "swim_miracle" });
+            } else {
+              setGameOver(true);
+              toast.error("The Pacific Ocean claims another soul. 2,400 miles was a bit ambitious.");
+            }
+          },
+        },
+      ],
+    },
+    
+    sailor_offer: {
+      title: "The Old Sailor's Proposition",
+      description: `'Name's Captain Pete. I'm taking a sailboat to Maui next week. Need crew - someone to keep watch, help with sails, clean the galley. It's a three-week voyage, hard work, but you'll get there.'\n\nHe looks you over. 'You got any sailing experience? No? Doesn't matter. You seem tough enough. I'll teach you. No pay, but you get there free and fed.'`,
+      choices: [
+        {
+          text: "Accept the offer - three weeks at sea sounds like an adventure",
+          outcome: () => {
+            addItem("Ocean Passage");
+            updateState({ 
+              currentScene: "sailing_to_hawaii",
+              morale: gameState.morale + 20,
+            });
+            increaseSkill("survival", 2);
+          },
+        },
+        {
+          text: "Ask if there are faster options",
+          outcome: () => updateState({ currentScene: "faster_options" }),
+        },
+        {
+          text: "Decline and keep looking",
+          outcome: () => updateState({ currentScene: "dock_search" }),
+        },
+      ],
+    },
+    
+    flight_search: {
+      title: "The Expensive Option",
+      description: `At the library, you search for flights. The cheapest one-way ticket to Honolulu is $189. You have $${gameState.cash.toFixed(2)}.\n\n${gameState.cash >= 189 ? "You could afford it... barely." : "Way out of your budget. Time for Plan B."}\n\nYou also notice a posting: 'VOLUNTEER NEEDED: Help escort elderly passenger to Hawaii. Free flight included.'`,
+      choices: [
+        ...(gameState.cash >= 189 ? [{
+          text: "Buy the flight ticket ($189)",
+          outcome: () => {
+            addItem("Ocean Passage");
+            updateState({ 
+              currentScene: "flying_to_hawaii",
+              cash: gameState.cash - 189,
+            });
+          },
+        }] : []),
+        {
+          text: "Look into the escort volunteer opportunity",
+          outcome: () => {
+            if (gameState.skills.socializing >= 3 || Math.random() > 0.5) {
+              addItem("Ocean Passage");
+              updateState({ currentScene: "escort_success" });
+              increaseSkill("socializing");
+            } else {
+              updateState({ currentScene: "escort_fail" });
+            }
+          },
+        },
+        {
+          text: "Go back to the docks",
+          outcome: () => updateState({ currentScene: "pacific_crossing" }),
+        },
+      ],
+    },
+    
+    dock_search: {
+      title: "Working the Docks",
+      description: "The marina is full of opportunities if you know where to look. Yacht owners sometimes need last-minute crew. Fishing boats need deckhands. Cargo ships occasionally take on workers.\n\nYou also notice a strange shimmer near one of the piers... probably just the heat off the water. Probably.",
+      choices: [
+        {
+          text: "Ask yacht owners if they need crew",
+          outcome: () => {
+            if (Math.random() > 0.6) {
+              addItem("Ocean Passage");
+              updateState({ currentScene: "yacht_crew" });
+              toast.success("A tech billionaire needs someone to help sail his yacht to Hawaii!");
+            } else {
+              updateState({ currentScene: "no_yacht_luck", morale: gameState.morale - 5 });
+            }
+          },
+        },
+        {
+          text: "Check with the fishing boats",
+          outcome: () => updateState({ currentScene: "fishing_boat" }),
+        },
+        {
+          text: "Investigate the strange shimmer",
+          outcome: () => updateState({ currentScene: "mysterious_shimmer" }),
+        },
+      ],
+    },
+    
+    mysterious_shimmer: {
+      title: "Through the Looking Glass",
+      description: "The shimmer grows brighter as you approach. You could swear you see palm trees through it... and is that Diamond Head in the distance?\n\nA small grey figure with enormous eyes appears briefly. 'Wrong timeline. But I can give you a lift if you keep quiet about it.'\n\nThis is either the strangest opportunity of your life or you really need to eat something.",
+      lesson: "LESSON: Sometimes the universe provides in mysterious ways. Don't question free transportation.",
+      choices: [
+        {
+          text: "Step through the portal (alien technology? magic? who cares!)",
+          outcome: () => {
+            addItem("Ocean Passage");
+            updateState({ 
+              currentScene: "alien_transport",
+              journeyProgress: 99,
+            });
+            toast.success("Well, that was unexpected. But you're almost there!");
+          },
+        },
+        {
+          text: "Back away slowly - you prefer conventional travel",
+          outcome: () => updateState({ currentScene: "pacific_crossing" }),
+        },
+      ],
+    },
+    
+    sailing_to_hawaii: {
+      title: "Three Weeks at Sea",
+      description: "Captain Pete's boat is small but seaworthy. You learn to read the wind, trim the sails, and navigate by the stars. It's hard work but there's something pure about it.\n\n'The vagabond life isn't about the destination,' Pete says one night under a sky full of stars. 'It's about the journey. You're learning that.'\n\nOn day 18, you spot land. The green mountains of Maui rise from the sea.",
+      choices: [
+        {
+          text: "Complete the journey to Hawaii",
+          outcome: () => {
+            updateState({ journeyProgress: 100 });
+          },
+        },
+      ],
+    },
+    
+    flying_to_hawaii: {
+      title: "The Easy Way",
+      description: "Five hours later, you're touching down in Honolulu. It's not the most vagabond way to travel, but sometimes you gotta do what you gotta do. The warm Hawaiian air hits you as you step off the plane. You made it.",
+      choices: [
+        {
+          text: "Step into your new Hawaiian life",
+          outcome: () => {
+            updateState({ journeyProgress: 100 });
+          },
+        },
+      ],
+    },
+    
+    escort_success: {
+      title: "Free Flight Secured",
+      description: "Mrs. Nakamura is 87 and heading home to Honolulu. Her family pays for an escort to help her through the airports. You spend the flight hearing stories about Hawaii in the 1950s. 'You remind me of my grandson,' she says. 'A wanderer's spirit.'\n\nShe gives you her number. 'Call if you need anything on the island. We take care of our own.'",
+      choices: [
+        {
+          text: "Thank her and prepare for landing",
+          outcome: () => {
+            updateState({ journeyProgress: 100 });
+            increaseSkill("socializing", 2);
+          },
+        },
+      ],
+    },
+    
+    escort_fail: {
+      title: "Position Filled",
+      description: "'Sorry, we already found someone.' Back to the drawing board. There has to be another way.",
+      choices: [
+        { text: "Keep searching", outcome: () => updateState({ currentScene: "pacific_crossing" }) },
+      ],
+    },
+    
+    yacht_crew: {
+      title: "Billionaire's Boat",
+      description: "The yacht is nicer than any apartment you've ever lived in. The owner, some tech guy, barely notices you exist, but his captain appreciates the help. A week later, you're pulling into Honolulu Harbor.",
+      choices: [
+        {
+          text: "Disembark into your new life",
+          outcome: () => {
+            updateState({ journeyProgress: 100 });
+          },
+        },
+      ],
+    },
+    
+    no_yacht_luck: {
+      title: "No Takers Today",
+      description: "The yacht owners either have full crews or aren't going anywhere near Hawaii. Keep trying.",
+      choices: [
+        { text: "Try another approach", outcome: () => updateState({ currentScene: "pacific_crossing" }) },
+      ],
+    },
+    
+    fishing_boat: {
+      title: "The Tuna Run",
+      description: "A grizzled fisherman spits tobacco and considers your offer. 'We're heading to the fishing grounds near the Big Island. Hard work - 16-hour days. You'll stink of fish for a month. But I'll drop you in Kona when we're done.'\n\nIt's not glamorous, but it's a ticket to Hawaii.",
+      choices: [
+        {
+          text: "Accept - hard work never killed anyone",
+          outcome: () => {
+            addItem("Ocean Passage");
+            updateState({ 
+              currentScene: "fishing_voyage",
+              health: gameState.health - 10,
+            });
+            increaseSkill("survival", 2);
+            increaseSkill("hustling");
+          },
+        },
+        {
+          text: "Keep looking for easier options",
+          outcome: () => updateState({ currentScene: "pacific_crossing" }),
+        },
+      ],
+    },
+    
+    fishing_voyage: {
+      title: "Blood and Saltwater",
+      description: "Two weeks of hauling nets, gutting fish, and sleeping in three-hour shifts. Your hands are raw, your back aches, but you've earned every mile.\n\nThe captain slaps your back as you dock in Kona. 'You're tougher than you look, kid. Good luck out there.'\n\nThe Big Island stretches before you. You made it.",
+      choices: [
+        {
+          text: "Step onto Hawaiian soil",
+          outcome: () => {
+            updateState({ journeyProgress: 100 });
+          },
+        },
+      ],
+    },
+    
+    alien_transport: {
+      title: "Instant Transmission",
+      description: "One moment you're on a dock in California. The next, you're standing on Waikiki Beach, still slightly vibrating from whatever just happened.\n\nA tourist nearby blinks. 'Did you just... appear?'\n\n'Nope,' you say, already walking away. 'Must be the heat.'",
+      choices: [
+        {
+          text: "Blend into the crowd",
+          outcome: () => {
+            updateState({ journeyProgress: 100 });
+          },
+        },
+      ],
+    },
+    
+    swim_miracle: {
+      title: "Against All Odds",
+      description: "Your survival skills are legendary. Against all logic, reason, and basic human physiology, you somehow swim 2,400 miles across the Pacific Ocean. Scientists will be studying you for decades.\n\n(In reality, this is completely impossible. But your survival skill is maxed out, so we're allowing it. Don't try this at home.)",
+      choices: [
+        {
+          text: "Crawl onto the beach, a living legend",
+          outcome: () => {
+            addItem("Ocean Passage");
+            updateState({ journeyProgress: 100, health: 1 });
+          },
+        },
+      ],
+    },
+    
+    faster_options: {
+      title: "The Impatient Traveler",
+      description: "Captain Pete shrugs. 'Faster? You could fly - if you got a couple hundred bucks. You could find a faster boat - rich folks sometimes want crew. Or...' he lowers his voice, 'there's rumors of something strange happening at Pier 7. Folks appearing and disappearing. Probably nothing.'",
+      choices: [
+        { text: "I'll take the sailing trip", outcome: () => updateState({ currentScene: "sailor_offer" }) },
+        { text: "I'll check out Pier 7", outcome: () => updateState({ currentScene: "mysterious_shimmer" }) },
+        { text: "I'll find another way", outcome: () => updateState({ currentScene: "pacific_crossing" }) },
       ],
     },
   };
