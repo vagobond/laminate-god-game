@@ -111,21 +111,25 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
         return !["secret_friend", "fake_friend", "secret_enemy"].includes(f.level);
       });
 
-      // Load profiles
-      const friendsWithProfiles = await Promise.all(
-        visibleFriends.map(async (friend) => {
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("display_name, avatar_url")
-            .eq("id", friend.friend_id)
-            .single();
+      // Get all friend IDs to batch fetch profiles
+      const friendIds = visibleFriends.map((f) => f.friend_id);
+      
+      // Batch fetch all profiles at once
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url")
+        .in("id", friendIds);
 
-          return {
-            ...friend,
-            profile: profileData || undefined,
-          };
-        })
+      // Create a map for quick lookup
+      const profilesMap = new Map(
+        (profilesData || []).map((p) => [p.id, { display_name: p.display_name, avatar_url: p.avatar_url }])
       );
+
+      // Merge profiles with friendships
+      const friendsWithProfiles = visibleFriends.map((friend) => ({
+        ...friend,
+        profile: profilesMap.get(friend.friend_id) || undefined,
+      }));
 
       setFriends(friendsWithProfiles);
     } catch (error) {
