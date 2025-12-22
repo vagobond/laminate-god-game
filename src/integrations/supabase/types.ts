@@ -716,6 +716,10 @@ export type Database = {
         Returns: boolean
       }
       refresh_layer_stats: { Args: never; Returns: undefined }
+      resolve_username_to_id: {
+        Args: { target_username: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
