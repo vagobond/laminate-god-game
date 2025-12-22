@@ -74,19 +74,18 @@ const PublicProfile = () => {
       if (userId) {
         setResolvedUserId(userId);
       } else if (username) {
-        // Look up user by username
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("username", username.toLowerCase())
-          .maybeSingle();
+        // Use secure RPC function to resolve username (works without authentication)
+        const { data, error } = await supabase.rpc("resolve_username_to_id", {
+          target_username: username,
+        });
         
         if (error || !data) {
+          console.error("Username resolution failed:", error);
           setNotFound(true);
           setLoading(false);
           return;
         }
-        setResolvedUserId(data.id);
+        setResolvedUserId(data);
       }
     };
     resolveUser();
