@@ -62,6 +62,7 @@ const PublicProfile = () => {
   const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
   const [meetupPrefs, setMeetupPrefs] = useState<any>(null);
   const [hostingPrefs, setHostingPrefs] = useState<any>(null);
+  const [prefsLoading, setPrefsLoading] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -116,15 +117,20 @@ const PublicProfile = () => {
   }, [resolvedUserId, currentUser]);
 
   const loadMeetupHostingPrefs = async (profileId: string) => {
+    setPrefsLoading(true);
     try {
       const [meetupRes, hostingRes] = await Promise.all([
         supabase.from("meetup_preferences").select("*").eq("user_id", profileId).maybeSingle(),
         supabase.from("hosting_preferences").select("*").eq("user_id", profileId).maybeSingle(),
       ]);
-      setMeetupPrefs(meetupRes.data);
-      setHostingPrefs(hostingRes.data);
-    } catch (error) {
-      console.error("Error loading preferences:", error);
+
+      if (meetupRes.error) console.error("Error loading meetup preferences:", meetupRes.error);
+      if (hostingRes.error) console.error("Error loading hosting preferences:", hostingRes.error);
+
+      setMeetupPrefs(meetupRes.data ?? null);
+      setHostingPrefs(hostingRes.data ?? null);
+    } finally {
+      setPrefsLoading(false);
     }
   };
 
@@ -182,6 +188,14 @@ const PublicProfile = () => {
   const canSeeAcquaintanceFields = canSeeBuddyFields || friendshipLevel === "friendly_acquaintance";
 
   const isOwnProfile = currentUser?.id === resolvedUserId;
+
+  const canRequestMeetupOrHosting =
+    !!currentUser &&
+    !isOwnProfile &&
+    (friendshipLevel === "friendly_acquaintance" ||
+      friendshipLevel === "buddy" ||
+      friendshipLevel === "close_friend" ||
+      friendshipLevel === "secret_friend");
 
   const handleBlockUser = async () => {
     if (!currentUser || !resolvedUserId) return;
@@ -448,13 +462,16 @@ const PublicProfile = () => {
           </CardContent>
         </Card>
 
+
         {/* Meetup & Hosting Section */}
-        {resolvedUserId && currentUser && (meetupPrefs?.is_open_to_meetups || hostingPrefs?.is_open_to_hosting || isOwnProfile) && (
+        {resolvedUserId && (prefsLoading || meetupPrefs?.is_open_to_meetups || hostingPrefs?.is_open_to_hosting || isOwnProfile) && (
           <Card>
             <CardContent className="pt-6">
-              {isOwnProfile ? (
+              {prefsLoading ? (
+                <p className="text-center text-muted-foreground text-sm">Loading meetups & hosting…</p>
+              ) : isOwnProfile ? (
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-center">Your Availability</h3>
+                  <h2 className="text-lg font-semibold text-center">Meetups & Hosting</h2>
                   <div className="flex flex-wrap gap-4 justify-center">
                     {meetupPrefs?.is_open_to_meetups && (
                       <div className="flex items-center gap-2 px-4 py-2 bg-secondary/30 rounded-lg">
@@ -469,11 +486,17 @@ const PublicProfile = () => {
                       </div>
                     )}
                   </div>
+
                   {!meetupPrefs?.is_open_to_meetups && !hostingPrefs?.is_open_to_hosting && (
                     <p className="text-center text-muted-foreground text-sm">
-                      You haven't enabled meetups or hosting. Go to your <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/profile")}>profile settings</Button> to set them up.
+                      You haven't enabled meetups or hosting. Go to your{" "}
+                      <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/profile")}>
+                        profile settings
+                      </Button>
+                      .
                     </p>
                   )}
+
                   {meetupPrefs?.meetup_description && (
                     <p className="text-sm text-muted-foreground text-center italic">
                       Meetups: "{meetupPrefs.meetup_description}"
@@ -486,32 +509,64 @@ const PublicProfile = () => {
                   )}
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-3 justify-center">
-                  {meetupPrefs?.is_open_to_meetups && (
-                    <div className="text-center">
-                      <MeetupRequestDialog
-                        recipientId={resolvedUserId}
-                        recipientName={profile?.display_name || "User"}
-                      />
-                      {meetupPrefs.meetup_description && (
-                        <p className="text-xs text-muted-foreground mt-2 max-w-xs">
-                          {meetupPrefs.meetup_description}
-                        </p>
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold text-center">Meetups & Hosting</h2>
+
+                  <div className="flex flex-wrap gap-4 justify-center">
+                    {meetupPrefs?.is_open_to_meetups && (
+                      <div className="flex items-center gap-2 px-4 py-2 bg-secondary/30 rounded-lg">
+                        <Coffee className="w-4 h-4 text-primary" />
+                        <span>Open to Meetups</span>
+                      </div>
+                    )}
+                    {hostingPrefs?.is_open_to_hosting && (
+                      <div className="flex items-center gap-2 px-4 py-2 bg-secondary/30 rounded-lg">
+                        <Home className="w-4 h-4 text-primary" />
+                        <span>Open to Hosting</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {canRequestMeetupOrHosting ? (
+                    <div className="flex flex-wrap gap-3 justify-center">
+                      {meetupPrefs?.is_open_to_meetups && (
+                        <div className="text-center">
+                          <MeetupRequestDialog recipientId={resolvedUserId} recipientName={profile?.display_name || "User"} />
+                          {meetupPrefs.meetup_description && (
+                            <p className="text-xs text-muted-foreground mt-2 max-w-xs">
+                              {meetupPrefs.meetup_description}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      {hostingPrefs?.is_open_to_hosting && (
+                        <div className="text-center">
+                          <HostingRequestDialog recipientId={resolvedUserId} recipientName={profile?.display_name || "User"} />
+                          {hostingPrefs.hosting_description && (
+                            <p className="text-xs text-muted-foreground mt-2 max-w-xs">
+                              {hostingPrefs.hosting_description}
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground text-sm">
+                      {currentUser
+                        ? "Requests are available to friendly acquaintances and above."
+                        : "Sign in to request a meetup or hosting."}
+                    </p>
                   )}
-                  {hostingPrefs?.is_open_to_hosting && (
-                    <div className="text-center">
-                      <HostingRequestDialog
-                        recipientId={resolvedUserId}
-                        recipientName={profile?.display_name || "User"}
-                      />
-                      {hostingPrefs.hosting_description && (
-                        <p className="text-xs text-muted-foreground mt-2 max-w-xs">
-                          {hostingPrefs.hosting_description}
-                        </p>
-                      )}
-                    </div>
+
+                  {!canRequestMeetupOrHosting && meetupPrefs?.meetup_description && (
+                    <p className="text-xs text-muted-foreground text-center max-w-lg mx-auto">
+                      {meetupPrefs.meetup_description}
+                    </p>
+                  )}
+                  {!canRequestMeetupOrHosting && hostingPrefs?.hosting_description && (
+                    <p className="text-xs text-muted-foreground text-center max-w-lg mx-auto">
+                      {hostingPrefs.hosting_description}
+                    </p>
                   )}
                 </div>
               )}
