@@ -536,24 +536,14 @@ const Auth = () => {
           {renderContent()}
         </Card>
 
-        <div className="text-center space-y-2">
-          <div>
-            <Link 
-              to="/onboarding-guide"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              How to Wield Godlike Powers
-            </Link>
-          </div>
-          <div>
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/")}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Back to Home
-            </Button>
-          </div>
+        <div className="text-center">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/")}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            Back to Home
+          </Button>
         </div>
       </div>
 
