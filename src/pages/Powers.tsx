@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 
@@ -41,34 +47,57 @@ const Powers = () => {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center flex-wrap">
-          <Button 
-            variant="mystical" 
-            size="xl"
-            onClick={() => navigate("/irl-layer")}
-            className="w-full sm:w-auto min-w-[250px]"
-          >
-            USER MAP
-          </Button>
+        <TooltipProvider>
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center flex-wrap">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="mystical" 
+                  size="xl"
+                  onClick={() => navigate("/irl-layer")}
+                  className="w-full sm:w-auto min-w-[250px]"
+                >
+                  USER MAP
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Claim your hometown. See where other users live in the world. Explore.</p>
+              </TooltipContent>
+            </Tooltip>
 
-          <Button 
-            variant="divine" 
-            size="xl"
-            onClick={() => navigate("/mini-games-hub")}
-            className="w-full sm:w-auto min-w-[250px]"
-          >
-            ADVENTURE
-          </Button>
-          
-          <Button 
-            variant="mystical" 
-            size="xl"
-            onClick={handleProfileClick}
-            className="w-full sm:w-auto min-w-[250px]"
-          >
-            PROFILE
-          </Button>
-        </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="divine" 
+                  size="xl"
+                  onClick={() => navigate("/mini-games-hub")}
+                  className="w-full sm:w-auto min-w-[250px]"
+                >
+                  ADVENTURE
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Mini-Games Hub. Pointless fun</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="mystical" 
+                  size="xl"
+                  onClick={handleProfileClick}
+                  className="w-full sm:w-auto min-w-[250px]"
+                >
+                  PROFILE
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Set up your profile, friend-trust levels, hosting, and meetup status</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
 
         <button 
           onClick={() => navigate("/getting-started")}
