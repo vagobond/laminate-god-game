@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Users, Layers, Shield, RefreshCw } from "lucide-react";
+import { ArrowLeft, Users, Shield, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 interface UserProfile {
@@ -14,15 +14,6 @@ interface UserProfile {
   display_name: string | null;
   email: string | null;
   created_at: string;
-}
-
-interface LayerData {
-  id: string;
-  name: string;
-  creator_name: string;
-  created_at: string;
-  total_points: number;
-  branches_count: number;
 }
 
 interface UserRole {
@@ -41,11 +32,10 @@ export default function AdminDashboard() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserProfile[]>([]);
-  const [layers, setLayers] = useState<LayerData[]>([]);
+  
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [stats, setStats] = useState({
     totalUsers: 0,
-    totalLayers: 0,
     totalFriendships: 0,
   });
 
@@ -92,13 +82,6 @@ export default function AdminDashboard() {
       
       if (usersData) setUsers(usersData);
 
-      // Load layers
-      const { data: layersData } = await supabase
-        .from("layers")
-        .select("id, name, creator_name, created_at, total_points, branches_count")
-        .order("created_at", { ascending: false });
-      
-      if (layersData) setLayers(layersData);
 
       // Load roles with profile info
       const { data: rolesData } = await supabase
@@ -131,17 +114,12 @@ export default function AdminDashboard() {
         .from("profiles")
         .select("*", { count: "exact", head: true });
       
-      const { count: layerCount } = await supabase
-        .from("layers")
-        .select("*", { count: "exact", head: true });
-      
       const { count: friendshipCount } = await supabase
         .from("friendships")
         .select("*", { count: "exact", head: true });
 
       setStats({
         totalUsers: userCount || 0,
-        totalLayers: layerCount || 0,
         totalFriendships: friendshipCount || 0,
       });
     } catch (error) {
@@ -171,7 +149,7 @@ export default function AdminDashboard() {
             </Button>
             <div>
               <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-              <p className="text-muted-foreground">Manage users, layers, and permissions</p>
+              <p className="text-muted-foreground">Manage users and permissions</p>
             </div>
           </div>
           <Button onClick={loadDashboardData} variant="outline" disabled={loading}>
@@ -181,7 +159,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -189,15 +167,6 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalUsers}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Layers</CardTitle>
-              <Layers className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalLayers}</div>
             </CardContent>
           </Card>
           <Card>
@@ -215,7 +184,6 @@ export default function AdminDashboard() {
         <Tabs defaultValue="users" className="space-y-4">
           <TabsList>
             <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="layers">Layers</TabsTrigger>
             <TabsTrigger value="roles">Admin Roles</TabsTrigger>
           </TabsList>
 
@@ -262,40 +230,6 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="layers">
-            <Card>
-              <CardHeader>
-                <CardTitle>All Layers</CardTitle>
-                <CardDescription>Layers created on the platform</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Creator</TableHead>
-                      <TableHead>Points</TableHead>
-                      <TableHead>Branches</TableHead>
-                      <TableHead>Created</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {layers.map((layer) => (
-                      <TableRow key={layer.id}>
-                        <TableCell className="font-medium">{layer.name}</TableCell>
-                        <TableCell>{layer.creator_name}</TableCell>
-                        <TableCell>{layer.total_points}</TableCell>
-                        <TableCell>{layer.branches_count}</TableCell>
-                        <TableCell>
-                          {new Date(layer.created_at).toLocaleDateString()}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="roles">
             <Card>
