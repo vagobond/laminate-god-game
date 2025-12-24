@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Welcome from "./pages/Welcome";
 import Powers from "./pages/Powers";
 import Auth from "./pages/Auth";
-import OnboardingGuide from "./pages/OnboardingGuide";
+
 import MiniGamesHub from "./pages/MiniGamesHub";
 import DeathHistory from "./pages/DeathHistory";
 import IRLLayer from "./pages/IRLLayer";
@@ -34,7 +34,7 @@ const App = () => (
           <Route path="/powers" element={<Powers />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/onboarding-guide" element={<OnboardingGuide />} />
+          
           <Route path="/mini-games-hub" element={<MiniGamesHub />} />
           <Route path="/death-history" element={<DeathHistory />} />
           <Route path="/irl-layer" element={<IRLLayer />} />
