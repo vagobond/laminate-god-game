@@ -7,6 +7,75 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Retry configuration
+const MAX_RETRIES = 3;
+const INITIAL_DELAY_MS = 1000;
+
+async function fetchWithRetry(
+  url: string, 
+  options: RequestInit, 
+  retries = MAX_RETRIES
+): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      
+      // Check if response is HTML (error page) instead of JSON
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('text/html')) {
+        const text = await response.text();
+        console.error(`Attempt ${attempt + 1}: Received HTML instead of JSON:`, text.substring(0, 200));
+        
+        if (response.status === 429) {
+          throw new Error('RATE_LIMITED');
+        }
+        throw new Error('API returned HTML error page');
+      }
+      
+      // Handle rate limiting
+      if (response.status === 429) {
+        console.log(`Attempt ${attempt + 1}: Rate limited, will retry...`);
+        throw new Error('RATE_LIMITED');
+      }
+      
+      if (response.status === 402) {
+        throw new Error('PAYMENT_REQUIRED');
+      }
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Attempt ${attempt + 1}: API error ${response.status}:`, errorText);
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      return response;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      console.error(`Attempt ${attempt + 1} failed:`, lastError.message);
+      
+      // Don't retry on payment required
+      if (lastError.message === 'PAYMENT_REQUIRED') {
+        throw new Error('AI service requires payment. Please add credits to continue.');
+      }
+      
+      // Only retry on transient errors
+      if (attempt < retries - 1) {
+        const delay = INITIAL_DELAY_MS * Math.pow(2, attempt); // Exponential backoff
+        console.log(`Waiting ${delay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  if (lastError?.message === 'RATE_LIMITED') {
+    throw new Error('The adventure realm is busy. Please wait a moment and try again.');
+  }
+  
+  throw new Error('Failed to generate content after multiple attempts. Please try again.');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -161,8 +230,17 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in adventure-game function:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    
+    // Determine appropriate status code
+    let status = 500;
+    if (errorMessage.includes('busy') || errorMessage.includes('Rate')) {
+      status = 429;
+    } else if (errorMessage.includes('payment') || errorMessage.includes('credits')) {
+      status = 402;
+    }
+    
     return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500,
+      status,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
@@ -200,7 +278,7 @@ Create an opening scenario where the player awakens in this mystical realm. They
 - Face exactly 4 distinct choices
 - Keep under 150 words`;
 
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+  const response = await fetchWithRetry('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
@@ -247,6 +325,11 @@ Create an opening scenario where the player awakens in this mystical realm. They
   const data = await response.json();
   console.log('Scenario generation response:', JSON.stringify(data));
   
+  if (!data.choices?.[0]?.message?.tool_calls?.[0]) {
+    console.error('Unexpected response structure:', data);
+    throw new Error('Failed to generate scenario - unexpected response format');
+  }
+  
   const toolCall = data.choices[0].message.tool_calls[0];
   const scenario = JSON.parse(toolCall.function.arguments);
   
@@ -268,7 +351,7 @@ Generate a death that is:
 
 Make it darkly humorous, mystical, and educational about both the Verse Layer and bizarre real deaths.`;
 
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+  const response = await fetchWithRetry('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
@@ -315,6 +398,11 @@ Make it darkly humorous, mystical, and educational about both the Verse Layer an
 
   const data = await response.json();
   console.log('Death generation response:', JSON.stringify(data));
+  
+  if (!data.choices?.[0]?.message?.tool_calls?.[0]) {
+    console.error('Unexpected response structure:', data);
+    throw new Error('Failed to generate death - unexpected response format');
+  }
   
   const toolCall = data.choices[0].message.tool_calls[0];
   const death = JSON.parse(toolCall.function.arguments);
