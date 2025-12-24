@@ -17,6 +17,7 @@ import { MeetupPreferencesManager } from "@/components/MeetupPreferencesManager"
 import { HostingPreferencesManager } from "@/components/HostingPreferencesManager";
 import { UserReferences } from "@/components/UserReferences";
 import { ProfileCompleteness } from "@/components/ProfileCompleteness";
+import { CustomFriendshipTypeManager } from "@/components/CustomFriendshipTypeManager";
 import { z } from "zod";
 
 // Validation constants
@@ -632,6 +633,11 @@ const Profile = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Custom Friendship Type */}
+        {user && (
+          <CustomFriendshipTypeManager userId={user.id} />
+        )}
 
         {/* Meetup & Hosting Preferences */}
         {user && (
