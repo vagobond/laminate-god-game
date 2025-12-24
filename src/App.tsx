@@ -25,6 +25,7 @@ import Settings from "./pages/Settings";
 import AdminDashboard from "./pages/AdminDashboard";
 import Messages from "./pages/Messages";
 import GettingStarted from "./pages/GettingStarted";
+import InviteFriends from "./pages/InviteFriends";
 import NotFound from "./pages/NotFound";
 import AppHeader from "./components/AppHeader";
 
@@ -61,6 +62,7 @@ const App = () => (
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/getting-started" element={<GettingStarted />} />
+          <Route path="/invite-friends" element={<InviteFriends />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

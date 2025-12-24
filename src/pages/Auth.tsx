@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
 import { z } from "zod";
+import { WelcomeModal } from "@/components/WelcomeModal";
 
 // Validation schemas
 const signInSchema = z.object({
@@ -46,6 +47,7 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string; displayName?: string; confirmPassword?: string }>({});
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const [authView, setAuthView] = useState<AuthView>("default");
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   useEffect(() => {
     // Check URL hash for password recovery event
@@ -67,8 +69,8 @@ const Auth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setAuthView("update-password");
-      } else if (session && authView !== "update-password") {
-        navigate("/");
+      } else if (event === 'SIGNED_IN' && session && authView !== "update-password") {
+        setShowWelcomeModal(true);
       }
     });
 
@@ -551,6 +553,16 @@ const Auth = () => {
           </div>
         </div>
       </div>
+
+      <WelcomeModal 
+        open={showWelcomeModal} 
+        onOpenChange={(open) => {
+          setShowWelcomeModal(open);
+          if (!open) {
+            navigate("/");
+          }
+        }} 
+      />
     </div>
   );
 };
