@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Welcome from "./pages/Welcome";
 import Powers from "./pages/Powers";
 
-import ExploreLayers from "./pages/ExploreLayers";
+
 import PaderFamilias from "./pages/PaderFamilias";
 import EnterLamsterverse from "./pages/EnterLamsterverse";
 import BranchFromVerse from "./pages/BranchFromVerse";
@@ -40,7 +40,7 @@ const App = () => (
           <Route path="/" element={<Welcome />} />
           <Route path="/powers" element={<Powers />} />
           
-          <Route path="/explore-layers" element={<ExploreLayers />} />
+          
           <Route path="/pader-familias" element={<PaderFamilias />} />
           <Route path="/enter-lamsterverse" element={<EnterLamsterverse />} />
           <Route path="/branch-from-verse" element={<BranchFromVerse />} />
