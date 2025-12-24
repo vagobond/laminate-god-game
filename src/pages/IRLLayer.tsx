@@ -202,15 +202,58 @@ const IRLLayer = () => {
   useEffect(() => {
     if (!map.current || allHometowns.length === 0) return;
 
+    const mapInstance = map.current;
+    let isSetup = false;
+
+    const handleClusterClick = (e: mapboxgl.MapLayerMouseEvent) => {
+      if (!mapInstance || !e.features?.[0]) return;
+      e.preventDefault();
+      const clusterId = e.features[0].properties?.cluster_id;
+      const source = mapInstance.getSource("hometowns") as mapboxgl.GeoJSONSource;
+      source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+        if (err || !mapInstance) return;
+        const geometry = e.features![0].geometry as GeoJSON.Point;
+        mapInstance.easeTo({
+          center: geometry.coordinates as [number, number],
+          zoom: (zoom ?? mapInstance.getZoom()) + 2,
+        });
+      });
+    };
+
+    const handlePointClick = (e: mapboxgl.MapLayerMouseEvent) => {
+      if (!e.features?.[0]) return;
+      e.preventDefault();
+      const props = e.features[0].properties;
+      const profiles = JSON.parse(props?.profiles || "[]") as ProfileData[];
+      const geometry = e.features[0].geometry as GeoJSON.Point;
+      
+      setSelectedHometown({
+        city: props?.city,
+        country: props?.country,
+        lat: geometry.coordinates[1],
+        lng: geometry.coordinates[0],
+        profiles,
+      });
+    };
+
+    const handleMouseEnter = () => {
+      if (mapInstance) mapInstance.getCanvas().style.cursor = "pointer";
+    };
+
+    const handleMouseLeave = () => {
+      if (mapInstance) mapInstance.getCanvas().style.cursor = "";
+    };
+
     const setupClusters = () => {
-      if (!map.current) return;
+      if (!mapInstance || isSetup) return;
+      isSetup = true;
 
       // Remove existing source and layers if they exist
-      if (map.current.getLayer("clusters")) map.current.removeLayer("clusters");
-      if (map.current.getLayer("cluster-count")) map.current.removeLayer("cluster-count");
-      if (map.current.getLayer("unclustered-point")) map.current.removeLayer("unclustered-point");
-      if (map.current.getLayer("unclustered-count")) map.current.removeLayer("unclustered-count");
-      if (map.current.getSource("hometowns")) map.current.removeSource("hometowns");
+      if (mapInstance.getLayer("clusters")) mapInstance.removeLayer("clusters");
+      if (mapInstance.getLayer("cluster-count")) mapInstance.removeLayer("cluster-count");
+      if (mapInstance.getLayer("unclustered-point")) mapInstance.removeLayer("unclustered-point");
+      if (mapInstance.getLayer("unclustered-count")) mapInstance.removeLayer("unclustered-count");
+      if (mapInstance.getSource("hometowns")) mapInstance.removeSource("hometowns");
 
       // Create GeoJSON from grouped hometowns
       const geojsonData: GeoJSON.FeatureCollection = {
@@ -230,19 +273,19 @@ const IRLLayer = () => {
         })),
       };
 
-      map.current.addSource("hometowns", {
+      mapInstance.addSource("hometowns", {
         type: "geojson",
         data: geojsonData,
         cluster: true,
         clusterMaxZoom: 14,
-        clusterRadius: 50,
+        clusterRadius: 60,
         clusterProperties: {
           sum: ["+", ["get", "count"]],
         },
       });
 
       // Clustered circles
-      map.current.addLayer({
+      mapInstance.addLayer({
         id: "clusters",
         type: "circle",
         source: "hometowns",
@@ -263,7 +306,7 @@ const IRLLayer = () => {
       });
 
       // Cluster count labels
-      map.current.addLayer({
+      mapInstance.addLayer({
         id: "cluster-count",
         type: "symbol",
         source: "hometowns",
@@ -279,7 +322,7 @@ const IRLLayer = () => {
       });
 
       // Individual (unclustered) points
-      map.current.addLayer({
+      mapInstance.addLayer({
         id: "unclustered-point",
         type: "circle",
         source: "hometowns",
@@ -298,7 +341,7 @@ const IRLLayer = () => {
       });
 
       // Individual point count labels
-      map.current.addLayer({
+      mapInstance.addLayer({
         id: "unclustered-count",
         type: "symbol",
         source: "hometowns",
@@ -313,57 +356,34 @@ const IRLLayer = () => {
         },
       });
 
-      // Click on cluster to zoom in
-      map.current.on("click", "clusters", (e) => {
-        if (!map.current || !e.features?.[0]) return;
-        const clusterId = e.features[0].properties?.cluster_id;
-        const source = map.current.getSource("hometowns") as mapboxgl.GeoJSONSource;
-        source.getClusterExpansionZoom(clusterId, (err, zoom) => {
-          if (err || !map.current) return;
-          const geometry = e.features![0].geometry as GeoJSON.Point;
-          map.current.easeTo({
-            center: geometry.coordinates as [number, number],
-            zoom: zoom ?? 10,
-          });
-        });
-      });
-
-      // Click on individual point to show details
-      map.current.on("click", "unclustered-point", (e) => {
-        if (!e.features?.[0]) return;
-        const props = e.features[0].properties;
-        const profiles = JSON.parse(props?.profiles || "[]") as ProfileData[];
-        const geometry = e.features[0].geometry as GeoJSON.Point;
-        
-        setSelectedHometown({
-          city: props?.city,
-          country: props?.country,
-          lat: geometry.coordinates[1],
-          lng: geometry.coordinates[0],
-          profiles,
-        });
-      });
-
-      // Change cursor on hover
-      map.current.on("mouseenter", "clusters", () => {
-        if (map.current) map.current.getCanvas().style.cursor = "pointer";
-      });
-      map.current.on("mouseleave", "clusters", () => {
-        if (map.current) map.current.getCanvas().style.cursor = "";
-      });
-      map.current.on("mouseenter", "unclustered-point", () => {
-        if (map.current) map.current.getCanvas().style.cursor = "pointer";
-      });
-      map.current.on("mouseleave", "unclustered-point", () => {
-        if (map.current) map.current.getCanvas().style.cursor = "";
-      });
+      // Add event listeners
+      mapInstance.on("click", "clusters", handleClusterClick);
+      mapInstance.on("click", "unclustered-point", handlePointClick);
+      mapInstance.on("mouseenter", "clusters", handleMouseEnter);
+      mapInstance.on("mouseleave", "clusters", handleMouseLeave);
+      mapInstance.on("mouseenter", "unclustered-point", handleMouseEnter);
+      mapInstance.on("mouseleave", "unclustered-point", handleMouseLeave);
     };
 
-    if (map.current.isStyleLoaded()) {
+    if (mapInstance.isStyleLoaded()) {
       setupClusters();
     } else {
-      map.current.on("load", setupClusters);
+      mapInstance.on("load", setupClusters);
     }
+
+    return () => {
+      // Cleanup event listeners
+      if (mapInstance.getLayer("clusters")) {
+        mapInstance.off("click", "clusters", handleClusterClick);
+        mapInstance.off("mouseenter", "clusters", handleMouseEnter);
+        mapInstance.off("mouseleave", "clusters", handleMouseLeave);
+      }
+      if (mapInstance.getLayer("unclustered-point")) {
+        mapInstance.off("click", "unclustered-point", handlePointClick);
+        mapInstance.off("mouseenter", "unclustered-point", handleMouseEnter);
+        mapInstance.off("mouseleave", "unclustered-point", handleMouseLeave);
+      }
+    };
   }, [allHometowns, groupedHometowns]);
 
   const handleClaimHometown = async () => {
