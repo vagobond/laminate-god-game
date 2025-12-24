@@ -50,6 +50,12 @@ interface FriendsListProps {
 }
 
 type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | "fake_friend" | "secret_enemy";
+type FriendshipSelection = FriendshipLevel | "custom";
+
+interface CustomFriendshipType {
+  id: string;
+  name: string;
+}
 
 const levelLabels: Record<string, string> = {
   close_friend: "Close Friend",
@@ -69,7 +75,9 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
   const [unfriendingFriend, setUnfriendingFriend] = useState<Friend | null>(null);
   const [messagingFriend, setMessagingFriend] = useState<Friend | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<FriendshipLevel>("buddy");
+  const [selectedUsesCustomType, setSelectedUsesCustomType] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [customFriendshipType, setCustomFriendshipType] = useState<CustomFriendshipType | null>(null);
   const isOwnProfile = viewerId === userId;
 
   useEffect(() => {
@@ -78,8 +86,26 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
       checkMutualCloseFriend();
     } else if (viewerId === userId) {
       setCanSeeLevels(true);
+      loadCustomFriendshipType();
     }
   }, [userId, viewerId]);
+
+  const loadCustomFriendshipType = async () => {
+    if (!viewerId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("custom_friendship_types")
+        .select("id, name")
+        .eq("user_id", viewerId)
+        .maybeSingle();
+      
+      if (error) throw error;
+      setCustomFriendshipType(data);
+    } catch (error) {
+      console.error("Error loading custom friendship type:", error);
+    }
+  };
 
   const checkMutualCloseFriend = async () => {
     if (!viewerId) return;
@@ -154,8 +180,16 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
     }
   };
 
-  const handleEditLevel = (friend: Friend) => {
+  const handleEditLevel = async (friend: Friend) => {
+    // Check if this friend uses custom type
+    const { data } = await supabase
+      .from("friendships")
+      .select("uses_custom_type")
+      .eq("id", friend.id)
+      .single();
+    
     setEditingFriend(friend);
+    setSelectedUsesCustomType(data?.uses_custom_type || false);
     setSelectedLevel(friend.level as FriendshipLevel);
   };
 
@@ -164,9 +198,15 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
     setProcessing(true);
 
     try {
+      // When using custom type, store as "buddy" in DB (for RLS purposes) but set the flag
+      const levelToStore = selectedUsesCustomType ? "buddy" : selectedLevel;
+      
       const { error } = await supabase
         .from("friendships")
-        .update({ level: selectedLevel })
+        .update({ 
+          level: levelToStore,
+          uses_custom_type: selectedUsesCustomType
+        })
         .eq("id", editingFriend.id);
 
       if (error) throw error;
@@ -184,6 +224,17 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
     } finally {
       setProcessing(false);
     }
+  };
+
+  const handleSelectCustomType = () => {
+    setSelectedUsesCustomType(true);
+    // Custom type uses buddy as the base level for RLS purposes
+    setSelectedLevel("buddy");
+  };
+
+  const handleSelectStandardLevel = (level: FriendshipLevel) => {
+    setSelectedUsesCustomType(false);
+    setSelectedLevel(level);
   };
 
   if (loading) {
@@ -362,7 +413,17 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
             </DialogDescription>
           </DialogHeader>
           
-          <RadioGroup value={selectedLevel} onValueChange={(v) => setSelectedLevel(v as FriendshipLevel)} className="space-y-3">
+          <RadioGroup 
+            value={selectedUsesCustomType ? "custom" : selectedLevel} 
+            onValueChange={(v: FriendshipSelection) => {
+              if (v === "custom") {
+                handleSelectCustomType();
+              } else {
+                handleSelectStandardLevel(v as FriendshipLevel);
+              }
+            }}
+            className="space-y-3"
+          >
             <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
               <RadioGroupItem value="close_friend" id="edit_close_friend" className="mt-1" />
               <Label htmlFor="edit_close_friend" className="flex-1 cursor-pointer">
@@ -386,6 +447,17 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
                 <p className="text-sm text-muted-foreground">Can see your LinkedIn or general contact email.</p>
               </Label>
             </div>
+
+            {/* Custom friendship type - only show if user has created one */}
+            {customFriendshipType && (
+              <div className="flex items-start space-x-3 p-3 rounded-lg border border-primary/50 hover:bg-primary/10">
+                <RadioGroupItem value="custom" id="edit_custom" className="mt-1" />
+                <Label htmlFor="edit_custom" className="flex-1 cursor-pointer">
+                  <span className="font-medium text-primary">{customFriendshipType.name}</span>
+                  <p className="text-sm text-muted-foreground">Your custom friendship level with personalized visibility settings.</p>
+                </Label>
+              </div>
+            )}
             
             <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
               <RadioGroupItem value="secret_friend" id="edit_secret_friend" className="mt-1" />
