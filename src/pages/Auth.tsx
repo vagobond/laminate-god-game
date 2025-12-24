@@ -561,9 +561,6 @@ const Auth = () => {
         open={showWelcomeModal} 
         onOpenChange={(open) => {
           setShowWelcomeModal(open);
-          if (!open) {
-            navigate("/");
-          }
         }} 
       />
     </div>
