@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Welcome from "./pages/Welcome";
 import Powers from "./pages/Powers";
-import AboutLaminate from "./pages/AboutLaminate";
+
 import ExploreLayers from "./pages/ExploreLayers";
 import PaderFamilias from "./pages/PaderFamilias";
 import EnterLamsterverse from "./pages/EnterLamsterverse";
@@ -39,7 +39,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Welcome />} />
           <Route path="/powers" element={<Powers />} />
-          <Route path="/about-laminate" element={<AboutLaminate />} />
+          
           <Route path="/explore-layers" element={<ExploreLayers />} />
           <Route path="/pader-familias" element={<PaderFamilias />} />
           <Route path="/enter-lamsterverse" element={<EnterLamsterverse />} />
