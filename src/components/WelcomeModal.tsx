@@ -8,6 +8,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Users, Sparkles } from "lucide-react";
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface WelcomeModalProps {
@@ -17,19 +18,34 @@ interface WelcomeModalProps {
 
 export const WelcomeModal = ({ open, onOpenChange }: WelcomeModalProps) => {
   const navigate = useNavigate();
+  const didNavigateRef = useRef(false);
 
   const handleInviteFriends = () => {
-    onOpenChange(false);
+    didNavigateRef.current = true;
     navigate("/invite-friends");
+    // Let AlertDialog close itself; it will call onOpenChange(false)
   };
 
   const handleMaybeLater = () => {
-    onOpenChange(false);
+    didNavigateRef.current = true;
     navigate("/");
+    // Let AlertDialog close itself; it will call onOpenChange(false)
+  };
+
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    onOpenChange(nextOpen);
+
+    if (!nextOpen) {
+      // If the user closes the dialog via overlay/escape, treat it like "Maybe Later".
+      if (!didNavigateRef.current) {
+        navigate("/");
+      }
+      didNavigateRef.current = false;
+    }
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={open} onOpenChange={handleDialogOpenChange}>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader className="text-center">
           <div className="mx-auto w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-4">
@@ -43,14 +59,11 @@ export const WelcomeModal = ({ open, onOpenChange }: WelcomeModalProps) => {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-          <AlertDialogAction 
-            onClick={handleInviteFriends}
-            className="w-full"
-          >
+          <AlertDialogAction onClick={handleInviteFriends} className="w-full">
             <Users className="w-4 h-4 mr-2" />
             Invite Friends
           </AlertDialogAction>
-          <AlertDialogAction 
+          <AlertDialogAction
             onClick={handleMaybeLater}
             className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/80"
           >
