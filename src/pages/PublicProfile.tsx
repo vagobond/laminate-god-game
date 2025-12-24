@@ -448,38 +448,73 @@ const PublicProfile = () => {
           </CardContent>
         </Card>
 
-        {/* Meetup & Hosting Request Buttons */}
-        {resolvedUserId && currentUser && !isOwnProfile && (meetupPrefs?.is_open_to_meetups || hostingPrefs?.is_open_to_hosting) && (
+        {/* Meetup & Hosting Section */}
+        {resolvedUserId && currentUser && (meetupPrefs?.is_open_to_meetups || hostingPrefs?.is_open_to_hosting || isOwnProfile) && (
           <Card>
             <CardContent className="pt-6">
-              <div className="flex flex-wrap gap-3 justify-center">
-                {meetupPrefs?.is_open_to_meetups && (
-                  <div className="text-center">
-                    <MeetupRequestDialog
-                      recipientId={resolvedUserId}
-                      recipientName={profile?.display_name || "User"}
-                    />
-                    {meetupPrefs.meetup_description && (
-                      <p className="text-xs text-muted-foreground mt-2 max-w-xs">
-                        {meetupPrefs.meetup_description}
-                      </p>
+              {isOwnProfile ? (
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-center">Your Availability</h3>
+                  <div className="flex flex-wrap gap-4 justify-center">
+                    {meetupPrefs?.is_open_to_meetups && (
+                      <div className="flex items-center gap-2 px-4 py-2 bg-secondary/30 rounded-lg">
+                        <Coffee className="w-4 h-4 text-primary" />
+                        <span>Open to Meetups</span>
+                      </div>
+                    )}
+                    {hostingPrefs?.is_open_to_hosting && (
+                      <div className="flex items-center gap-2 px-4 py-2 bg-secondary/30 rounded-lg">
+                        <Home className="w-4 h-4 text-primary" />
+                        <span>Open to Hosting</span>
+                      </div>
                     )}
                   </div>
-                )}
-                {hostingPrefs?.is_open_to_hosting && (
-                  <div className="text-center">
-                    <HostingRequestDialog
-                      recipientId={resolvedUserId}
-                      recipientName={profile?.display_name || "User"}
-                    />
-                    {hostingPrefs.hosting_description && (
-                      <p className="text-xs text-muted-foreground mt-2 max-w-xs">
-                        {hostingPrefs.hosting_description}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
+                  {!meetupPrefs?.is_open_to_meetups && !hostingPrefs?.is_open_to_hosting && (
+                    <p className="text-center text-muted-foreground text-sm">
+                      You haven't enabled meetups or hosting. Go to your <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/profile")}>profile settings</Button> to set them up.
+                    </p>
+                  )}
+                  {meetupPrefs?.meetup_description && (
+                    <p className="text-sm text-muted-foreground text-center italic">
+                      Meetups: "{meetupPrefs.meetup_description}"
+                    </p>
+                  )}
+                  {hostingPrefs?.hosting_description && (
+                    <p className="text-sm text-muted-foreground text-center italic">
+                      Hosting: "{hostingPrefs.hosting_description}"
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-3 justify-center">
+                  {meetupPrefs?.is_open_to_meetups && (
+                    <div className="text-center">
+                      <MeetupRequestDialog
+                        recipientId={resolvedUserId}
+                        recipientName={profile?.display_name || "User"}
+                      />
+                      {meetupPrefs.meetup_description && (
+                        <p className="text-xs text-muted-foreground mt-2 max-w-xs">
+                          {meetupPrefs.meetup_description}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {hostingPrefs?.is_open_to_hosting && (
+                    <div className="text-center">
+                      <HostingRequestDialog
+                        recipientId={resolvedUserId}
+                        recipientName={profile?.display_name || "User"}
+                      />
+                      {hostingPrefs.hosting_description && (
+                        <p className="text-xs text-muted-foreground mt-2 max-w-xs">
+                          {hostingPrefs.hosting_description}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
