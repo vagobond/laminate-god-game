@@ -372,16 +372,18 @@ const IRLLayer = () => {
     }
 
     return () => {
-      // Cleanup event listeners
-      if (mapInstance.getLayer("clusters")) {
-        mapInstance.off("click", "clusters", handleClusterClick);
-        mapInstance.off("mouseenter", "clusters", handleMouseEnter);
-        mapInstance.off("mouseleave", "clusters", handleMouseLeave);
-      }
-      if (mapInstance.getLayer("unclustered-point")) {
-        mapInstance.off("click", "unclustered-point", handlePointClick);
-        mapInstance.off("mouseenter", "unclustered-point", handleMouseEnter);
-        mapInstance.off("mouseleave", "unclustered-point", handleMouseLeave);
+      // Cleanup event listeners - check if map still has style loaded
+      try {
+        if (mapInstance && mapInstance.getStyle()) {
+          mapInstance.off("click", "clusters", handleClusterClick);
+          mapInstance.off("mouseenter", "clusters", handleMouseEnter);
+          mapInstance.off("mouseleave", "clusters", handleMouseLeave);
+          mapInstance.off("click", "unclustered-point", handlePointClick);
+          mapInstance.off("mouseenter", "unclustered-point", handleMouseEnter);
+          mapInstance.off("mouseleave", "unclustered-point", handleMouseLeave);
+        }
+      } catch {
+        // Map was already destroyed, ignore cleanup
       }
     };
   }, [allHometowns, groupedHometowns]);
