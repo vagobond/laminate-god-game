@@ -405,7 +405,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
 
       {/* Dialog for editing friendship level */}
       <Dialog open={!!editingFriend} onOpenChange={(open) => !open && setEditingFriend(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Edit Friendship Level</DialogTitle>
             <DialogDescription>
@@ -413,17 +413,18 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
             </DialogDescription>
           </DialogHeader>
           
-          <RadioGroup 
-            value={selectedUsesCustomType ? "custom" : selectedLevel} 
-            onValueChange={(v: FriendshipSelection) => {
-              if (v === "custom") {
-                handleSelectCustomType();
-              } else {
-                handleSelectStandardLevel(v as FriendshipLevel);
-              }
-            }}
-            className="space-y-3"
-          >
+          <div className="flex-1 overflow-y-auto pr-2">
+            <RadioGroup 
+              value={selectedUsesCustomType ? "custom" : selectedLevel} 
+              onValueChange={(v: FriendshipSelection) => {
+                if (v === "custom") {
+                  handleSelectCustomType();
+                } else {
+                  handleSelectStandardLevel(v as FriendshipLevel);
+                }
+              }}
+              className="space-y-3"
+            >
             <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
               <RadioGroupItem value="close_friend" id="edit_close_friend" className="mt-1" />
               <Label htmlFor="edit_close_friend" className="flex-1 cursor-pointer">
@@ -482,9 +483,10 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
                 <p className="text-sm text-muted-foreground">They'll think you're close friends, but only see generic/fake info.</p>
               </Label>
             </div>
-          </RadioGroup>
+            </RadioGroup>
+          </div>
 
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-2 pt-4 border-t border-border">
             <Button onClick={handleUpdateLevel} disabled={processing} className="flex-1">
               {processing ? "Saving..." : "Save Changes"}
             </Button>
