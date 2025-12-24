@@ -676,6 +676,16 @@ export type Database = {
           id: string
         }[]
       }
+      get_visible_friends: {
+        Args: { profile_id: string; viewer_id: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          friend_id: string
+          id: string
+          level: Database["public"]["Enums"]["friendship_level"]
+        }[]
+      }
       get_visible_profile: {
         Args: { profile_id: string; viewer_id: string }
         Returns: {

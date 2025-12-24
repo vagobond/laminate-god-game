@@ -95,45 +95,31 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
 
   const loadFriends = async () => {
     try {
-      // Get friendships where this user has added friends
-      const { data, error } = await supabase
-        .from("friendships")
-        .select("id, friend_id, level")
-        .eq("user_id", userId);
+      setLoading(true);
+
+      // Use backend function so logged-out viewers can still see public friends + basic friend profile info.
+      // (Direct reads from `profiles` are auth-gated.)
+      const { data, error } = await supabase.rpc("get_visible_friends", {
+        profile_id: userId,
+        viewer_id: viewerId ?? null,
+      });
 
       if (error) throw error;
 
-      // For non-owners: hide secret_friend, fake_friend, secret_enemy
-      // For owners: show all friends
-      const visibleFriends = (data || []).filter((f) => {
-        if (viewerId === userId) return true; // Owner sees all
-        // Non-owners don't see secret categories
-        return !["secret_friend", "fake_friend", "secret_enemy"].includes(f.level);
-      });
-
-      // Get all friend IDs to batch fetch profiles
-      const friendIds = visibleFriends.map((f) => f.friend_id);
-      
-      // Batch fetch all profiles at once
-      const { data: profilesData } = await supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url")
-        .in("id", friendIds);
-
-      // Create a map for quick lookup
-      const profilesMap = new Map(
-        (profilesData || []).map((p) => [p.id, { display_name: p.display_name, avatar_url: p.avatar_url }])
-      );
-
-      // Merge profiles with friendships
-      const friendsWithProfiles = visibleFriends.map((friend) => ({
-        ...friend,
-        profile: profilesMap.get(friend.friend_id) || undefined,
+      const friendsWithProfiles: Friend[] = (data || []).map((row: any) => ({
+        id: row.id,
+        friend_id: row.friend_id,
+        level: row.level,
+        profile: {
+          display_name: row.display_name,
+          avatar_url: row.avatar_url,
+        },
       }));
 
       setFriends(friendsWithProfiles);
     } catch (error) {
       console.error("Error loading friends:", error);
+      setFriends([]);
     } finally {
       setLoading(false);
     }
