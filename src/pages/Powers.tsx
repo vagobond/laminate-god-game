@@ -20,9 +20,9 @@ const Powers = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleCreateClick = () => {
+  const handleProfileClick = () => {
     if (user) {
-      navigate("/creation-hub");
+      navigate("/profile");
     } else {
       navigate("/auth");
     }
@@ -63,10 +63,10 @@ const Powers = () => {
           <Button 
             variant="mystical" 
             size="xl"
-            onClick={handleCreateClick}
+            onClick={handleProfileClick}
             className="w-full sm:w-auto min-w-[250px]"
           >
-            CREATE
+            PROFILE
           </Button>
         </div>
 
