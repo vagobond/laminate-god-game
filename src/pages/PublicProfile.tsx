@@ -519,14 +519,6 @@ const PublicProfile = () => {
           </Card>
         )}
 
-        {/* Friends List */}
-        {resolvedUserId && (
-          <FriendsList 
-            userId={resolvedUserId} 
-            viewerId={currentUser?.id || null}
-          />
-        )}
-
         {/* References Section */}
         {resolvedUserId && (
           <div className="space-y-4">
@@ -538,6 +530,14 @@ const PublicProfile = () => {
               />
             )}
           </div>
+        )}
+
+        {/* Friends List */}
+        {resolvedUserId && (
+          <FriendsList 
+            userId={resolvedUserId} 
+            viewerId={currentUser?.id || null}
+          />
         )}
 
         {/* Mini-Game Stats */}
