@@ -5,13 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Welcome from "./pages/Welcome";
 import Powers from "./pages/Powers";
-
-
-import PaderFamilias from "./pages/PaderFamilias";
-import EnterLamsterverse from "./pages/EnterLamsterverse";
-import BranchFromVerse from "./pages/BranchFromVerse";
-import LayerTree from "./pages/LayerTree";
-import Leaderboard from "./pages/Leaderboard";
 import Auth from "./pages/Auth";
 import OnboardingGuide from "./pages/OnboardingGuide";
 import MiniGamesHub from "./pages/MiniGamesHub";
@@ -39,13 +32,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Welcome />} />
           <Route path="/powers" element={<Powers />} />
-          
-          
-          <Route path="/pader-familias" element={<PaderFamilias />} />
-          <Route path="/enter-lamsterverse" element={<EnterLamsterverse />} />
-          <Route path="/branch-from-verse" element={<BranchFromVerse />} />
-          <Route path="/layer-tree" element={<LayerTree />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/onboarding-guide" element={<OnboardingGuide />} />
           <Route path="/mini-games-hub" element={<MiniGamesHub />} />
