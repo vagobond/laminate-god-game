@@ -80,6 +80,66 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_friendship_types: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          show_birthday_day_month: boolean
+          show_birthday_year: boolean
+          show_contact_email: boolean
+          show_home_address: boolean
+          show_hometown_coords: boolean
+          show_instagram: boolean
+          show_linkedin: boolean
+          show_mailing_address: boolean
+          show_nicknames: boolean
+          show_phone: boolean
+          show_private_email: boolean
+          show_whatsapp: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          show_birthday_day_month?: boolean
+          show_birthday_year?: boolean
+          show_contact_email?: boolean
+          show_home_address?: boolean
+          show_hometown_coords?: boolean
+          show_instagram?: boolean
+          show_linkedin?: boolean
+          show_mailing_address?: boolean
+          show_nicknames?: boolean
+          show_phone?: boolean
+          show_private_email?: boolean
+          show_whatsapp?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          show_birthday_day_month?: boolean
+          show_birthday_year?: boolean
+          show_contact_email?: boolean
+          show_home_address?: boolean
+          show_hometown_coords?: boolean
+          show_instagram?: boolean
+          show_linkedin?: boolean
+          show_mailing_address?: boolean
+          show_nicknames?: boolean
+          show_phone?: boolean
+          show_private_email?: boolean
+          show_whatsapp?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       dream_trips: {
         Row: {
           created_at: string
@@ -148,6 +208,7 @@ export type Database = {
           level: Database["public"]["Enums"]["friendship_level"]
           needs_level_set: boolean
           user_id: string
+          uses_custom_type: boolean
         }
         Insert: {
           created_at?: string
@@ -156,6 +217,7 @@ export type Database = {
           level: Database["public"]["Enums"]["friendship_level"]
           needs_level_set?: boolean
           user_id: string
+          uses_custom_type?: boolean
         }
         Update: {
           created_at?: string
@@ -164,6 +226,7 @@ export type Database = {
           level?: Database["public"]["Enums"]["friendship_level"]
           needs_level_set?: boolean
           user_id?: string
+          uses_custom_type?: boolean
         }
         Relationships: [
           {
