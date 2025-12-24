@@ -63,6 +63,8 @@ const PublicProfile = () => {
   const [meetupPrefs, setMeetupPrefs] = useState<any>(null);
   const [hostingPrefs, setHostingPrefs] = useState<any>(null);
   const [prefsLoading, setPrefsLoading] = useState(false);
+  const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
+  const [showInsufficientLevelModal, setShowInsufficientLevelModal] = useState<"meetup" | "hosting" | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -527,47 +529,62 @@ const PublicProfile = () => {
                     )}
                   </div>
 
-                  {canRequestMeetupOrHosting ? (
-                    <div className="flex flex-wrap gap-3 justify-center">
-                      {meetupPrefs?.is_open_to_meetups && (
-                        <div className="text-center">
+                  <div className="flex flex-wrap gap-3 justify-center">
+                    {meetupPrefs?.is_open_to_meetups && (
+                      <div className="text-center">
+                        {canRequestMeetupOrHosting ? (
                           <MeetupRequestDialog recipientId={resolvedUserId} recipientName={profile?.display_name || "User"} />
-                          {meetupPrefs.meetup_description && (
-                            <p className="text-xs text-muted-foreground mt-2 max-w-xs">
-                              {meetupPrefs.meetup_description}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                      {hostingPrefs?.is_open_to_hosting && (
-                        <div className="text-center">
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (!currentUser) {
+                                setShowLoginRequiredModal(true);
+                              } else {
+                                setShowInsufficientLevelModal("meetup");
+                              }
+                            }}
+                          >
+                            <Coffee className="w-4 h-4 mr-2" />
+                            Request Meetup
+                          </Button>
+                        )}
+                        {meetupPrefs.meetup_description && (
+                          <p className="text-xs text-muted-foreground mt-2 max-w-xs">
+                            {meetupPrefs.meetup_description}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {hostingPrefs?.is_open_to_hosting && (
+                      <div className="text-center">
+                        {canRequestMeetupOrHosting ? (
                           <HostingRequestDialog recipientId={resolvedUserId} recipientName={profile?.display_name || "User"} />
-                          {hostingPrefs.hosting_description && (
-                            <p className="text-xs text-muted-foreground mt-2 max-w-xs">
-                              {hostingPrefs.hosting_description}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-center text-muted-foreground text-sm">
-                      {currentUser
-                        ? "Requests are available to friendly acquaintances and above."
-                        : "Sign in to request a meetup or hosting."}
-                    </p>
-                  )}
-
-                  {!canRequestMeetupOrHosting && meetupPrefs?.meetup_description && (
-                    <p className="text-xs text-muted-foreground text-center max-w-lg mx-auto">
-                      {meetupPrefs.meetup_description}
-                    </p>
-                  )}
-                  {!canRequestMeetupOrHosting && hostingPrefs?.hosting_description && (
-                    <p className="text-xs text-muted-foreground text-center max-w-lg mx-auto">
-                      {hostingPrefs.hosting_description}
-                    </p>
-                  )}
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (!currentUser) {
+                                setShowLoginRequiredModal(true);
+                              } else {
+                                setShowInsufficientLevelModal("hosting");
+                              }
+                            }}
+                          >
+                            <Home className="w-4 h-4 mr-2" />
+                            Request to Stay
+                          </Button>
+                        )}
+                        {hostingPrefs.hosting_description && (
+                          <p className="text-xs text-muted-foreground mt-2 max-w-xs">
+                            {hostingPrefs.hosting_description}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -618,6 +635,42 @@ const PublicProfile = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {blocking ? "Blocking..." : "Block User"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Login Required Modal */}
+      <AlertDialog open={showLoginRequiredModal} onOpenChange={setShowLoginRequiredModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Account Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              You need to create a free account to request meetups and hosting. Join our community to connect with travelers around the world!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate("/auth")}>
+              Sign Up Free
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Insufficient Friendship Level Modal */}
+      <AlertDialog open={!!showInsufficientLevelModal} onOpenChange={() => setShowInsufficientLevelModal(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Friendship Level Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              You don't have the required friendship trust level to send a {showInsufficientLevelModal} request to {profile?.display_name || "this user"}. 
+              Build your connection first by becoming friends at the "friendly acquaintance" level or higher.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowInsufficientLevelModal(null)}>
+              Got it
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
