@@ -20,6 +20,11 @@ import AddFriendButton from "@/components/AddFriendButton";
 import FriendsList from "@/components/FriendsList";
 import { ProfileGameStats } from "@/components/ProfileGameStats";
 import SendMessageDialog from "@/components/SendMessageDialog";
+import { UserReferences } from "@/components/UserReferences";
+import { LeaveReferenceDialog } from "@/components/LeaveReferenceDialog";
+import { MeetupRequestDialog } from "@/components/MeetupRequestDialog";
+import { HostingRequestDialog } from "@/components/HostingRequestDialog";
+import { Coffee, Home } from "lucide-react";
 interface Profile {
   id: string;
   display_name: string | null;
@@ -55,6 +60,8 @@ const PublicProfile = () => {
   const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [blocking, setBlocking] = useState(false);
   const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
+  const [meetupPrefs, setMeetupPrefs] = useState<any>(null);
+  const [hostingPrefs, setHostingPrefs] = useState<any>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -104,8 +111,22 @@ const PublicProfile = () => {
   useEffect(() => {
     if (resolvedUserId) {
       loadSecureProfile(resolvedUserId, currentUser?.id);
+      loadMeetupHostingPrefs(resolvedUserId);
     }
   }, [resolvedUserId, currentUser]);
+
+  const loadMeetupHostingPrefs = async (profileId: string) => {
+    try {
+      const [meetupRes, hostingRes] = await Promise.all([
+        supabase.from("meetup_preferences").select("*").eq("user_id", profileId).maybeSingle(),
+        supabase.from("hosting_preferences").select("*").eq("user_id", profileId).maybeSingle(),
+      ]);
+      setMeetupPrefs(meetupRes.data);
+      setHostingPrefs(hostingRes.data);
+    } catch (error) {
+      console.error("Error loading preferences:", error);
+    }
+  };
 
   const loadSecureProfile = async (profileId: string, viewerId: string | null) => {
     try {
@@ -426,6 +447,55 @@ const PublicProfile = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Meetup & Hosting Request Buttons */}
+        {resolvedUserId && currentUser && !isOwnProfile && (meetupPrefs?.is_open_to_meetups || hostingPrefs?.is_open_to_hosting) && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-wrap gap-3 justify-center">
+                {meetupPrefs?.is_open_to_meetups && (
+                  <div className="text-center">
+                    <MeetupRequestDialog
+                      recipientId={resolvedUserId}
+                      recipientName={profile?.display_name || "User"}
+                    />
+                    {meetupPrefs.meetup_description && (
+                      <p className="text-xs text-muted-foreground mt-2 max-w-xs">
+                        {meetupPrefs.meetup_description}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {hostingPrefs?.is_open_to_hosting && (
+                  <div className="text-center">
+                    <HostingRequestDialog
+                      recipientId={resolvedUserId}
+                      recipientName={profile?.display_name || "User"}
+                    />
+                    {hostingPrefs.hosting_description && (
+                      <p className="text-xs text-muted-foreground mt-2 max-w-xs">
+                        {hostingPrefs.hosting_description}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* References Section */}
+        {resolvedUserId && (
+          <div className="space-y-4">
+            <UserReferences userId={resolvedUserId} isOwnProfile={isOwnProfile} />
+            {currentUser && !isOwnProfile && friendshipLevel && (
+              <LeaveReferenceDialog
+                recipientId={resolvedUserId}
+                recipientName={profile?.display_name || "User"}
+              />
+            )}
+          </div>
+        )}
 
         {/* Friends List */}
         {resolvedUserId && (

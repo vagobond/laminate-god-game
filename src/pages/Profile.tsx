@@ -13,6 +13,9 @@ import FriendsList from "@/components/FriendsList";
 import { ProfileGameStats } from "@/components/ProfileGameStats";
 import { SocialLinksManager } from "@/components/SocialLinksManager";
 import { PersonalInfoManager, PersonalInfoData, VisibilityLevel } from "@/components/PersonalInfoManager";
+import { MeetupPreferencesManager } from "@/components/MeetupPreferencesManager";
+import { HostingPreferencesManager } from "@/components/HostingPreferencesManager";
+import { UserReferences } from "@/components/UserReferences";
 import { z } from "zod";
 
 // Validation constants
@@ -610,9 +613,22 @@ const Profile = () => {
           </CardContent>
         </Card>
 
+        {/* Meetup & Hosting Preferences */}
+        {user && (
+          <div className="grid gap-6 md:grid-cols-2">
+            <MeetupPreferencesManager userId={user.id} />
+            <HostingPreferencesManager userId={user.id} />
+          </div>
+        )}
+
         {/* Friends List */}
         {user && (
           <FriendsList userId={user.id} viewerId={user.id} showLevels={true} />
+        )}
+
+        {/* References */}
+        {user && (
+          <UserReferences userId={user.id} isOwnProfile={true} />
         )}
 
         {/* Mini-Game Stats */}
