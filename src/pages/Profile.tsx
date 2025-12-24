@@ -16,6 +16,7 @@ import { PersonalInfoManager, PersonalInfoData, VisibilityLevel } from "@/compon
 import { MeetupPreferencesManager } from "@/components/MeetupPreferencesManager";
 import { HostingPreferencesManager } from "@/components/HostingPreferencesManager";
 import { UserReferences } from "@/components/UserReferences";
+import { ProfileCompleteness } from "@/components/ProfileCompleteness";
 import { z } from "zod";
 
 // Validation constants
@@ -459,6 +460,25 @@ const Profile = () => {
             </Button>
           </div>
         </div>
+
+        {/* Profile Completeness */}
+        <ProfileCompleteness 
+          profile={{
+            display_name: displayName,
+            username,
+            avatar_url: avatarUrl,
+            bio,
+            link,
+            hometown_city: profile?.hometown_city || null,
+            birthday_month: personalInfo.birthday_month,
+            whatsapp: contactData.whatsapp || null,
+            phone_number: contactData.phone_number || null,
+            private_email: contactData.private_email || null,
+            instagram_url: contactData.instagram_url || null,
+            linkedin_url: contactData.linkedin_url || null,
+            nicknames: personalInfo.nicknames,
+          }}
+        />
 
         <Card>
           <CardHeader>
