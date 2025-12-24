@@ -31,6 +31,7 @@ interface Message {
   created_at: string;
   read_at: string | null;
   sender?: SenderProfile;
+  recipient?: SenderProfile;
 }
 
 const platformLabels: Record<string, string> = {
@@ -87,21 +88,22 @@ const MessagesInbox = () => {
 
       if (error) throw error;
 
-      // Fetch sender profiles with contact info for platform links
-      const senderIds = [...new Set((data || []).map(m => m.from_user_id))];
+      // Fetch sender and recipient profiles with contact info for platform links
+      const allUserIds = [...new Set((data || []).flatMap(m => [m.from_user_id, m.to_user_id]))];
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, display_name, avatar_url, linkedin_url, contact_email, instagram_url, whatsapp, phone_number, link")
-        .in("id", senderIds);
+        .in("id", allUserIds);
 
       const profileMap = new Map<string, SenderProfile>(profiles?.map(p => [p.id, p as SenderProfile]) || []);
 
-      const messagesWithSenders = (data || []).map(m => ({
+      const messagesWithProfiles = (data || []).map(m => ({
         ...m,
         sender: profileMap.get(m.from_user_id),
+        recipient: profileMap.get(m.to_user_id),
       }));
 
-      setMessages(messagesWithSenders as Message[]);
+      setMessages(messagesWithProfiles as Message[]);
     } catch (error) {
       console.error("Error loading messages:", error);
     } finally {
@@ -194,8 +196,11 @@ const MessagesInbox = () => {
                 >
                   <div className="flex items-start gap-3">
                     <Avatar 
-                      className="w-10 h-10 cursor-pointer"
-                      onClick={() => navigate(`/profile/${message.from_user_id}`)}
+                      className="w-10 h-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/u/${message.from_user_id}`);
+                      }}
                     >
                       <AvatarImage src={message.sender?.avatar_url || undefined} />
                       <AvatarFallback>
@@ -205,13 +210,25 @@ const MessagesInbox = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span 
-                          className="font-medium cursor-pointer hover:text-primary"
-                          onClick={() => navigate(`/profile/${message.from_user_id}`)}
+                          className="font-medium cursor-pointer hover:text-primary hover:underline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/u/${message.from_user_id}`);
+                          }}
                         >
                           {message.sender?.display_name || "Unknown"}
                         </span>
-                        <span className="text-xs text-muted-foreground">
-                          {isReceived ? "→ you" : "← sent by you"}
+                        <span className="text-xs text-muted-foreground">→</span>
+                        <span 
+                          className="font-medium cursor-pointer hover:text-primary hover:underline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/u/${message.to_user_id}`);
+                          }}
+                        >
+                          {message.to_user_id === currentUserId 
+                            ? "you" 
+                            : (message.recipient?.display_name || "Unknown")}
                         </span>
                         {isUnread && (
                           <Mail className="w-4 h-4 text-primary" />
