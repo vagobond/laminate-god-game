@@ -53,29 +53,32 @@ const Auth = () => {
     // Check URL hash for password recovery event
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const type = hashParams.get('type');
-    
+
     if (type === 'recovery') {
       setAuthView("update-password");
       return;
     }
 
-    // Check if user is already logged in (only redirect if not showing welcome modal)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session && !showWelcomeModal) {
-        navigate("/");
-      }
-    });
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setAuthView("update-password");
-      } else if (event === 'SIGNED_IN' && session && authView !== "update-password") {
+        return;
+      }
+
+      // If user visits /auth while already signed in, bounce them home.
+      if (event === 'INITIAL_SESSION' && session && authView !== "update-password") {
+        navigate("/");
+        return;
+      }
+
+      // After a successful sign-in/sign-up, show the invite modal.
+      if (event === 'SIGNED_IN' && session && authView !== "update-password") {
         setShowWelcomeModal(true);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, authView, showWelcomeModal]);
+  }, [navigate, authView]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
