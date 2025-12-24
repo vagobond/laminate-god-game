@@ -1,16 +1,15 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import scrollOpenGif from "@/assets/scroll-paper-open-up.gif";
 
 const Welcome = () => {
   const navigate = useNavigate();
-  const [animationPhase, setAnimationPhase] = useState<"video" | "dissolve" | "complete">("video");
-  const [isMuted, setIsMuted] = useState(() => localStorage.getItem("audio-muted") !== "false");
-  const [isVideoLoading, setIsVideoLoading] = useState(true);
+  const [animationPhase, setAnimationPhase] = useState<"gif" | "dissolve" | "complete">("gif");
+  const [isGifLoading, setIsGifLoading] = useState(true);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Check if user is already logged in - redirect to powers
   useEffect(() => {
@@ -25,49 +24,19 @@ const Welcome = () => {
     checkAuth();
   }, [navigate]);
 
+  // Transition to content after GIF plays (approximately 3 seconds)
   useEffect(() => {
-    if (checkingAuth) return;
+    if (checkingAuth || isGifLoading) return;
     
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleTimeUpdate = () => {
-      const timeRemaining = video.duration - video.currentTime;
-      // Fade out audio over the last 0.8 seconds
-      if (timeRemaining <= 0.8 && timeRemaining > 0) {
-        video.volume = Math.max(0, timeRemaining / 0.8);
-      }
-    };
-
-    const handleEnded = () => {
+    const timer = setTimeout(() => {
       setAnimationPhase("dissolve");
       setTimeout(() => {
         setAnimationPhase("complete");
       }, 800);
-    };
+    }, 3000);
 
-    video.addEventListener("timeupdate", handleTimeUpdate);
-    video.addEventListener("ended", handleEnded);
-    return () => {
-      video.removeEventListener("timeupdate", handleTimeUpdate);
-      video.removeEventListener("ended", handleEnded);
-    };
-  }, [checkingAuth]);
-
-  useEffect(() => {
-    const handleMuteChange = (e: CustomEvent<boolean>) => {
-      setIsMuted(e.detail);
-    };
-
-    window.addEventListener("audio-mute-changed", handleMuteChange as EventListener);
-    return () => window.removeEventListener("audio-mute-changed", handleMuteChange as EventListener);
-  }, []);
-
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = isMuted;
-    }
-  }, [isMuted]);
+    return () => clearTimeout(timer);
+  }, [checkingAuth, isGifLoading]);
 
   // Show nothing while checking auth to prevent flash
   if (checkingAuth) {
@@ -81,10 +50,10 @@ const Welcome = () => {
   return (
     <div className="flex min-h-screen items-center justify-center p-4 overflow-hidden">
       <div className="text-center space-y-12 relative w-full h-full">
-        {/* Video Animation - Full Page */}
+        {/* GIF Animation - Full Page */}
         <div 
           className={`fixed inset-0 flex items-center justify-center transition-opacity duration-700 ease-out z-10 ${
-            animationPhase === "video" 
+            animationPhase === "gif" 
               ? "opacity-100" 
               : "opacity-0 pointer-events-none"
           }`}
@@ -93,21 +62,18 @@ const Welcome = () => {
           <div className="absolute inset-0 bg-gradient-radial from-primary/20 via-transparent to-transparent" />
           
           {/* Loading spinner */}
-          {isVideoLoading && (
+          {isGifLoading && (
             <div className="absolute inset-0 flex items-center justify-center">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
           )}
           
-          <video 
-            ref={videoRef}
-            src="/video/xcrol.mp4"
-            autoPlay
-            muted={isMuted}
-            playsInline
-            onCanPlay={() => setIsVideoLoading(false)}
+          <img 
+            src={scrollOpenGif}
+            alt="Scroll opening"
+            onLoad={() => setIsGifLoading(false)}
             className={`w-[80vmin] h-[80vmin] max-w-[600px] max-h-[600px] object-contain drop-shadow-[0_0_60px_rgba(139,92,246,0.6)] transition-opacity duration-300 ${
-              isVideoLoading ? "opacity-0" : "opacity-100"
+              isGifLoading ? "opacity-0" : "opacity-100"
             }`}
           />
         </div>
@@ -115,7 +81,7 @@ const Welcome = () => {
         {/* Main Content */}
         <div 
           className={`transition-all duration-700 ease-out ${
-            animationPhase === "video" 
+            animationPhase === "gif" 
               ? "opacity-0 scale-95 translate-y-4" 
               : "opacity-100 scale-100 translate-y-0"
           }`}
