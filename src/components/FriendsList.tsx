@@ -37,6 +37,7 @@ interface Friend {
   id: string;
   friend_id: string;
   level: string;
+  uses_custom_type?: boolean;
   profile?: {
     display_name: string | null;
     avatar_url: string | null;
@@ -132,17 +133,44 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
 
       if (error) throw error;
 
-      const friendsWithProfiles: Friend[] = (data || []).map((row: any) => ({
-        id: row.id,
-        friend_id: row.friend_id,
-        level: row.level,
-        profile: {
-          display_name: row.display_name,
-          avatar_url: row.avatar_url,
-        },
-      }));
+      // Get uses_custom_type for each friend (only needed for own profile)
+      let friendsWithCustomType: Friend[] = [];
+      
+      if (viewerId === userId) {
+        // Fetch uses_custom_type for all friendships
+        const friendshipIds = (data || []).map((row: any) => row.id);
+        const { data: customTypeData } = await supabase
+          .from("friendships")
+          .select("id, uses_custom_type")
+          .in("id", friendshipIds);
+        
+        const customTypeMap = new Map(
+          (customTypeData || []).map((f: any) => [f.id, f.uses_custom_type])
+        );
+        
+        friendsWithCustomType = (data || []).map((row: any) => ({
+          id: row.id,
+          friend_id: row.friend_id,
+          level: row.level,
+          uses_custom_type: customTypeMap.get(row.id) || false,
+          profile: {
+            display_name: row.display_name,
+            avatar_url: row.avatar_url,
+          },
+        }));
+      } else {
+        friendsWithCustomType = (data || []).map((row: any) => ({
+          id: row.id,
+          friend_id: row.friend_id,
+          level: row.level,
+          profile: {
+            display_name: row.display_name,
+            avatar_url: row.avatar_url,
+          },
+        }));
+      }
 
-      setFriends(friendsWithProfiles);
+      setFriends(friendsWithCustomType);
     } catch (error) {
       console.error("Error loading friends:", error);
       setFriends([]);
@@ -213,7 +241,9 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
 
       setFriends((prev) =>
         prev.map((f) =>
-          f.id === editingFriend.id ? { ...f, level: selectedLevel } : f
+          f.id === editingFriend.id 
+            ? { ...f, level: levelToStore, uses_custom_type: selectedUsesCustomType } 
+            : f
         )
       );
       toast.success("Friendship level updated!");
@@ -291,8 +321,13 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
         </div>
         {/* Only show level badges to the profile owner */}
         {showLevelBadge && isOwnProfile && !["secret_friend", "fake_friend", "secret_enemy"].includes(friend.level) && (
-          <Badge variant="secondary" className="text-xs">
-            {levelLabels[friend.level] || friend.level}
+          <Badge 
+            variant={friend.uses_custom_type ? "default" : "secondary"} 
+            className={`text-xs ${friend.uses_custom_type ? "bg-primary/80" : ""}`}
+          >
+            {friend.uses_custom_type && customFriendshipType 
+              ? customFriendshipType.name 
+              : (levelLabels[friend.level] || friend.level)}
           </Badge>
         )}
       </div>
