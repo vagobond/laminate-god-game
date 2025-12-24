@@ -59,9 +59,9 @@ const Auth = () => {
       return;
     }
 
-    // Check if user is already logged in
+    // Check if user is already logged in (only redirect if not showing welcome modal)
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
+      if (session && !showWelcomeModal) {
         navigate("/");
       }
     });
@@ -75,7 +75,7 @@ const Auth = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, authView]);
+  }, [navigate, authView, showWelcomeModal]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -25,6 +25,7 @@ export const WelcomeModal = ({ open, onOpenChange }: WelcomeModalProps) => {
 
   const handleMaybeLater = () => {
     onOpenChange(false);
+    navigate("/");
   };
 
   return (
