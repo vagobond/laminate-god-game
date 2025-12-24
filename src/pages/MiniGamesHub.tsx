@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Skull, Trophy, Zap, Home, Globe, Heart, Sparkles, Plane, CircleDot, Award, Play, Tent } from "lucide-react";
 import { WolfemonGame } from "@/components/WolfemonGame";
-import { ArtIFucked } from "@/components/ArtIFucked";
+
 import { SlyDoubtGame } from "@/components/SlyDoubtGame";
 import { DreamTripGame } from "@/components/DreamTripGame";
 import CureToLonelinessGame from "@/components/CureToLonelinessGame";
@@ -33,7 +33,7 @@ interface GameStats {
   total_scenarios: number;
 }
 
-type GameType = "country" | "loneliness" | "slyDoubt" | "verse" | "dreamTrip" | "wolfemon" | "artIFucked" | "resolution" | "roughLiving" | null;
+type GameType = "country" | "loneliness" | "slyDoubt" | "verse" | "dreamTrip" | "wolfemon" | "resolution" | "roughLiving" | null;
 
 interface GameCardProps {
   title: string;
@@ -361,13 +361,6 @@ const MiniGamesHub = () => {
       badge: "Idle"
     },
     {
-      id: "artIFucked" as GameType,
-      title: "Art I Fucked",
-      description: "In a world destroyed by AI, encounter those who helped build the machines that ended civilization.",
-      icon: <Award className="w-5 h-5" />,
-      badge: "Drama"
-    },
-    {
       id: "resolution" as GameType,
       title: "Resolution Validation Bureau",
       description: "Official certification for making AND breaking resolutions.",
@@ -397,8 +390,6 @@ const MiniGamesHub = () => {
         return <DreamTripGame />;
       case "wolfemon":
         return <WolfemonGame />;
-      case "artIFucked":
-        return <ArtIFucked />;
       case "resolution":
         return <ResolutionGames />;
       case "roughLiving":
