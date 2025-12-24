@@ -236,6 +236,84 @@ export type Database = {
         }
         Relationships: []
       }
+      hosting_preferences: {
+        Row: {
+          accommodation_type: string | null
+          created_at: string
+          hosting_description: string | null
+          id: string
+          is_open_to_hosting: boolean
+          max_guests: number | null
+          min_friendship_level: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accommodation_type?: string | null
+          created_at?: string
+          hosting_description?: string | null
+          id?: string
+          is_open_to_hosting?: boolean
+          max_guests?: number | null
+          min_friendship_level?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accommodation_type?: string | null
+          created_at?: string
+          hosting_description?: string | null
+          id?: string
+          is_open_to_hosting?: boolean
+          max_guests?: number | null
+          min_friendship_level?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hosting_requests: {
+        Row: {
+          arrival_date: string | null
+          created_at: string
+          departure_date: string | null
+          from_user_id: string
+          id: string
+          message: string
+          num_guests: number | null
+          response_message: string | null
+          status: Database["public"]["Enums"]["request_status"]
+          to_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          arrival_date?: string | null
+          created_at?: string
+          departure_date?: string | null
+          from_user_id: string
+          id?: string
+          message: string
+          num_guests?: number | null
+          response_message?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          to_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          arrival_date?: string | null
+          created_at?: string
+          departure_date?: string | null
+          from_user_id?: string
+          id?: string
+          message?: string
+          num_guests?: number | null
+          response_message?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          to_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       layer_relationships: {
         Row: {
           child_layer_id: string
@@ -317,6 +395,75 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           vision?: string | null
+        }
+        Relationships: []
+      }
+      meetup_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          is_open_to_meetups: boolean
+          meetup_description: string | null
+          min_friendship_level: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_open_to_meetups?: boolean
+          meetup_description?: string | null
+          min_friendship_level?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_open_to_meetups?: boolean
+          meetup_description?: string | null
+          min_friendship_level?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      meetup_requests: {
+        Row: {
+          created_at: string
+          from_user_id: string
+          id: string
+          message: string
+          proposed_dates: string | null
+          purpose: Database["public"]["Enums"]["meetup_purpose"]
+          response_message: string | null
+          status: Database["public"]["Enums"]["request_status"]
+          to_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_user_id: string
+          id?: string
+          message: string
+          proposed_dates?: string | null
+          purpose: Database["public"]["Enums"]["meetup_purpose"]
+          response_message?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          to_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          message?: string
+          proposed_dates?: string | null
+          purpose?: Database["public"]["Enums"]["meetup_purpose"]
+          response_message?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          to_user_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -575,6 +722,39 @@ export type Database = {
           },
         ]
       }
+      user_references: {
+        Row: {
+          content: string
+          created_at: string
+          from_user_id: string
+          id: string
+          rating: number | null
+          reference_type: Database["public"]["Enums"]["reference_type"]
+          to_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          from_user_id: string
+          id?: string
+          rating?: number | null
+          reference_type: Database["public"]["Enums"]["reference_type"]
+          to_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          rating?: number | null
+          reference_type?: Database["public"]["Enums"]["reference_type"]
+          to_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -741,6 +921,9 @@ export type Database = {
         | "fake_friend"
         | "not_friend"
         | "secret_enemy"
+      meetup_purpose: "tourism" | "food" | "friendship" | "romance"
+      reference_type: "host" | "guest" | "friendly" | "business"
+      request_status: "pending" | "accepted" | "declined" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -878,6 +1061,9 @@ export const Constants = {
         "not_friend",
         "secret_enemy",
       ],
+      meetup_purpose: ["tourism", "food", "friendship", "romance"],
+      reference_type: ["host", "guest", "friendly", "business"],
+      request_status: ["pending", "accepted", "declined", "cancelled"],
     },
   },
 } as const
