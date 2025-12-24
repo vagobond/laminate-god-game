@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Users, Shield, RefreshCw } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, Users, Shield, RefreshCw, Send, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 
 interface UserProfile {
@@ -38,6 +39,9 @@ export default function AdminDashboard() {
     totalUsers: 0,
     totalFriendships: 0,
   });
+  const [broadcastMessage, setBroadcastMessage] = useState("");
+  const [sendingBroadcast, setSendingBroadcast] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     checkAdminAccess();
@@ -66,8 +70,56 @@ export default function AdminDashboard() {
       return;
     }
 
+    setCurrentUserId(user.id);
     setIsAdmin(true);
     loadDashboardData();
+  };
+
+  const sendBroadcastMessage = async () => {
+    if (!broadcastMessage.trim() || !currentUserId) {
+      toast.error("Please enter a message");
+      return;
+    }
+
+    setSendingBroadcast(true);
+    
+    try {
+      // Get all user IDs except the admin
+      const { data: allUsers, error: usersError } = await supabase
+        .from("profiles")
+        .select("id")
+        .neq("id", currentUserId);
+
+      if (usersError) throw usersError;
+
+      if (!allUsers || allUsers.length === 0) {
+        toast.error("No users to send message to");
+        setSendingBroadcast(false);
+        return;
+      }
+
+      // Create messages for all users
+      const messages = allUsers.map((user) => ({
+        from_user_id: currentUserId,
+        to_user_id: user.id,
+        content: broadcastMessage.trim(),
+        platform_suggestion: "system_broadcast",
+      }));
+
+      const { error: insertError } = await supabase
+        .from("messages")
+        .insert(messages);
+
+      if (insertError) throw insertError;
+
+      toast.success(`Broadcast sent to ${allUsers.length} users`);
+      setBroadcastMessage("");
+    } catch (error) {
+      console.error("Error sending broadcast:", error);
+      toast.error("Failed to send broadcast message");
+    } finally {
+      setSendingBroadcast(false);
+    }
   };
 
   const loadDashboardData = async () => {
@@ -185,6 +237,7 @@ export default function AdminDashboard() {
           <TabsList>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="roles">Admin Roles</TabsTrigger>
+            <TabsTrigger value="broadcast">Broadcast</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -266,6 +319,40 @@ export default function AdminDashboard() {
                     ))}
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="broadcast">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Broadcast Message
+                </CardTitle>
+                <CardDescription>
+                  Send a system message to all users. This will appear in their inbox.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Textarea
+                  placeholder="Type your broadcast message here..."
+                  value={broadcastMessage}
+                  onChange={(e) => setBroadcastMessage(e.target.value)}
+                  className="min-h-[150px]"
+                />
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    This will be sent to {stats.totalUsers - 1} users
+                  </p>
+                  <Button 
+                    onClick={sendBroadcastMessage} 
+                    disabled={sendingBroadcast || !broadcastMessage.trim()}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    {sendingBroadcast ? "Sending..." : "Send Broadcast"}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
