@@ -184,7 +184,7 @@ export const DreamTripGame = () => {
         <CardContent className="space-y-4">
           {isAuthenticated === false && (
             <p className="text-sm text-muted-foreground">
-              Please sign in to play Dream Trip.
+              Please <button onClick={() => navigate('/auth')} className="text-primary hover:underline">sign in</button> to play Dream Trip.
             </p>
           )}
 
@@ -231,8 +231,8 @@ export const DreamTripGame = () => {
           )}
 
           <Button 
-            onClick={startTrip}
-            disabled={isLoading || destinations.length === 0}
+            onClick={isAuthenticated === false ? () => navigate('/auth') : startTrip}
+            disabled={isLoading || (isAuthenticated !== false && destinations.length === 0)}
             className="w-full"
             size="lg"
           >

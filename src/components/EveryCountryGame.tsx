@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,7 @@ interface AvailableInvites {
 }
 
 export const EveryCountryGame = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [hasHometown, setHasHometown] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -261,8 +263,11 @@ export const EveryCountryGame = () => {
             Every Country in the World
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <p className="text-muted-foreground">Please log in to participate.</p>
+          <Button onClick={() => navigate('/auth')} className="w-full">
+            Sign In to Play
+          </Button>
         </CardContent>
       </Card>
     );

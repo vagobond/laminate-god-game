@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +47,7 @@ const DESTINATIONS = ["Hawaii", "Key West", "San Diego", "New Orleans", "Austin"
 const STARTING_INVENTORY = ["Swiss Army Knife", "Lighter", "Wool Blanket"];
 
 export function RoughLivingGame() {
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -1508,9 +1510,18 @@ export function RoughLivingGame() {
             </ul>
             <p className="mt-2">Can you make it from Portland to your destination?</p>
           </div>
-          <Button onClick={startGame} className="w-full bg-amber-700 hover:bg-amber-600">
-            Begin Your Journey
-          </Button>
+          {isAuthenticated ? (
+            <Button onClick={startGame} className="w-full bg-amber-700 hover:bg-amber-600">
+              Begin Your Journey
+            </Button>
+          ) : (
+            <>
+              <p className="text-sm text-amber-200/70">Please sign in to play Rough Living.</p>
+              <Button onClick={() => navigate('/auth')} className="w-full bg-amber-700 hover:bg-amber-600">
+                Sign In to Play
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
     );
