@@ -186,11 +186,6 @@ const GettingStarted = () => {
               </div>
               
               <div className="p-4 rounded-lg bg-background/50 border border-border/30">
-                <h3 className="font-bold text-lg mb-2">🎨 Art I Fucked</h3>
-                <p className="text-sm">An irreverent art adventure where you collect "Sharts" (shart art) and complete bizarre artistic encounters. Not for the easily offended!</p>
-              </div>
-              
-              <div className="p-4 rounded-lg bg-background/50 border border-border/30">
                 <h3 className="font-bold text-lg mb-2">✊ Sly Doubt</h3>
                 <p className="text-sm">Join the revolution! Collect "Bloot" and perform acts of rebellion in this tongue-in-cheek political satire game.</p>
               </div>
