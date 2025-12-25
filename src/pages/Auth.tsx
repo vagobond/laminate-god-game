@@ -25,6 +25,7 @@ const signUpSchema = z.object({
   email: z.string().trim().email({ message: "Please enter a valid email address" }),
   password: z.string()
     .min(8, { message: "Password must be at least 8 characters" }),
+  inviteCode: z.string().trim().optional(),
 });
 
 const resetPasswordSchema = z.object({
@@ -44,7 +45,8 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; displayName?: string; confirmPassword?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; displayName?: string; confirmPassword?: string; inviteCode?: string }>({});
+  const [inviteCode, setInviteCode] = useState("");
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const [authView, setAuthView] = useState<AuthView>("default");
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
@@ -84,7 +86,7 @@ const Auth = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = signUpSchema.safeParse({ displayName, email, password });
+    const result = signUpSchema.safeParse({ displayName, email, password, inviteCode });
     if (!result.success) {
       const fieldErrors: typeof errors = {};
       result.error.errors.forEach((err) => {
@@ -97,18 +99,58 @@ const Auth = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      // If invite code provided, validate it first
+      if (result.data.inviteCode) {
+        const { data: inviteData, error: inviteError } = await supabase
+          .from('country_invites')
+          .select('id, invitee_email, status')
+          .eq('invite_code', result.data.inviteCode)
+          .single();
+
+        if (inviteError || !inviteData) {
+          setErrors({ inviteCode: "Invalid invite code" });
+          setLoading(false);
+          return;
+        }
+
+        if (inviteData.status !== 'pending') {
+          setErrors({ inviteCode: "This invite code has already been used" });
+          setLoading(false);
+          return;
+        }
+
+        if (inviteData.invitee_email.toLowerCase() !== result.data.email.toLowerCase()) {
+          setErrors({ inviteCode: "This invite code was sent to a different email address" });
+          setLoading(false);
+          return;
+        }
+      }
+
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email: result.data.email,
         password: result.data.password,
         options: {
           emailRedirectTo: "https://laminate-god-game.lovable.app/",
           data: {
             display_name: result.data.displayName,
+            invite_code: result.data.inviteCode || null,
           }
         }
       });
 
       if (error) throw error;
+
+      // If invite code was used and user was created, update the invite status
+      if (result.data.inviteCode && signUpData.user) {
+        await supabase
+          .from('country_invites')
+          .update({ 
+            status: 'accepted', 
+            invitee_id: signUpData.user.id 
+          })
+          .eq('invite_code', result.data.inviteCode);
+      }
+
       setShowEmailConfirmation(true);
       toast.success("Check your email to verify your account!");
     } catch (error: any) {
@@ -509,6 +551,21 @@ const Auth = () => {
                   <p className="text-sm text-destructive">{errors.password}</p>
                 )}
                 <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signup-invite-code">Invite Code (optional)</Label>
+                <Input
+                  id="signup-invite-code"
+                  type="text"
+                  placeholder="Enter invite code if you have one"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                  className="bg-muted/20 border-primary/30"
+                />
+                {errors.inviteCode && (
+                  <p className="text-sm text-destructive">{errors.inviteCode}</p>
+                )}
+                <p className="text-xs text-muted-foreground">If someone invited you, enter their code here</p>
               </div>
               <Button
                 type="submit"
