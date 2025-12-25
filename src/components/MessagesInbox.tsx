@@ -9,6 +9,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import SendMessageDialog from "./SendMessageDialog";
+import MarkdownContent from "./MarkdownContent";
 
 interface SenderProfile {
   id: string;
@@ -237,9 +238,10 @@ const MessagesInbox = () => {
                           <MailOpen className="w-4 h-4 text-muted-foreground" />
                         )}
                       </div>
-                      <p className="mt-1 text-sm whitespace-pre-wrap break-words">
-                        {message.content}
-                      </p>
+                      <MarkdownContent 
+                        content={message.content} 
+                        className="mt-1 text-sm break-words block"
+                      />
                       {message.platform_suggestion && message.platform_suggestion !== "none" && (() => {
 const platformUrl = getPlatformUrl(message.platform_suggestion, message.sender);
                         return platformUrl ? (
