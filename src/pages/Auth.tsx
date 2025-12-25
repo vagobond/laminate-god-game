@@ -513,7 +513,7 @@ const Auth = () => {
                 <Input
                   id="signup-name"
                   type="text"
-                  placeholder="Your divine name"
+                  placeholder="username"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   className="bg-muted/20 border-primary/30"
