@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -259,8 +260,34 @@ const PublicProfile = () => {
 
   const displayName = profile.display_name || "Anonymous Xcroler";
 
+  const profileUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const metaDescription = profile.bio 
+    ? profile.bio.slice(0, 155) + (profile.bio.length > 155 ? '...' : '')
+    : `View ${displayName}'s profile on XCROL`;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 p-4 pt-20">
+    <>
+      <Helmet>
+        <title>{displayName} | XCROL</title>
+        <meta name="description" content={metaDescription} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="profile" />
+        <meta property="og:title" content={`${displayName} | XCROL`} />
+        <meta property="og:description" content={metaDescription} />
+        <meta property="og:url" content={profileUrl} />
+        {profile.avatar_url && <meta property="og:image" content={profile.avatar_url} />}
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={`${displayName} | XCROL`} />
+        <meta name="twitter:description" content={metaDescription} />
+        {profile.avatar_url && <meta name="twitter:image" content={profile.avatar_url} />}
+        
+        {/* Profile specific */}
+        {hometown && <meta property="profile:hometown" content={hometown} />}
+      </Helmet>
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 p-4 pt-20">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center justify-between mb-4">
           <Button 
@@ -681,6 +708,7 @@ const PublicProfile = () => {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </>
   );
 };
 
