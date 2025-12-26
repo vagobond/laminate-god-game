@@ -82,6 +82,7 @@ export type Database = {
       }
       custom_friendship_types: {
         Row: {
+          can_leave_reference: boolean
           created_at: string
           id: string
           name: string
@@ -101,6 +102,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          can_leave_reference?: boolean
           created_at?: string
           id?: string
           name: string
@@ -120,6 +122,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          can_leave_reference?: boolean
           created_at?: string
           id?: string
           name?: string
