@@ -878,6 +878,36 @@ export type Database = {
         }
         Relationships: []
       }
+      xcrol_entries: {
+        Row: {
+          content: string
+          created_at: string
+          entry_date: string
+          id: string
+          link: string | null
+          privacy_level: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          entry_date?: string
+          id?: string
+          link?: string | null
+          privacy_level?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          entry_date?: string
+          id?: string
+          link?: string | null
+          privacy_level?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

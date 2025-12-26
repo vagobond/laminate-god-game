@@ -18,6 +18,7 @@ import { HostingPreferencesManager } from "@/components/HostingPreferencesManage
 import { UserReferences } from "@/components/UserReferences";
 import { ProfileCompleteness } from "@/components/ProfileCompleteness";
 import { CustomFriendshipTypeManager } from "@/components/CustomFriendshipTypeManager";
+import { XcrolPrompt } from "@/components/XcrolPrompt";
 import { z } from "zod";
 
 // Validation constants
@@ -462,8 +463,11 @@ const Profile = () => {
           </div>
         </div>
 
+        {/* Xcrol Prompt */}
+        <XcrolPrompt userId={user.id} />
+
         {/* Profile Completeness */}
-        <ProfileCompleteness 
+        <ProfileCompleteness
           profile={{
             display_name: displayName,
             username,
