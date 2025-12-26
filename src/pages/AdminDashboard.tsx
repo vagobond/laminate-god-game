@@ -7,8 +7,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Users, Shield, RefreshCw, Send, MessageSquare } from "lucide-react";
+import { ArrowLeft, Users, Shield, RefreshCw, Send, MessageSquare, Flag, Star, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface UserProfile {
   id: string;
@@ -28,6 +38,49 @@ interface UserRole {
   };
 }
 
+interface FlaggedReference {
+  id: string;
+  reference_id: string;
+  flagged_by: string;
+  reason: string;
+  status: string;
+  admin_notes: string | null;
+  created_at: string;
+  reference?: {
+    id: string;
+    content: string;
+    rating: number | null;
+    reference_type: string;
+    from_user_id: string;
+    to_user_id: string;
+  };
+  flagger?: {
+    display_name: string | null;
+  };
+  from_user?: {
+    display_name: string | null;
+  };
+  to_user?: {
+    display_name: string | null;
+  };
+}
+
+interface AllReference {
+  id: string;
+  content: string;
+  rating: number | null;
+  reference_type: string;
+  from_user_id: string;
+  to_user_id: string;
+  created_at: string;
+  from_user?: {
+    display_name: string | null;
+  };
+  to_user?: {
+    display_name: string | null;
+  };
+}
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -42,6 +95,10 @@ export default function AdminDashboard() {
   const [broadcastMessage, setBroadcastMessage] = useState("");
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [flaggedReferences, setFlaggedReferences] = useState<FlaggedReference[]>([]);
+  const [allReferences, setAllReferences] = useState<AllReference[]>([]);
+  const [deleteRefId, setDeleteRefId] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -174,12 +231,146 @@ export default function AdminDashboard() {
         totalUsers: userCount || 0,
         totalFriendships: friendshipCount || 0,
       });
+
+      // Load flagged references
+      const { data: flaggedData } = await supabase
+        .from("flagged_references")
+        .select("*")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (flaggedData) {
+        const flaggedWithDetails = await Promise.all(
+          flaggedData.map(async (flag) => {
+            const { data: reference } = await supabase
+              .from("user_references")
+              .select("*")
+              .eq("id", flag.reference_id)
+              .maybeSingle();
+
+            const { data: flagger } = await supabase
+              .from("profiles")
+              .select("display_name")
+              .eq("id", flag.flagged_by)
+              .maybeSingle();
+
+            let from_user = null;
+            let to_user = null;
+
+            if (reference) {
+              const { data: fromData } = await supabase
+                .from("profiles")
+                .select("display_name")
+                .eq("id", reference.from_user_id)
+                .maybeSingle();
+              from_user = fromData;
+
+              const { data: toData } = await supabase
+                .from("profiles")
+                .select("display_name")
+                .eq("id", reference.to_user_id)
+                .maybeSingle();
+              to_user = toData;
+            }
+
+            return { ...flag, reference, flagger, from_user, to_user };
+          })
+        );
+        setFlaggedReferences(flaggedWithDetails);
+      }
+
+      // Load all references
+      const { data: refsData } = await supabase
+        .from("user_references")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      if (refsData) {
+        const refsWithUsers = await Promise.all(
+          refsData.map(async (ref) => {
+            const { data: fromUser } = await supabase
+              .from("profiles")
+              .select("display_name")
+              .eq("id", ref.from_user_id)
+              .maybeSingle();
+
+            const { data: toUser } = await supabase
+              .from("profiles")
+              .select("display_name")
+              .eq("id", ref.to_user_id)
+              .maybeSingle();
+
+            return { ...ref, from_user: fromUser, to_user: toUser };
+          })
+        );
+        setAllReferences(refsWithUsers);
+      }
     } catch (error) {
       console.error("Error loading dashboard data:", error);
       toast.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteReference = async (refId: string) => {
+    try {
+      const { error } = await supabase
+        .from("user_references")
+        .delete()
+        .eq("id", refId);
+
+      if (error) throw error;
+
+      toast.success("Reference deleted");
+      setAllReferences(prev => prev.filter(r => r.id !== refId));
+      setFlaggedReferences(prev => prev.filter(f => f.reference_id !== refId));
+      setShowDeleteDialog(false);
+      setDeleteRefId(null);
+    } catch (error) {
+      console.error("Error deleting reference:", error);
+      toast.error("Failed to delete reference");
+    }
+  };
+
+  const handleResolveFlag = async (flagId: string, action: "dismissed" | "resolved") => {
+    try {
+      const { error } = await supabase
+        .from("flagged_references")
+        .update({
+          status: action,
+          resolved_at: new Date().toISOString(),
+          resolved_by: currentUserId,
+        })
+        .eq("id", flagId);
+
+      if (error) throw error;
+
+      toast.success(`Flag ${action}`);
+      setFlaggedReferences(prev => prev.filter(f => f.id !== flagId));
+    } catch (error) {
+      console.error("Error resolving flag:", error);
+      toast.error("Failed to update flag");
+    }
+  };
+
+  const renderStars = (rating: number | null) => {
+    if (!rating) return null;
+    return (
+      <div className="flex items-center gap-0.5">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`w-3 h-3 ${
+              star <= rating
+                ? "fill-yellow-400 text-yellow-400"
+                : "text-muted-foreground"
+            }`}
+          />
+        ))}
+      </div>
+    );
   };
 
   if (!isAdmin) {
@@ -237,6 +428,11 @@ export default function AdminDashboard() {
           <TabsList>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="roles">Admin Roles</TabsTrigger>
+            <TabsTrigger value="flagged" className="flex items-center gap-1">
+              <Flag className="w-3 h-3" />
+              Flagged ({flaggedReferences.length})
+            </TabsTrigger>
+            <TabsTrigger value="references">All References</TabsTrigger>
             <TabsTrigger value="broadcast">Broadcast</TabsTrigger>
           </TabsList>
 
@@ -323,6 +519,147 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="flagged">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Flag className="h-5 w-5" />
+                  Flagged References
+                </CardTitle>
+                <CardDescription>
+                  References that users have flagged for review
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {flaggedReferences.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No flagged references pending review
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {flaggedReferences.map((flag) => (
+                      <div key={flag.id} className="p-4 border rounded-lg space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm font-medium">
+                              Flagged by: {flag.flagger?.display_name || "Unknown"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(flag.created_at).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleResolveFlag(flag.id, "dismissed")}
+                            >
+                              <X className="w-3 h-3 mr-1" />
+                              Dismiss
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                setDeleteRefId(flag.reference_id);
+                                setShowDeleteDialog(true);
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3 mr-1" />
+                              Delete Reference
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="bg-destructive/10 p-2 rounded">
+                          <p className="text-sm font-medium text-destructive">Flag Reason:</p>
+                          <p className="text-sm">{flag.reason}</p>
+                        </div>
+                        {flag.reference && (
+                          <div className="bg-secondary/30 p-3 rounded space-y-2">
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm">
+                                <span className="font-medium">From:</span> {flag.from_user?.display_name || "Unknown"}
+                                {" → "}
+                                <span className="font-medium">To:</span> {flag.to_user?.display_name || "Unknown"}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary">{flag.reference.reference_type}</Badge>
+                                {renderStars(flag.reference.rating)}
+                              </div>
+                            </div>
+                            <p className="text-sm whitespace-pre-wrap">{flag.reference.content}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="references">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="h-5 w-5" />
+                  All References
+                </CardTitle>
+                <CardDescription>
+                  Recent references (showing last 100)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>From</TableHead>
+                      <TableHead>To</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Rating</TableHead>
+                      <TableHead>Content</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allReferences.map((ref) => (
+                      <TableRow key={ref.id}>
+                        <TableCell className="font-medium">
+                          {ref.from_user?.display_name || "Unknown"}
+                        </TableCell>
+                        <TableCell>{ref.to_user?.display_name || "Unknown"}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{ref.reference_type}</Badge>
+                        </TableCell>
+                        <TableCell>{renderStars(ref.rating)}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">
+                          {ref.content}
+                        </TableCell>
+                        <TableCell>
+                          {new Date(ref.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => {
+                              setDeleteRefId(ref.id);
+                              setShowDeleteDialog(true);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="broadcast">
             <Card>
               <CardHeader>
@@ -357,6 +694,27 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Reference</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this reference? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setDeleteRefId(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => deleteRefId && handleDeleteReference(deleteRefId)}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

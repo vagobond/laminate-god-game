@@ -4,8 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Star, Home, Users, Briefcase, Coffee, Loader2 } from "lucide-react";
+import { Star, Home, Users, Briefcase, Coffee, Loader2, Flag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 type ReferenceType = "host" | "guest" | "friendly" | "business";
 
@@ -20,6 +30,7 @@ interface Reference {
     display_name: string | null;
     avatar_url: string | null;
   };
+  flagged?: boolean;
 }
 
 interface UserReferencesProps {
@@ -31,10 +42,21 @@ export const UserReferences = ({ userId, isOwnProfile = false }: UserReferencesP
   const navigate = useNavigate();
   const [references, setReferences] = useState<Reference[]>([]);
   const [loading, setLoading] = useState(true);
+  const [flagDialogOpen, setFlagDialogOpen] = useState(false);
+  const [selectedRefId, setSelectedRefId] = useState<string | null>(null);
+  const [flagReason, setFlagReason] = useState("");
+  const [submittingFlag, setSubmittingFlag] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadReferences();
+    loadCurrentUser();
   }, [userId]);
+
+  const loadCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setCurrentUserId(user?.id || null);
+  };
 
   const loadReferences = async () => {
     try {
@@ -45,6 +67,18 @@ export const UserReferences = ({ userId, isOwnProfile = false }: UserReferencesP
         .order("created_at", { ascending: false });
 
       if (error) throw error;
+
+      // Check for existing flags on own profile
+      const { data: { user } } = await supabase.auth.getUser();
+      let flaggedIds: string[] = [];
+      
+      if (user && user.id === userId) {
+        const { data: flags } = await supabase
+          .from("flagged_references")
+          .select("reference_id")
+          .eq("flagged_by", user.id);
+        flaggedIds = (flags || []).map(f => f.reference_id);
+      }
 
       // Fetch user info for each reference
       const referencesWithUsers = await Promise.all(
@@ -58,6 +92,7 @@ export const UserReferences = ({ userId, isOwnProfile = false }: UserReferencesP
           return {
             ...ref,
             from_user: userData || { display_name: null, avatar_url: null },
+            flagged: flaggedIds.includes(ref.id),
           };
         })
       );
@@ -67,6 +102,43 @@ export const UserReferences = ({ userId, isOwnProfile = false }: UserReferencesP
       console.error("Error loading references:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFlagClick = (refId: string) => {
+    setSelectedRefId(refId);
+    setFlagReason("");
+    setFlagDialogOpen(true);
+  };
+
+  const submitFlag = async () => {
+    if (!selectedRefId || !flagReason.trim() || !currentUserId) return;
+    
+    setSubmittingFlag(true);
+    try {
+      const { error } = await supabase
+        .from("flagged_references")
+        .insert({
+          reference_id: selectedRefId,
+          flagged_by: currentUserId,
+          reason: flagReason.trim(),
+        });
+
+      if (error) throw error;
+
+      toast.success("Reference flagged for admin review");
+      setFlagDialogOpen(false);
+      setReferences(prev => 
+        prev.map(r => r.id === selectedRefId ? { ...r, flagged: true } : r)
+      );
+    } catch (error: any) {
+      if (error.code === '23505') {
+        toast.error("You've already flagged this reference");
+      } else {
+        toast.error("Failed to flag reference");
+      }
+    } finally {
+      setSubmittingFlag(false);
     }
   };
 
@@ -142,6 +214,26 @@ export const UserReferences = ({ userId, isOwnProfile = false }: UserReferencesP
           </div>
         </button>
         <div className="flex items-center gap-2">
+          {isOwnProfile && currentUserId === userId && (
+            ref.flagged ? (
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Flag className="w-3 h-3" /> Flagged
+              </span>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleFlagClick(ref.id);
+                }}
+              >
+                <Flag className="w-3 h-3 mr-1" />
+                Flag
+              </Button>
+            )
+          )}
           <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full flex items-center gap-1">
             {getTypeIcon(ref.reference_type)}
             {getTypeLabel(ref.reference_type)}
@@ -233,6 +325,35 @@ export const UserReferences = ({ userId, isOwnProfile = false }: UserReferencesP
           </TabsContent>
         </Tabs>
       </CardContent>
+
+      {/* Flag Dialog */}
+      <Dialog open={flagDialogOpen} onOpenChange={setFlagDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Flag Reference for Review</DialogTitle>
+            <DialogDescription>
+              Explain why you believe this reference should be reviewed by an admin.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            placeholder="Please describe the issue with this reference..."
+            value={flagReason}
+            onChange={(e) => setFlagReason(e.target.value)}
+            className="min-h-[100px]"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFlagDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={submitFlag} 
+              disabled={!flagReason.trim() || submittingFlag}
+            >
+              {submittingFlag ? "Submitting..." : "Submit Flag"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
