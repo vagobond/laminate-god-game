@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { User as UserIcon, LogIn, LogOut, Settings, Shield, Mail } from "lucide-react";
+import { User as UserIcon, LogIn, LogOut, Settings, Shield, Mail, Scroll } from "lucide-react";
 import { toast } from "sonner";
 
 const UserMenu = () => {
@@ -152,6 +152,10 @@ const UserMenu = () => {
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate("/my-xcrol")} className="cursor-pointer">
+          <Scroll className="w-4 h-4 mr-2" />
+          My Xcrol
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
           <Settings className="w-4 h-4 mr-2" />
