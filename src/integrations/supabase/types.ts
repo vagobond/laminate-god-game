@@ -164,6 +164,50 @@ export type Database = {
         }
         Relationships: []
       }
+      flagged_references: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          flagged_by: string
+          id: string
+          reason: string
+          reference_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          flagged_by: string
+          id?: string
+          reason: string
+          reference_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          flagged_by?: string
+          id?: string
+          reason?: string
+          reference_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flagged_references_reference_id_fkey"
+            columns: ["reference_id"]
+            isOneToOne: false
+            referencedRelation: "user_references"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       friend_requests: {
         Row: {
           created_at: string
