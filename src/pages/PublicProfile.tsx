@@ -24,6 +24,7 @@ import { UserReferences } from "@/components/UserReferences";
 import { LeaveReferenceDialog } from "@/components/LeaveReferenceDialog";
 import { MeetupRequestDialog } from "@/components/MeetupRequestDialog";
 import { HostingRequestDialog } from "@/components/HostingRequestDialog";
+import { PublicXcrolEntries } from "@/components/PublicXcrolEntries";
 import { Coffee, Home } from "lucide-react";
 interface Profile {
   id: string;
@@ -464,6 +465,10 @@ const PublicProfile = () => {
           </CardContent>
         </Card>
 
+        {/* Public Xcrol Entries */}
+        {resolvedUserId && (
+          <PublicXcrolEntries userId={resolvedUserId} username={displayName} />
+        )}
 
         {/* Meetup & Hosting Section */}
         {resolvedUserId && (prefsLoading || meetupPrefs?.is_open_to_meetups || hostingPrefs?.is_open_to_hosting || isOwnProfile) && (
