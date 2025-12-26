@@ -35,6 +35,7 @@ interface CustomFriendshipType {
   show_home_address: boolean;
   show_mailing_address: boolean;
   show_nicknames: boolean;
+  can_leave_reference: boolean;
 }
 
 interface Props {
@@ -54,6 +55,7 @@ const DEFAULT_VISIBILITY = {
   show_home_address: false,
   show_mailing_address: false,
   show_nicknames: false,
+  can_leave_reference: false,
 };
 
 const FIELD_LABELS: Record<keyof typeof DEFAULT_VISIBILITY, string> = {
@@ -69,6 +71,7 @@ const FIELD_LABELS: Record<keyof typeof DEFAULT_VISIBILITY, string> = {
   show_home_address: "Home Address",
   show_mailing_address: "Mailing Address",
   show_nicknames: "Nicknames",
+  can_leave_reference: "Can Leave References",
 };
 
 export function CustomFriendshipTypeManager({ userId }: Props) {
@@ -109,6 +112,7 @@ export function CustomFriendshipTypeManager({ userId }: Props) {
           show_home_address: data.show_home_address,
           show_mailing_address: data.show_mailing_address,
           show_nicknames: data.show_nicknames,
+          can_leave_reference: data.can_leave_reference,
         });
       }
     } catch (error) {
