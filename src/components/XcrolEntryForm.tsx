@@ -5,8 +5,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Scroll, Link as LinkIcon, Save, Loader2 } from "lucide-react";
+import { Scroll, Link as LinkIcon, Save, Loader2, AlertTriangle } from "lucide-react";
 
 interface XcrolEntryFormProps {
   userId: string;
@@ -19,6 +20,7 @@ const PRIVACY_LEVELS = [
   { value: "close_friend", label: "Close Friends" },
   { value: "buddy", label: "Buddies & above" },
   { value: "friendly_acquaintance", label: "Friendly Acquaintances & above" },
+  { value: "public", label: "Public - everyone on the internet" },
 ];
 
 export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false }: XcrolEntryFormProps) => {
@@ -28,6 +30,8 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false }: XcrolE
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [todayEntry, setTodayEntry] = useState<{ id: string; content: string; link: string | null; privacy_level: string } | null>(null);
+  const [showPublicWarning, setShowPublicWarning] = useState(false);
+  const [pendingPrivacyLevel, setPendingPrivacyLevel] = useState<string | null>(null);
 
   useEffect(() => {
     loadTodayEntry();
@@ -170,7 +174,17 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false }: XcrolE
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
-          <Select value={privacyLevel} onValueChange={setPrivacyLevel}>
+          <Select 
+            value={privacyLevel} 
+            onValueChange={(value) => {
+              if (value === "public" && privacyLevel !== "public") {
+                setPendingPrivacyLevel(value);
+                setShowPublicWarning(true);
+              } else {
+                setPrivacyLevel(value);
+              }
+            }}
+          >
             <SelectTrigger className="flex-1">
               <SelectValue placeholder="Who can see this?" />
             </SelectTrigger>
@@ -189,6 +203,35 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false }: XcrolE
           </Button>
         </div>
       </CardContent>
+
+      <AlertDialog open={showPublicWarning} onOpenChange={setShowPublicWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Make this status public?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This status will be visible to <strong>everyone on the internet</strong>, not just your friends. Anyone who visits your profile will be able to see it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingPrivacyLevel(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingPrivacyLevel) {
+                  setPrivacyLevel(pendingPrivacyLevel);
+                  setPendingPrivacyLevel(null);
+                }
+              }}
+            >
+              Yes, make it public
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
