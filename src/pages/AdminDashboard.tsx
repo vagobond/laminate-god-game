@@ -23,6 +23,7 @@ import {
 interface UserProfile {
   id: string;
   display_name: string | null;
+  username: string | null;
   email: string | null;
   created_at: string;
 }
@@ -186,7 +187,7 @@ export default function AdminDashboard() {
       // Load users
       const { data: usersData } = await supabase
         .from("profiles")
-        .select("id, display_name, email, created_at")
+        .select("id, display_name, username, email, created_at")
         .order("created_at", { ascending: false });
       
       if (usersData) setUsers(usersData);
@@ -447,6 +448,7 @@ export default function AdminDashboard() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Display Name</TableHead>
+                      <TableHead>@Username</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Registered</TableHead>
                       <TableHead>Actions</TableHead>
@@ -458,6 +460,9 @@ export default function AdminDashboard() {
                         <TableCell className="font-medium">
                           {user.display_name || "No name"}
                         </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {user.username ? `@${user.username}` : "—"}
+                        </TableCell>
                         <TableCell>{user.email || "No email"}</TableCell>
                         <TableCell>
                           {new Date(user.created_at).toLocaleDateString()}
@@ -466,7 +471,7 @@ export default function AdminDashboard() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => navigate(`/u/${user.id}`)}
+                            onClick={() => user.username ? navigate(`/@${user.username}`) : navigate(`/u/${user.id}`)}
                           >
                             View Profile
                           </Button>
