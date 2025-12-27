@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skull, Sparkles, Palette, Globe, Plane, MapPin } from "lucide-react";
+import { Skull, Sparkles, Globe, Plane, MapPin } from "lucide-react";
 
 interface ProfileGameStatsProps {
   userId: string;
@@ -18,9 +18,6 @@ interface GameStats {
   sheepCount: number;
   woolCount: number;
   wolfemonCount: number;
-  // Art I Fucked
-  shartsCollected: number;
-  encountersCompleted: number;
   // Sly Doubt of Uranus
   blootCollected: number;
   revolutionActs: number;
@@ -36,8 +33,6 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
     sheepCount: 0,
     woolCount: 0,
     wolfemonCount: 0,
-    shartsCollected: 0,
-    encountersCompleted: 0,
     blootCollected: 0,
     revolutionActs: 0,
     destinations: [],
@@ -51,7 +46,7 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
   const loadStats = async () => {
     try {
       // Fetch all game stats in parallel
-      const [deathsResult, wolfemonResult, artResult, slyDoubtResult, tripsResult] = await Promise.all([
+      const [deathsResult, wolfemonResult, slyDoubtResult, tripsResult] = await Promise.all([
         // Verse Adventure deaths
         supabase
           .from('game_deaths')
@@ -61,12 +56,6 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
         supabase
           .from('wolfemon_game_state')
           .select('gold, sheep_count, wool_count, has_wolfemon, total_sheep_collected')
-          .eq('user_id', userId)
-          .maybeSingle(),
-        // Art I Fucked state
-        supabase
-          .from('art_i_fucked_state')
-          .select('sharts_collected, encounters_completed')
           .eq('user_id', userId)
           .maybeSingle(),
         // Sly Doubt of Uranus state
@@ -110,8 +99,6 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
         sheepCount: wolfemonData?.sheep_count || 0,
         woolCount: wolfemonData?.wool_count || 0,
         wolfemonCount,
-        shartsCollected: artResult.data?.sharts_collected || 0,
-        encountersCompleted: artResult.data?.encounters_completed || 0,
         blootCollected: slyDoubtResult.data?.bloot_collected || 0,
         revolutionActs: slyDoubtResult.data?.revolution_acts || 0,
         destinations: allDestinations,
@@ -139,7 +126,6 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
   const hasAnyStats = 
     stats.deathCount > 0 || 
     stats.gold > 0 || 
-    stats.shartsCollected > 0 || 
     stats.blootCollected > 0 ||
     stats.destinations.length > 0;
 
@@ -184,18 +170,6 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
             <Badge variant="secondary">🐑 {stats.sheepCount} Lamsters</Badge>
             <Badge variant="secondary">🧶 {stats.woolCount} Wool</Badge>
             <Badge variant="default">🐺 {stats.wolfemonCount} Wolfemon</Badge>
-          </div>
-        </div>
-
-        {/* Art I Fucked */}
-        <div className="p-3 bg-accent/10 rounded-lg border border-accent/20">
-          <div className="flex items-center gap-2 mb-2">
-            <Palette className="w-5 h-5 text-accent" />
-            <span className="font-medium">Art I Fucked</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary">💨 {stats.shartsCollected} Sharts</Badge>
-            <Badge variant="secondary">🎨 {stats.encountersCompleted} Encounters</Badge>
           </div>
         </div>
 
