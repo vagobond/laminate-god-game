@@ -522,9 +522,49 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
             </div>
           )}
 
-          {/* Owner-only: Sent Requests */}
+          {regularFriends.length > 0 ? (
+            <div className="space-y-2">
+              {regularFriends.map((friend) => renderFriendItem(friend, isOwnProfile))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">No friends yet</p>
+          )}
+
+          {/* Owner-only: Secret Friends */}
+          {isOwnProfile && secretFriends.length > 0 && (
+            <div className="mt-6 pt-4 border-t border-border">
+              <h4 className="text-sm font-medium text-purple-500 mb-3">Secret Friends ({secretFriends.length})</h4>
+              <div className="space-y-2">
+                {secretFriends.map((friend) => renderFriendItem(friend, false))}
+              </div>
+            </div>
+          )}
+
+          {/* Owner-only: Fake Friends */}
+          {isOwnProfile && fakeFriends.length > 0 && (
+            <div className="mt-6 pt-4 border-t border-border">
+              <h4 className="text-sm font-medium text-orange-500 mb-3">Fake Friends ({fakeFriends.length})</h4>
+              <p className="text-xs text-muted-foreground mb-2">They think they're your friend, but get no real access.</p>
+              <div className="space-y-2">
+                {fakeFriends.map((friend) => renderFriendItem(friend, false))}
+              </div>
+            </div>
+          )}
+
+          {/* Owner-only: Secret Enemies */}
+          {isOwnProfile && secretEnemies.length > 0 && (
+            <div className="mt-6 pt-4 border-t border-border">
+              <h4 className="text-sm font-medium text-red-500 mb-3">Secret Enemies ({secretEnemies.length})</h4>
+              <p className="text-xs text-muted-foreground mb-2">They think they're close friends, but see decoy info.</p>
+              <div className="space-y-2">
+                {secretEnemies.map((friend) => renderFriendItem(friend, false))}
+              </div>
+            </div>
+          )}
+
+          {/* Owner-only: Sent Requests - at the bottom */}
           {isOwnProfile && sentRequests.length > 0 && (
-            <div className="mb-6 pb-4 border-b border-border">
+            <div className="mt-6 pt-4 border-t border-border">
               <h4 className="text-sm font-medium text-blue-500 mb-3 flex items-center gap-2">
                 <Clock className="w-4 h-4" />
                 Sent Requests ({sentRequests.length})
@@ -567,46 +607,6 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
                     </Tooltip>
                   </div>
                 ))}
-              </div>
-            </div>
-          )}
-
-          {regularFriends.length > 0 ? (
-            <div className="space-y-2">
-              {regularFriends.map((friend) => renderFriendItem(friend, isOwnProfile))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-sm">No friends yet</p>
-          )}
-
-          {/* Owner-only: Secret Friends */}
-          {isOwnProfile && secretFriends.length > 0 && (
-            <div className="mt-6 pt-4 border-t border-border">
-              <h4 className="text-sm font-medium text-purple-500 mb-3">Secret Friends ({secretFriends.length})</h4>
-              <div className="space-y-2">
-                {secretFriends.map((friend) => renderFriendItem(friend, false))}
-              </div>
-            </div>
-          )}
-
-          {/* Owner-only: Fake Friends */}
-          {isOwnProfile && fakeFriends.length > 0 && (
-            <div className="mt-6 pt-4 border-t border-border">
-              <h4 className="text-sm font-medium text-orange-500 mb-3">Fake Friends ({fakeFriends.length})</h4>
-              <p className="text-xs text-muted-foreground mb-2">They think they're your friend, but get no real access.</p>
-              <div className="space-y-2">
-                {fakeFriends.map((friend) => renderFriendItem(friend, false))}
-              </div>
-            </div>
-          )}
-
-          {/* Owner-only: Secret Enemies */}
-          {isOwnProfile && secretEnemies.length > 0 && (
-            <div className="mt-6 pt-4 border-t border-border">
-              <h4 className="text-sm font-medium text-red-500 mb-3">Secret Enemies ({secretEnemies.length})</h4>
-              <p className="text-xs text-muted-foreground mb-2">They think they're close friends, but see decoy info.</p>
-              <div className="space-y-2">
-                {secretEnemies.map((friend) => renderFriendItem(friend, false))}
               </div>
             </div>
           )}
