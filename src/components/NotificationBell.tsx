@@ -52,10 +52,12 @@ const NotificationBell = () => {
   const [user, setUser] = useState<any>(null);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [pendingFriendships, setPendingFriendships] = useState<PendingFriendship[]>([]);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [selectedRequest, setSelectedRequest] = useState<FriendRequest | null>(null);
   const [selectedPendingFriendship, setSelectedPendingFriendship] = useState<PendingFriendship | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<FriendshipLevel>("buddy");
   const [processing, setProcessing] = useState(false);
+  const [hasShownMessageToast, setHasShownMessageToast] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -73,8 +75,42 @@ const NotificationBell = () => {
     if (user) {
       loadRequests();
       loadPendingFriendships();
+      loadUnreadMessages();
     }
   }, [user]);
+
+  // Show toast for unread messages (once per session/page load)
+  useEffect(() => {
+    if (unreadMessageCount > 0 && !hasShownMessageToast) {
+      const currentPath = window.location.pathname;
+      // Don't show toast if already on messages page
+      if (!currentPath.startsWith('/messages')) {
+        toast.info(
+          `You have ${unreadMessageCount} unread message${unreadMessageCount > 1 ? 's' : ''}`,
+          {
+            action: {
+              label: 'View',
+              onClick: () => navigate('/messages'),
+            },
+            duration: 5000,
+          }
+        );
+        setHasShownMessageToast(true);
+      }
+    }
+  }, [unreadMessageCount, hasShownMessageToast, navigate]);
+
+  const loadUnreadMessages = async () => {
+    if (!user) return;
+
+    const { count } = await supabase
+      .from("messages")
+      .select("*", { count: "exact", head: true })
+      .eq("to_user_id", user.id)
+      .is("read_at", null);
+
+    setUnreadMessageCount(count || 0);
+  };
 
   const loadRequests = async () => {
     if (!user) return;
@@ -240,7 +276,7 @@ const NotificationBell = () => {
 
   if (!user) return null;
 
-  const totalNotifications = requests.length + pendingFriendships.length;
+  const totalNotifications = requests.length + pendingFriendships.length + unreadMessageCount;
 
   return (
     <>
@@ -262,6 +298,25 @@ const NotificationBell = () => {
               <p className="text-sm text-muted-foreground p-2">No pending notifications</p>
             ) : (
               <div className="space-y-2 max-h-80 overflow-y-auto">
+                {/* Unread messages notification */}
+                {unreadMessageCount > 0 && (
+                  <button
+                    onClick={() => navigate('/messages')}
+                    className="w-full p-3 bg-blue-500/10 rounded-lg border border-blue-500/30 hover:bg-blue-500/20 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                        <Bell className="h-5 w-5 text-blue-500" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">Unread Messages</p>
+                        <p className="text-sm text-muted-foreground">
+                          You have {unreadMessageCount} unread message{unreadMessageCount > 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                )}
                 {/* Pending friendships - need to set level */}
                 {pendingFriendships.map((friendship) => (
                   <div key={friendship.id} className="p-3 bg-primary/10 rounded-lg space-y-2 border border-primary/30">
