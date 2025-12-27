@@ -86,29 +86,30 @@ const PublicProfile = () => {
     const resolveUser = async () => {
       if (userId) {
         setResolvedUserId(userId);
-      } else if (username) {
-        const handle = username.trim();
-        if (!handle.startsWith("@")) {
-          setNotFound(true);
-          setLoading(false);
-          return;
-        }
-
-        const normalizedUsername = handle.slice(1).toLowerCase();
-
-        // Use secure RPC function to resolve username (works without authentication)
-        const { data, error } = await supabase.rpc("resolve_username_to_id", {
-          target_username: normalizedUsername,
-        });
-
-        if (error || !data) {
-          console.error("Username resolution failed:", error);
-          setNotFound(true);
-          setLoading(false);
-          return;
-        }
-        setResolvedUserId(data);
+        return;
       }
+
+      if (!username) return;
+
+      const normalizedUsername = username.trim().replace(/^@+/, "").toLowerCase();
+      if (!normalizedUsername) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      // Use secure RPC function to resolve username (works without authentication)
+      const { data, error } = await supabase.rpc("resolve_username_to_id", {
+        target_username: normalizedUsername,
+      });
+
+      if (error || !data) {
+        console.error("Username resolution failed:", error);
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+      setResolvedUserId(data);
     };
     resolveUser();
   }, [userId, username]);
@@ -196,15 +197,33 @@ const PublicProfile = () => {
 
   // Scroll to hash anchor when page loads
   useEffect(() => {
-    if (location.hash === '#friends' && !loading) {
-      setTimeout(() => {
-        const element = document.getElementById('friends');
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 400);
-    }
-  }, [location.hash, loading]);
+    if (location.hash !== "#friends") return;
+    if (loading) return;
+
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const scrollToFriends = () => {
+      const element = document.getElementById("friends");
+      if (!element) return;
+      element.scrollIntoView({
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+        block: "start",
+      });
+    };
+
+    // Scroll on next paint, then again after async content settles.
+    requestAnimationFrame(scrollToFriends);
+    const t1 = window.setTimeout(scrollToFriends, 250);
+    const t2 = window.setTimeout(scrollToFriends, 900);
+
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [location.key, location.hash, loading]);
 
   const canRequestMeetupOrHosting =
     !!currentUser &&
@@ -661,7 +680,7 @@ const PublicProfile = () => {
 
         {/* Friends List */}
         {resolvedUserId && (
-          <div id="friends" className="scroll-mt-6">
+          <div id="friends" className="scroll-mt-24">
             <FriendsList 
               userId={resolvedUserId} 
               viewerId={currentUser?.id || null}
