@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, UserMinus, Edit2, MessageSquare, UserPlus, Clock, X } from "lucide-react";
+import { Users, UserMinus, Edit2, MessageSquare, UserPlus, Clock, X, Check } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -93,6 +93,8 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
   const [selectedUsesCustomType, setSelectedUsesCustomType] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [customFriendshipType, setCustomFriendshipType] = useState<CustomFriendshipType | null>(null);
+  const [acceptingRequest, setAcceptingRequest] = useState<FriendRequest | null>(null);
+  const [acceptLevel, setAcceptLevel] = useState<FriendshipSelection>("buddy");
   const isOwnProfile = viewerId === userId;
 
   useEffect(() => {
@@ -189,6 +191,64 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
     } catch (error) {
       console.error("Error cancelling request:", error);
       toast.error("Failed to cancel request");
+    }
+  };
+
+  const declineRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from("friend_requests")
+        .delete()
+        .eq("id", requestId);
+      
+      if (error) throw error;
+      
+      setReceivedRequests(prev => prev.filter(r => r.id !== requestId));
+      toast.success("Friend request declined");
+    } catch (error) {
+      console.error("Error declining request:", error);
+      toast.error("Failed to decline request");
+    }
+  };
+
+  const handleAcceptRequest = async () => {
+    if (!acceptingRequest) return;
+    
+    setProcessing(true);
+    try {
+      // Determine the actual level to use
+      const levelToUse = acceptLevel === "custom" ? "buddy" : acceptLevel;
+      
+      const { error } = await supabase.rpc("accept_friend_request", {
+        request_id: acceptingRequest.id,
+        friendship_level: levelToUse
+      });
+      
+      if (error) throw error;
+      
+      // If custom type, update the friendship to use custom type
+      if (acceptLevel === "custom" && customFriendshipType) {
+        const { error: updateError } = await supabase
+          .from("friendships")
+          .update({ uses_custom_type: true })
+          .eq("user_id", viewerId)
+          .eq("friend_id", acceptingRequest.from_user_id);
+        
+        if (updateError) {
+          console.error("Error setting custom type:", updateError);
+        }
+      }
+      
+      toast.success("Friend request accepted!");
+      setReceivedRequests(prev => prev.filter(r => r.id !== acceptingRequest.id));
+      setAcceptingRequest(null);
+      setAcceptLevel("buddy");
+      loadFriends();
+    } catch (error) {
+      console.error("Error accepting request:", error);
+      toast.error("Failed to accept request");
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -513,9 +573,40 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
                         )}
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-green-600 border-green-600">
-                      Pending
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-500/20"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAcceptingRequest(request);
+                            }}
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Accept</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/20"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              declineRequest(request.id);
+                            }}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Decline</TooltipContent>
+                      </Tooltip>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -738,6 +829,93 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
           onOpenChange={(open) => !open && setMessagingFriend(null)}
         />
       )}
+
+      {/* Dialog for accepting friend request */}
+      <Dialog open={!!acceptingRequest} onOpenChange={(open) => !open && setAcceptingRequest(null)}>
+        <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Accept Friend Request</DialogTitle>
+            <DialogDescription>
+              Choose your friendship level with {acceptingRequest?.profile?.display_name || "this person"}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto pr-2">
+            <RadioGroup 
+              value={acceptLevel} 
+              onValueChange={(v: FriendshipSelection) => setAcceptLevel(v)}
+              className="space-y-3"
+            >
+              <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
+                <RadioGroupItem value="close_friend" id="accept_close_friend" className="mt-1" />
+                <Label htmlFor="accept_close_friend" className="flex-1 cursor-pointer">
+                  <span className="font-medium">Close Friend</span>
+                  <p className="text-sm text-muted-foreground">Can see your WhatsApp, phone, or private email.</p>
+                </Label>
+              </div>
+              
+              <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
+                <RadioGroupItem value="buddy" id="accept_buddy" className="mt-1" />
+                <Label htmlFor="accept_buddy" className="flex-1 cursor-pointer">
+                  <span className="font-medium">Buddy</span>
+                  <p className="text-sm text-muted-foreground">Can see your Instagram or social profile.</p>
+                </Label>
+              </div>
+              
+              <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
+                <RadioGroupItem value="friendly_acquaintance" id="accept_friendly_acquaintance" className="mt-1" />
+                <Label htmlFor="accept_friendly_acquaintance" className="flex-1 cursor-pointer">
+                  <span className="font-medium">Friendly Acquaintance</span>
+                  <p className="text-sm text-muted-foreground">Can see your LinkedIn or contact email.</p>
+                </Label>
+              </div>
+
+              {customFriendshipType && (
+                <div className="flex items-start space-x-3 p-3 rounded-lg border border-primary/50 hover:bg-primary/10">
+                  <RadioGroupItem value="custom" id="accept_custom" className="mt-1" />
+                  <Label htmlFor="accept_custom" className="flex-1 cursor-pointer">
+                    <span className="font-medium text-primary">{customFriendshipType.name}</span>
+                    <p className="text-sm text-muted-foreground">Your custom friendship level.</p>
+                  </Label>
+                </div>
+              )}
+              
+              <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
+                <RadioGroupItem value="secret_friend" id="accept_secret_friend" className="mt-1" />
+                <Label htmlFor="accept_secret_friend" className="flex-1 cursor-pointer">
+                  <span className="font-medium">Secret Friend</span>
+                  <p className="text-sm text-muted-foreground">Close friend privileges, but hidden from lists.</p>
+                </Label>
+              </div>
+
+              <div className="flex items-start space-x-3 p-3 rounded-lg border border-amber-500/50 hover:bg-amber-500/10">
+                <RadioGroupItem value="fake_friend" id="accept_fake_friend" className="mt-1" />
+                <Label htmlFor="accept_fake_friend" className="flex-1 cursor-pointer">
+                  <span className="font-medium text-amber-600">Fake Friend</span>
+                  <p className="text-sm text-muted-foreground">They'll think you're friends, but get no access.</p>
+                </Label>
+              </div>
+
+              <div className="flex items-start space-x-3 p-3 rounded-lg border border-red-500/50 hover:bg-red-500/10">
+                <RadioGroupItem value="secret_enemy" id="accept_secret_enemy" className="mt-1" />
+                <Label htmlFor="accept_secret_enemy" className="flex-1 cursor-pointer">
+                  <span className="font-medium text-red-600">Secret Enemy</span>
+                  <p className="text-sm text-muted-foreground">They'll see fake/generic info.</p>
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div className="flex gap-2 pt-4 border-t border-border">
+            <Button onClick={handleAcceptRequest} disabled={processing} className="flex-1">
+              {processing ? "Accepting..." : "Accept"}
+            </Button>
+            <Button variant="outline" onClick={() => setAcceptingRequest(null)} className="flex-1">
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
