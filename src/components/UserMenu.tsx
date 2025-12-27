@@ -19,6 +19,7 @@ const UserMenu = () => {
   const [user, setUser] = useState<User | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -68,13 +69,14 @@ const UserMenu = () => {
   const loadProfile = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("avatar_url, display_name")
+      .select("avatar_url, display_name, username")
       .eq("id", userId)
       .maybeSingle();
 
     if (data) {
       setAvatarUrl(data.avatar_url);
       setDisplayName(data.display_name);
+      setUsername(data.username);
     }
   };
 
@@ -140,11 +142,11 @@ const UserMenu = () => {
           </div>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer">
+        <DropdownMenuItem onClick={() => navigate(username ? `/@${username}` : `/u/${user.id}`)} className="cursor-pointer">
           <UserIcon className="w-4 h-4 mr-2" />
           My Profile
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate("/profile#friends")} className="cursor-pointer">
+        <DropdownMenuItem onClick={() => navigate(username ? `/@${username}#friends` : `/u/${user.id}#friends`)} className="cursor-pointer">
           <Users className="w-4 h-4 mr-2" />
           My Friends
         </DropdownMenuItem>
