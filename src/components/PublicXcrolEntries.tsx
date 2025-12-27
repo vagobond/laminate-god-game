@@ -35,7 +35,7 @@ export const PublicXcrolEntries = ({ userId, username }: PublicXcrolEntriesProps
         .eq("user_id", userId)
         .eq("privacy_level", "public")
         .order("entry_date", { ascending: false })
-        .limit(5);
+        .limit(3);
 
       if (error) throw error;
       setEntries(data || []);
@@ -99,6 +99,14 @@ export const PublicXcrolEntries = ({ userId, username }: PublicXcrolEntriesProps
             )}
           </div>
         ))}
+        {entries.length === 3 && (
+          <button
+            onClick={() => navigate(`/xcrol/${username}`)}
+            className="w-full text-center text-sm text-primary hover:underline mt-2"
+          >
+            See more entries →
+          </button>
+        )}
       </CardContent>
     </Card>
   );
