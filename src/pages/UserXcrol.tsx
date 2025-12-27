@@ -153,12 +153,15 @@ const UserXcrol = () => {
 
   const displayName = profileInfo?.display_name || username || "User";
 
+  // Extract the clean username for linking back to profile
+  const cleanUsername = username?.startsWith("@") ? username.slice(1) : username;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 p-4 pt-20">
       <div className="max-w-2xl mx-auto space-y-6">
-        <Button variant="ghost" onClick={() => navigate(-1)}>
+        <Button variant="ghost" onClick={() => navigate(`/@${cleanUsername}`)}>
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
+          Back to Profile
         </Button>
 
         <Card>
