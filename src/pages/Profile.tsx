@@ -268,7 +268,7 @@ const Profile = () => {
 
   const validateUsername = (value: string): string | null => {
     if (!value) return null; // Empty is allowed
-    if (value.length < 3) return "Username must be at least 3 characters";
+    if (value.length < 2) return "Username must be at least 2 characters";
     if (value.length > 30) return "Username must be less than 30 characters";
     if (!/^[a-z0-9_]+$/.test(value)) return "Only lowercase letters, numbers, and underscores allowed";
     return null;
