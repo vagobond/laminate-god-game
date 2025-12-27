@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +76,7 @@ interface ProfileContactData {
 
 const Profile = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -148,6 +149,19 @@ const Profile = () => {
     loadProfile(user.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
+  // Scroll to hash anchor (e.g., #friends)
+  useEffect(() => {
+    if (location.hash && !loading) {
+      const elementId = location.hash.slice(1);
+      setTimeout(() => {
+        const element = document.getElementById(elementId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+  }, [location.hash, loading]);
 
   const loadProfile = async (userId: string) => {
     try {
@@ -653,7 +667,9 @@ const Profile = () => {
 
         {/* Friends List */}
         {user && (
-          <FriendsList userId={user.id} viewerId={user.id} showLevels={true} />
+          <div id="friends">
+            <FriendsList userId={user.id} viewerId={user.id} showLevels={true} />
+          </div>
         )}
 
         {/* References */}
