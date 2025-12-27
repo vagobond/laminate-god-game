@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, UserMinus, Edit2, MessageSquare } from "lucide-react";
+import { Users, UserMinus, Edit2, MessageSquare, UserPlus, Clock, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -44,6 +44,18 @@ interface Friend {
   };
 }
 
+interface FriendRequest {
+  id: string;
+  from_user_id: string;
+  to_user_id: string;
+  message: string | null;
+  created_at: string;
+  profile?: {
+    display_name: string | null;
+    avatar_url: string | null;
+  };
+}
+
 interface FriendsListProps {
   userId: string;
   viewerId?: string | null;
@@ -70,6 +82,8 @@ const levelLabels: Record<string, string> = {
 const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps) => {
   const navigate = useNavigate();
   const [friends, setFriends] = useState<Friend[]>([]);
+  const [sentRequests, setSentRequests] = useState<FriendRequest[]>([]);
+  const [receivedRequests, setReceivedRequests] = useState<FriendRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [canSeeLevels, setCanSeeLevels] = useState(false);
   const [editingFriend, setEditingFriend] = useState<Friend | null>(null);
@@ -88,6 +102,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
     } else if (viewerId === userId) {
       setCanSeeLevels(true);
       loadCustomFriendshipType();
+      loadFriendRequests();
     }
   }, [userId, viewerId]);
 
@@ -105,6 +120,75 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
       setCustomFriendshipType(data);
     } catch (error) {
       console.error("Error loading custom friendship type:", error);
+    }
+  };
+
+  const loadFriendRequests = async () => {
+    if (!viewerId) return;
+    
+    try {
+      // Load sent requests
+      const { data: sentData, error: sentError } = await supabase
+        .from("friend_requests")
+        .select("id, from_user_id, to_user_id, message, created_at")
+        .eq("from_user_id", viewerId);
+      
+      if (sentError) throw sentError;
+      
+      // Load received requests
+      const { data: receivedData, error: receivedError } = await supabase
+        .from("friend_requests")
+        .select("id, from_user_id, to_user_id, message, created_at")
+        .eq("to_user_id", viewerId);
+      
+      if (receivedError) throw receivedError;
+      
+      // Fetch profiles for sent requests (to_user_id)
+      const sentUserIds = (sentData || []).map(r => r.to_user_id);
+      const receivedUserIds = (receivedData || []).map(r => r.from_user_id);
+      const allUserIds = [...new Set([...sentUserIds, ...receivedUserIds])];
+      
+      let profilesMap = new Map<string, { display_name: string | null; avatar_url: string | null }>();
+      
+      if (allUserIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, display_name, avatar_url")
+          .in("id", allUserIds);
+        
+        (profilesData || []).forEach(p => {
+          profilesMap.set(p.id, { display_name: p.display_name, avatar_url: p.avatar_url });
+        });
+      }
+      
+      setSentRequests((sentData || []).map(r => ({
+        ...r,
+        profile: profilesMap.get(r.to_user_id)
+      })));
+      
+      setReceivedRequests((receivedData || []).map(r => ({
+        ...r,
+        profile: profilesMap.get(r.from_user_id)
+      })));
+    } catch (error) {
+      console.error("Error loading friend requests:", error);
+    }
+  };
+
+  const cancelSentRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from("friend_requests")
+        .delete()
+        .eq("id", requestId);
+      
+      if (error) throw error;
+      
+      setSentRequests(prev => prev.filter(r => r.id !== requestId));
+      toast.success("Friend request cancelled");
+    } catch (error) {
+      console.error("Error cancelling request:", error);
+      toast.error("Failed to cancel request");
     }
   };
 
@@ -396,6 +480,97 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Owner-only: Incoming Friend Requests */}
+          {isOwnProfile && receivedRequests.length > 0 && (
+            <div className="mb-6 pb-4 border-b border-border">
+              <h4 className="text-sm font-medium text-green-600 mb-3 flex items-center gap-2">
+                <UserPlus className="w-4 h-4" />
+                Friend Requests ({receivedRequests.length})
+              </h4>
+              <p className="text-xs text-muted-foreground mb-2">People who want to be your friend</p>
+              <div className="space-y-2">
+                {receivedRequests.map((request) => (
+                  <div
+                    key={request.id}
+                    className="flex items-center gap-3 p-2 rounded-lg bg-green-500/10 border border-green-500/20"
+                  >
+                    <div
+                      className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+                      onClick={() => navigate(`/u/${request.from_user_id}`)}
+                    >
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={request.profile?.avatar_url || undefined} />
+                        <AvatarFallback>
+                          {(request.profile?.display_name || "?").slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">
+                          {request.profile?.display_name || "Unknown"}
+                        </p>
+                        {request.message && (
+                          <p className="text-xs text-muted-foreground truncate">{request.message}</p>
+                        )}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-green-600 border-green-600">
+                      Pending
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Owner-only: Sent Requests */}
+          {isOwnProfile && sentRequests.length > 0 && (
+            <div className="mb-6 pb-4 border-b border-border">
+              <h4 className="text-sm font-medium text-blue-500 mb-3 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Sent Requests ({sentRequests.length})
+              </h4>
+              <p className="text-xs text-muted-foreground mb-2">Waiting for their response</p>
+              <div className="space-y-2">
+                {sentRequests.map((request) => (
+                  <div
+                    key={request.id}
+                    className="flex items-center gap-3 p-2 rounded-lg bg-blue-500/10 border border-blue-500/20"
+                  >
+                    <div
+                      className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+                      onClick={() => navigate(`/u/${request.to_user_id}`)}
+                    >
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={request.profile?.avatar_url || undefined} />
+                        <AvatarFallback>
+                          {(request.profile?.display_name || "?").slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">
+                          {request.profile?.display_name || "Unknown"}
+                        </p>
+                      </div>
+                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => cancelSentRequest(request.id)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Cancel request</TooltipContent>
+                    </Tooltip>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {regularFriends.length > 0 ? (
             <div className="space-y-2">
               {regularFriends.map((friend) => renderFriendItem(friend, isOwnProfile))}
