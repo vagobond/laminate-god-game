@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { User, MapPin, Link as LinkIcon, ArrowLeft, ExternalLink, Phone, Mail, MessageCircle, Ban } from "lucide-react";
+import { User, MapPin, Link as LinkIcon, ArrowLeft, ExternalLink, Phone, Mail, MessageCircle, Ban, Pencil } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,6 +54,7 @@ type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "sec
 const PublicProfile = () => {
   const { userId, username } = useParams<{ userId?: string; username?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -193,6 +194,18 @@ const PublicProfile = () => {
 
   const isOwnProfile = currentUser?.id === resolvedUserId;
 
+  // Scroll to hash anchor when page loads
+  useEffect(() => {
+    if (location.hash === '#friends' && !loading) {
+      setTimeout(() => {
+        const element = document.getElementById('friends');
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 400);
+    }
+  }, [location.hash, loading]);
+
   const canRequestMeetupOrHosting =
     !!currentUser &&
     !isOwnProfile &&
@@ -298,6 +311,16 @@ const PublicProfile = () => {
             Back
           </Button>
           <div className="flex gap-2">
+            {isOwnProfile && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate("/profile")}
+              >
+                <Pencil className="w-4 h-4 mr-2" />
+                Edit Profile
+              </Button>
+            )}
             {resolvedUserId && friendshipLevel && (
               <SendMessageDialog
                 recipientId={resolvedUserId}
@@ -638,10 +661,12 @@ const PublicProfile = () => {
 
         {/* Friends List */}
         {resolvedUserId && (
-          <FriendsList 
-            userId={resolvedUserId} 
-            viewerId={currentUser?.id || null}
-          />
+          <div id="friends" className="scroll-mt-6">
+            <FriendsList 
+              userId={resolvedUserId} 
+              viewerId={currentUser?.id || null}
+            />
+          </div>
         )}
 
         {/* Mini-Game Stats */}
