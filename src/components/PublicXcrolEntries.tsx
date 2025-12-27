@@ -11,6 +11,7 @@ interface XcrolEntry {
   link: string | null;
   entry_date: string;
   created_at: string;
+  privacy_level: string;
 }
 
 interface PublicXcrolEntriesProps {
@@ -31,9 +32,8 @@ export const PublicXcrolEntries = ({ userId, username }: PublicXcrolEntriesProps
     try {
       const { data, error } = await supabase
         .from("xcrol_entries")
-        .select("id, content, link, entry_date, created_at")
+        .select("id, content, link, entry_date, created_at, privacy_level")
         .eq("user_id", userId)
-        .eq("privacy_level", "public")
         .order("entry_date", { ascending: false })
         .limit(3);
 
@@ -71,7 +71,7 @@ export const PublicXcrolEntries = ({ userId, username }: PublicXcrolEntriesProps
           >
             {username}'s Xcrol
           </button>
-          <span className="text-muted-foreground font-normal">- Public Entries</span>
+          <span className="text-muted-foreground font-normal">- Recent Entries</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
