@@ -142,11 +142,23 @@ const UserMenu = () => {
           </div>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate(username ? `/@${username}` : `/u/${user.id}`)} className="cursor-pointer">
+        <DropdownMenuItem
+          onClick={() => {
+            const handle = (username ?? "").replace(/^@+/, "");
+            navigate(handle ? `/@${handle}` : `/u/${user.id}`);
+          }}
+          className="cursor-pointer"
+        >
           <UserIcon className="w-4 h-4 mr-2" />
           My Profile
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate(username ? `/@${username}#friends` : `/u/${user.id}#friends`)} className="cursor-pointer">
+        <DropdownMenuItem
+          onClick={() => {
+            const handle = (username ?? "").replace(/^@+/, "");
+            navigate(handle ? `/@${handle}#friends` : `/u/${user.id}#friends`);
+          }}
+          className="cursor-pointer"
+        >
           <Users className="w-4 h-4 mr-2" />
           My Friends
         </DropdownMenuItem>
