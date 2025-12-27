@@ -159,7 +159,7 @@ const Profile = () => {
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-      }, 100);
+      }, 400);
     }
   }, [location.hash, loading]);
 
@@ -667,7 +667,7 @@ const Profile = () => {
 
         {/* Friends List */}
         {user && (
-          <div id="friends">
+          <div id="friends" className="scroll-mt-6">
             <FriendsList userId={user.id} viewerId={user.id} showLevels={true} />
           </div>
         )}
