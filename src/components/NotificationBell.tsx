@@ -79,6 +79,16 @@ const NotificationBell = () => {
     }
   }, [user]);
 
+  // Listen for messages-updated event to refresh unread count
+  useEffect(() => {
+    const handleMessagesUpdated = () => {
+      loadUnreadMessages();
+    };
+    
+    window.addEventListener('messages-updated', handleMessagesUpdated);
+    return () => window.removeEventListener('messages-updated', handleMessagesUpdated);
+  }, [user]);
+
   // Show toast for unread messages (once per session/page load)
   useEffect(() => {
     if (unreadMessageCount > 0 && !hasShownMessageToast) {
