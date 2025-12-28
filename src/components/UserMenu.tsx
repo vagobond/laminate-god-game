@@ -56,6 +56,19 @@ const UserMenu = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
+  // Keep unread badge in sync when messages are marked read elsewhere
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const handleMessagesUpdated = () => {
+      loadUnreadCount(user.id);
+    };
+
+    window.addEventListener("messages-updated", handleMessagesUpdated);
+    return () => window.removeEventListener("messages-updated", handleMessagesUpdated);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
   const loadUnreadCount = async (userId: string) => {
     const { count } = await supabase
       .from("messages")
@@ -121,7 +134,11 @@ const UserMenu = () => {
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (open && user?.id) loadUnreadCount(user.id);
+      }}
+    >
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
