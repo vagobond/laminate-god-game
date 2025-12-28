@@ -122,6 +122,9 @@ const MessagesInbox = () => {
       setMessages(prev => 
         prev.map(m => m.id === messageId ? { ...m, read_at: new Date().toISOString() } : m)
       );
+      
+      // Dispatch event to notify NotificationBell to refresh
+      window.dispatchEvent(new CustomEvent('messages-updated'));
     } catch (error) {
       console.error("Error marking as read:", error);
     }
