@@ -19,6 +19,7 @@ import GettingStarted from "./pages/GettingStarted";
 import InviteFriends from "./pages/InviteFriends";
 import MyXcrol from "./pages/MyXcrol";
 import UserXcrol from "./pages/UserXcrol";
+import EveryCountry from "./pages/EveryCountry";
 import NotFound from "./pages/NotFound";
 import AppHeader from "./components/AppHeader";
 
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/invite-friends" element={<InviteFriends />} />
           <Route path="/my-xcrol" element={<MyXcrol />} />
           <Route path="/xcrol/:username" element={<UserXcrol />} />
+          <Route path="/every-country" element={<EveryCountry />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
