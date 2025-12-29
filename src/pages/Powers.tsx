@@ -58,7 +58,7 @@ const Powers = () => {
                   onClick={() => navigate("/irl-layer")}
                   className="w-full sm:w-auto min-w-[250px]"
                 >
-                  USER MAP
+                  THE WORLD
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
