@@ -91,7 +91,7 @@ const Powers = () => {
                   onClick={handleProfileClick}
                   className="w-full sm:w-auto min-w-[250px]"
                 >
-                  PROFILE
+                  YOU
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
