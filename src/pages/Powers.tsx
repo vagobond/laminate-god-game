@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { Waves } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -70,14 +71,15 @@ const Powers = () => {
                 <Button 
                   variant="divine" 
                   size="xl"
-                  onClick={() => navigate("/mini-games-hub")}
+                  onClick={() => navigate("/the-river")}
                   className="w-full sm:w-auto min-w-[250px]"
                 >
-                  ADVENTURE
+                  <Waves className="mr-2 h-5 w-5" />
+                  THE RIVER
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Mini-Games Hub. Pointless fun</p>
+                <p>See what your friends are up to</p>
               </TooltipContent>
             </Tooltip>
             
