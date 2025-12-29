@@ -132,7 +132,10 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
+        <CardTitle 
+          className="text-lg flex items-center gap-2 cursor-pointer hover:text-primary transition-colors"
+          onClick={() => navigate('/mini-games-hub')}
+        >
           <Sparkles className="w-5 h-5 text-primary" />
           Mini-Game Stats
         </CardTitle>
@@ -140,7 +143,14 @@ export function ProfileGameStats({ userId }: ProfileGameStatsProps) {
       <CardContent className="space-y-4">
         {!hasAnyStats && (
           <div className="text-sm text-muted-foreground italic">
-            No mini-game stats yet. Play some games to see your progress!
+            No mini-game stats yet.{' '}
+            <button 
+              onClick={() => navigate('/mini-games-hub')}
+              className="text-primary hover:underline"
+            >
+              Play some games
+            </button>{' '}
+            to see your progress!
           </div>
         )}
 

@@ -428,7 +428,7 @@ const IRLLayer = () => {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="text-center space-y-6">
-          <h1 className="text-4xl font-bold text-glow">The IRL Layer</h1>
+          <h1 className="text-4xl font-bold text-glow">The World</h1>
           <p className="text-foreground/80">Please sign in to claim your hometown</p>
           <Button onClick={() => navigate("/auth")} variant="mystical">
             Sign In
@@ -459,7 +459,7 @@ const IRLLayer = () => {
     <div className="min-h-screen p-4 space-y-6">
       {/* Every Country Banner */}
       <div 
-        onClick={() => navigate("/mini-games-hub")}
+        onClick={() => navigate("/every-country")}
         className="max-w-7xl mx-auto bg-gradient-to-r from-primary/20 via-purple-600/20 to-primary/20 border border-primary/30 rounded-lg p-4 cursor-pointer hover:bg-primary/30 transition-all group"
       >
         <div className="flex items-center justify-between gap-4">
@@ -480,7 +480,7 @@ const IRLLayer = () => {
 
       <div className="flex justify-between items-center max-w-7xl mx-auto flex-wrap gap-4">
         <div>
-          <h1 className="text-4xl md:text-5xl font-bold text-glow">The IRL Layer</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-glow">The World</h1>
           <p className="text-foreground/80 mt-2">Claim your hometown on the Laminate map</p>
         </div>
         <div className="flex gap-3">
