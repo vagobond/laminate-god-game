@@ -151,6 +151,21 @@ const Auth = () => {
           .eq('invite_code', result.data.inviteCode);
       }
 
+      // Send welcome email to new user
+      if (signUpData.user) {
+        try {
+          await supabase.functions.invoke('send-welcome-email', {
+            body: {
+              email: result.data.email,
+              displayName: result.data.displayName,
+            }
+          });
+        } catch (emailError) {
+          console.error('Failed to send welcome email:', emailError);
+          // Don't block signup if welcome email fails
+        }
+      }
+
       setShowEmailConfirmation(true);
       toast.success("Check your email to verify your account!");
     } catch (error: any) {
