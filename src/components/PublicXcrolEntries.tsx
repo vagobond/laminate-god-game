@@ -98,7 +98,12 @@ export const PublicXcrolEntries = ({ userId, username }: PublicXcrolEntriesProps
                 </span>
               </a>
             )}
-            <XcrolReactions entryId={entry.id} compact />
+            <XcrolReactions 
+              entryId={entry.id} 
+              compact 
+              authorId={userId}
+              authorName={username}
+            />
           </div>
         ))}
         {entries.length === 3 && (

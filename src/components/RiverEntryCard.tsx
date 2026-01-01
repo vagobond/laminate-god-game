@@ -97,7 +97,11 @@ export const RiverEntryCard = ({ entry }: RiverEntryCardProps) => {
                 <PrivacyIcon className={`h-3 w-3 ${config.color}`} />
                 {config.label}
               </Badge>
-              <XcrolReactions entryId={entry.id} />
+              <XcrolReactions 
+                entryId={entry.id} 
+                authorId={entry.user_id}
+                authorName={entry.author.display_name || entry.author.username || "User"}
+              />
             </div>
           </div>
         </div>
