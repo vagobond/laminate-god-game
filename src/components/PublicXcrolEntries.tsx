@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Scroll, ExternalLink, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { XcrolReactions } from "@/components/XcrolReactions";
 
 interface XcrolEntry {
   id: string;
@@ -97,6 +98,7 @@ export const PublicXcrolEntries = ({ userId, username }: PublicXcrolEntriesProps
                 </span>
               </a>
             )}
+            <XcrolReactions entryId={entry.id} compact />
           </div>
         ))}
         {entries.length === 3 && (

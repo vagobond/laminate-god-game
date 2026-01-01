@@ -4,6 +4,7 @@ import { Globe, Users, UserCheck, Heart, Lock, ExternalLink } from "lucide-react
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { XcrolReactions } from "@/components/XcrolReactions";
 
 interface RiverEntryCardProps {
   entry: {
@@ -91,11 +92,12 @@ export const RiverEntryCard = ({ entry }: RiverEntryCardProps) => {
               </a>
             )}
 
-            <div className="mt-3 flex items-center gap-1">
+            <div className="mt-3 flex items-center gap-2 flex-wrap">
               <Badge variant="outline" className="text-xs gap-1">
                 <PrivacyIcon className={`h-3 w-3 ${config.color}`} />
                 {config.label}
               </Badge>
+              <XcrolReactions entryId={entry.id} />
             </div>
           </div>
         </div>
