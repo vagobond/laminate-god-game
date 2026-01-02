@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { User, MapPin, Link as LinkIcon, ArrowLeft, ExternalLink, Phone, Mail, MessageCircle, Ban, Pencil } from "lucide-react";
+import { User, MapPin, Link as LinkIcon, ArrowLeft, ExternalLink, Phone, Mail, MessageCircle, Ban, Pencil, Share2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -330,6 +330,20 @@ const PublicProfile = () => {
             Back
           </Button>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const ogUrl = username 
+                  ? `https://ceuaibqpikcvcnmuesos.supabase.co/functions/v1/og-profile?username=${username.replace(/^@/, '')}`
+                  : `https://ceuaibqpikcvcnmuesos.supabase.co/functions/v1/og-profile?userId=${resolvedUserId}`;
+                navigator.clipboard.writeText(ogUrl);
+                toast.success("Profile link copied! Share it anywhere for a nice preview.");
+              }}
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
+            </Button>
             {isOwnProfile && (
               <Button 
                 variant="outline" 
