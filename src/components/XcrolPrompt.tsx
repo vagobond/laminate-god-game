@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Scroll, ChevronRight, Check } from "lucide-react";
+import { useHometownDate } from "@/hooks/use-hometown-date";
 
 interface XcrolPromptProps {
   userId: string;
@@ -11,21 +12,23 @@ interface XcrolPromptProps {
 
 export const XcrolPrompt = ({ userId }: XcrolPromptProps) => {
   const navigate = useNavigate();
+  const { todayDate, loading: dateLoading } = useHometownDate(userId);
   const [hasTodayEntry, setHasTodayEntry] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkTodayEntry();
-  }, [userId]);
+    if (!dateLoading) {
+      checkTodayEntry();
+    }
+  }, [userId, dateLoading, todayDate]);
 
   const checkTodayEntry = async () => {
     try {
-      const today = new Date().toISOString().split("T")[0];
       const { data, error } = await supabase
         .from("xcrol_entries")
         .select("id")
         .eq("user_id", userId)
-        .eq("entry_date", today)
+        .eq("entry_date", todayDate)
         .maybeSingle();
 
       if (error) throw error;

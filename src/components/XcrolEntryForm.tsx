@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Scroll, Link as LinkIcon, Save, Loader2, AlertTriangle } from "lucide-react";
+import { useHometownDate } from "@/hooks/use-hometown-date";
 
 interface XcrolEntryFormProps {
   userId: string;
@@ -24,6 +25,7 @@ const PRIVACY_LEVELS = [
 ];
 
 export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false }: XcrolEntryFormProps) => {
+  const { todayDate, loading: dateLoading } = useHometownDate(userId);
   const [content, setContent] = useState("");
   const [link, setLink] = useState("");
   const [privacyLevel, setPrivacyLevel] = useState("private");
@@ -34,18 +36,19 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false }: XcrolE
   const [pendingPrivacyLevel, setPendingPrivacyLevel] = useState<string | null>(null);
 
   useEffect(() => {
-    loadTodayEntry();
-  }, [userId]);
+    if (!dateLoading) {
+      loadTodayEntry();
+    }
+  }, [userId, dateLoading, todayDate]);
 
   const loadTodayEntry = async () => {
     setLoading(true);
     try {
-      const today = new Date().toISOString().split("T")[0];
       const { data, error } = await supabase
         .from("xcrol_entries")
         .select("id, content, link, privacy_level")
         .eq("user_id", userId)
-        .eq("entry_date", today)
+        .eq("entry_date", todayDate)
         .maybeSingle();
 
       if (error) throw error;
@@ -86,8 +89,6 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false }: XcrolE
 
     setSaving(true);
     try {
-      const today = new Date().toISOString().split("T")[0];
-      
       if (todayEntry) {
         // Update existing entry
         const { error } = await supabase
@@ -110,7 +111,7 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false }: XcrolE
             content: content.trim(),
             link: link.trim() || null,
             privacy_level: privacyLevel,
-            entry_date: today,
+            entry_date: todayDate,
           });
 
         if (error) throw error;
