@@ -7,6 +7,7 @@ import { ArrowLeft, Scroll, Lock, Users, UserCheck, Heart, ExternalLink, Trash2 
 import { XcrolEntryForm } from "@/components/XcrolEntryForm";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useHometownDate } from "@/hooks/use-hometown-date";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,7 +48,7 @@ const MyXcrol = () => {
   const [user, setUser] = useState<any>(null);
   const [entries, setEntries] = useState<XcrolEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hasTodayEntry, setHasTodayEntry] = useState(false);
+  const { todayDate, loading: dateLoading, timezone } = useHometownDate(user?.id ?? null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -64,10 +65,10 @@ const MyXcrol = () => {
   }, []);
 
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && !dateLoading) {
       loadEntries();
     }
-  }, [user?.id]);
+  }, [user?.id, dateLoading, todayDate]);
 
   const loadEntries = async () => {
     if (!user?.id) return;
@@ -83,10 +84,6 @@ const MyXcrol = () => {
       if (error) throw error;
 
       setEntries(data || []);
-      
-      // Check if there's an entry for today
-      const today = new Date().toISOString().split("T")[0];
-      setHasTodayEntry(data?.some(e => e.entry_date === today) || false);
     } catch (error) {
       console.error("Error loading entries:", error);
       toast.error("Failed to load your Xcrol entries");
