@@ -6,9 +6,28 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Bell, Shield, Eye, ArrowLeft } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Bell, Shield, Eye, ArrowLeft, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import BlockedUsersManager from "@/components/BlockedUsersManager";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+
+interface DeletionRequest {
+  id: string;
+  status: string;
+  reason: string | null;
+  created_at: string;
+}
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -21,6 +40,13 @@ const Settings = () => {
   const [showOnlineStatus, setShowOnlineStatus] = useState(true);
   const [allowFriendRequests, setAllowFriendRequests] = useState(true);
 
+  // Account deletion state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletionReason, setDeletionReason] = useState("");
+  const [submittingDeletion, setSubmittingDeletion] = useState(false);
+  const [existingRequest, setExistingRequest] = useState<DeletionRequest | null>(null);
+  const [loadingRequest, setLoadingRequest] = useState(true);
+
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -30,6 +56,7 @@ const Settings = () => {
       }
       setUser(session.user);
       setLoading(false);
+      loadDeletionRequest(session.user.id);
     };
 
     checkAuth();
@@ -39,11 +66,81 @@ const Settings = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
+        loadDeletionRequest(session.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const loadDeletionRequest = async (userId: string) => {
+    setLoadingRequest(true);
+    try {
+      const { data, error } = await supabase
+        .from("account_deletion_requests")
+        .select("id, status, reason, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      setExistingRequest(data);
+    } catch (error) {
+      console.error("Error loading deletion request:", error);
+    } finally {
+      setLoadingRequest(false);
+    }
+  };
+
+  const handleRequestDeletion = async () => {
+    if (!user) return;
+
+    setSubmittingDeletion(true);
+    try {
+      const { error } = await supabase
+        .from("account_deletion_requests")
+        .insert({
+          user_id: user.id,
+          reason: deletionReason.trim() || null,
+        });
+
+      if (error) throw error;
+
+      toast.success("Account deletion request submitted. An admin will review it shortly.");
+      setShowDeleteDialog(false);
+      setDeletionReason("");
+      loadDeletionRequest(user.id);
+    } catch (error: any) {
+      console.error("Error submitting deletion request:", error);
+      if (error.code === "23505") {
+        toast.error("You already have a pending deletion request.");
+      } else {
+        toast.error("Failed to submit deletion request");
+      }
+    } finally {
+      setSubmittingDeletion(false);
+    }
+  };
+
+  const handleCancelDeletionRequest = async () => {
+    if (!existingRequest) return;
+
+    try {
+      const { error } = await supabase
+        .from("account_deletion_requests")
+        .update({ status: "cancelled" })
+        .eq("id", existingRequest.id);
+
+      if (error) throw error;
+
+      toast.success("Deletion request cancelled");
+      setExistingRequest(null);
+    } catch (error) {
+      console.error("Error cancelling deletion request:", error);
+      toast.error("Failed to cancel deletion request");
+    }
+  };
 
   const handleSettingChange = (setting: string, value: boolean) => {
     // In a full implementation, this would save to the database
@@ -187,8 +284,106 @@ const Settings = () => {
               <BlockedUsersManager />
             </CardContent>
           </Card>
+
+          {/* Account Deletion Section */}
+          <Card className="border-destructive/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <Trash2 className="w-5 h-5" />
+                Delete Account
+              </CardTitle>
+              <CardDescription>
+                Request permanent deletion of your account and all associated data
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {loadingRequest ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Loading...</span>
+                </div>
+              ) : existingRequest && existingRequest.status === "pending" ? (
+                <div className="space-y-3">
+                  <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-amber-600">Deletion Request Pending</p>
+                        <p className="text-sm text-muted-foreground">
+                          Submitted on {new Date(existingRequest.created_at).toLocaleDateString()}
+                        </p>
+                        {existingRequest.reason && (
+                          <p className="text-sm mt-1">Reason: {existingRequest.reason}</p>
+                        )}
+                      </div>
+                      <Badge variant="outline" className="border-amber-500 text-amber-600">
+                        Pending Review
+                      </Badge>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleCancelDeletionRequest}
+                    className="w-full"
+                  >
+                    Cancel Deletion Request
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Once your account is deleted, all your data including profile, messages, 
+                    friendships, and entries will be permanently removed. This action cannot be undone.
+                  </p>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="w-full"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Request Account Deletion
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      {/* Delete Account Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Request Account Deletion
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will submit a request to permanently delete your account. An admin will review 
+              and process your request. You can cancel the request anytime before it's processed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="deletion-reason">Reason for leaving (optional)</Label>
+            <Textarea
+              id="deletion-reason"
+              placeholder="Help us improve by telling us why you're leaving..."
+              value={deletionReason}
+              onChange={(e) => setDeletionReason(e.target.value)}
+              className="mt-2"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRequestDeletion}
+              disabled={submittingDeletion}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {submittingDeletion ? "Submitting..." : "Submit Request"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -5,3 +5,15 @@ verify_jwt = true
 
 [functions.send-welcome-email]
 verify_jwt = false
+
+[functions.og-profile]
+verify_jwt = false
+
+[functions.dream-trip]
+verify_jwt = true
+
+[functions.get-mapbox-token]
+verify_jwt = false
+
+[functions.send-country-invite]
+verify_jwt = true

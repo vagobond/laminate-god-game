@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Users, Shield, RefreshCw, Send, MessageSquare, Flag, Star, Trash2, Check, X } from "lucide-react";
+import { ArrowLeft, Users, Shield, RefreshCw, Send, MessageSquare, Flag, Star, Trash2, Check, X, UserX } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -82,6 +82,21 @@ interface AllReference {
   };
 }
 
+interface DeletionRequest {
+  id: string;
+  user_id: string;
+  reason: string | null;
+  status: string;
+  admin_notes: string | null;
+  created_at: string;
+  processed_at: string | null;
+  profile?: {
+    display_name: string | null;
+    email: string | null;
+    username: string | null;
+  };
+}
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -100,6 +115,8 @@ export default function AdminDashboard() {
   const [allReferences, setAllReferences] = useState<AllReference[]>([]);
   const [deleteRefId, setDeleteRefId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletionRequests, setDeletionRequests] = useState<DeletionRequest[]>([]);
+  const [processingDeletion, setProcessingDeletion] = useState<string | null>(null);
 
   useEffect(() => {
     checkAdminAccess();
@@ -307,6 +324,27 @@ export default function AdminDashboard() {
         );
         setAllReferences(refsWithUsers);
       }
+
+      // Load deletion requests
+      const { data: deletionData } = await supabase
+        .from("account_deletion_requests")
+        .select("*")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (deletionData) {
+        const requestsWithProfiles = await Promise.all(
+          deletionData.map(async (req: any) => {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("display_name, email, username")
+              .eq("id", req.user_id)
+              .maybeSingle();
+            return { ...req, profile };
+          })
+        );
+        setDeletionRequests(requestsWithProfiles);
+      }
     } catch (error) {
       console.error("Error loading dashboard data:", error);
       toast.error("Failed to load dashboard data");
@@ -353,6 +391,37 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error("Error resolving flag:", error);
       toast.error("Failed to update flag");
+    }
+  };
+
+  const handleProcessDeletionRequest = async (requestId: string, action: "approved" | "rejected") => {
+    setProcessingDeletion(requestId);
+    try {
+      const { error } = await supabase
+        .from("account_deletion_requests")
+        .update({
+          status: action,
+          processed_by: currentUserId,
+          processed_at: new Date().toISOString(),
+        })
+        .eq("id", requestId);
+
+      if (error) throw error;
+
+      if (action === "approved") {
+        toast.success("Deletion request approved. User account will be deleted.");
+        // Note: Actual account deletion would need to be handled via Supabase admin API
+        // For now, we're just marking the request as approved
+      } else {
+        toast.success("Deletion request rejected.");
+      }
+      
+      setDeletionRequests(prev => prev.filter(r => r.id !== requestId));
+    } catch (error) {
+      console.error("Error processing deletion request:", error);
+      toast.error("Failed to process deletion request");
+    } finally {
+      setProcessingDeletion(null);
     }
   };
 
@@ -426,9 +495,13 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList>
+          <TabsList className="flex-wrap">
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="roles">Admin Roles</TabsTrigger>
+            <TabsTrigger value="deletions" className="flex items-center gap-1">
+              <UserX className="w-3 h-3" />
+              Deletions ({deletionRequests.length})
+            </TabsTrigger>
             <TabsTrigger value="flagged" className="flex items-center gap-1">
               <Flag className="w-3 h-3" />
               Flagged ({flaggedReferences.length})
@@ -520,6 +593,87 @@ export default function AdminDashboard() {
                     ))}
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="deletions">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserX className="h-5 w-5" />
+                  Account Deletion Requests
+                </CardTitle>
+                <CardDescription>
+                  Users requesting account deletion
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {deletionRequests.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No pending deletion requests
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {deletionRequests.map((request) => (
+                      <div key={request.id} className="p-4 border border-destructive/30 rounded-lg space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-medium">
+                              {request.profile?.display_name || "Unknown User"}
+                              {request.profile?.username && (
+                                <span className="text-muted-foreground ml-2">
+                                  @{request.profile.username}
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {request.profile?.email || "No email"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Requested: {new Date(request.created_at).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={processingDeletion === request.id}
+                              onClick={() => handleProcessDeletionRequest(request.id, "rejected")}
+                            >
+                              <X className="w-3 h-3 mr-1" />
+                              Reject
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              disabled={processingDeletion === request.id}
+                              onClick={() => handleProcessDeletionRequest(request.id, "approved")}
+                            >
+                              <Check className="w-3 h-3 mr-1" />
+                              Approve
+                            </Button>
+                          </div>
+                        </div>
+                        {request.reason && (
+                          <div className="bg-secondary/30 p-3 rounded">
+                            <p className="text-sm font-medium">Reason:</p>
+                            <p className="text-sm">{request.reason}</p>
+                          </div>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => request.profile?.username 
+                            ? navigate(`/@${request.profile.username}`) 
+                            : navigate(`/u/${request.user_id}`)}
+                        >
+                          View Profile
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

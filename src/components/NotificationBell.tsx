@@ -414,7 +414,7 @@ const NotificationBell = () => {
 
       {/* Dialog for accepting friend requests */}
       <Dialog open={!!selectedRequest} onOpenChange={(open) => !open && setSelectedRequest(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Accept Friend Request</DialogTitle>
             <DialogDescription>
@@ -422,6 +422,7 @@ const NotificationBell = () => {
             </DialogDescription>
           </DialogHeader>
           
+          <div className="flex-1 overflow-y-auto pr-2">
           <RadioGroup value={selectedLevel} onValueChange={(v) => setSelectedLevel(v as FriendshipLevel)} className="space-y-2">
             <div className="flex items-center justify-between p-2 rounded-lg border border-border hover:bg-secondary/50">
               <div className="flex items-center gap-3">
@@ -542,8 +543,9 @@ const NotificationBell = () => {
               </Popover>
             </div>
           </RadioGroup>
+          </div>
 
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-2 pt-4 border-t border-border">
             <Button onClick={handleAccept} disabled={processing} className="flex-1">
               {processing ? "Accepting..." : "Confirm"}
             </Button>
@@ -556,7 +558,7 @@ const NotificationBell = () => {
 
       {/* Dialog for setting friendship level on accepted requests */}
       <Dialog open={!!selectedPendingFriendship} onOpenChange={(open) => !open && setSelectedPendingFriendship(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Set Friendship Level</DialogTitle>
             <DialogDescription>
@@ -564,6 +566,7 @@ const NotificationBell = () => {
             </DialogDescription>
           </DialogHeader>
           
+          <div className="flex-1 overflow-y-auto pr-2">
           <RadioGroup value={selectedLevel} onValueChange={(v) => setSelectedLevel(v as FriendshipLevel)} className="space-y-2">
             <div className="flex items-center justify-between p-2 rounded-lg border border-border hover:bg-secondary/50">
               <div className="flex items-center gap-3">
@@ -633,8 +636,9 @@ const NotificationBell = () => {
               </Popover>
             </div>
           </RadioGroup>
+          </div>
 
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-2 pt-4 border-t border-border">
             <Button onClick={handleSetFriendshipLevel} disabled={processing} className="flex-1">
               {processing ? "Saving..." : "Confirm"}
             </Button>
