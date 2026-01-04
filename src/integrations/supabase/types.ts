@@ -457,6 +457,42 @@ export type Database = {
         }
         Relationships: []
       }
+      introduction_requests: {
+        Row: {
+          created_at: string
+          id: string
+          introducer_id: string
+          message: string
+          requester_id: string
+          response_message: string | null
+          status: string
+          target_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          introducer_id: string
+          message: string
+          requester_id: string
+          response_message?: string | null
+          status?: string
+          target_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          introducer_id?: string
+          message?: string
+          requester_id?: string
+          response_message?: string | null
+          status?: string
+          target_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       layer_relationships: {
         Row: {
           child_layer_id: string
@@ -1042,6 +1078,13 @@ export type Database = {
         Returns: {
           existing_country_remaining: number
           new_country_remaining: number
+        }[]
+      }
+      get_connection_degree: {
+        Args: { from_user_id: string; max_depth?: number; to_user_id: string }
+        Returns: {
+          degree: number
+          path: string[]
         }[]
       }
       get_friendship_level: {

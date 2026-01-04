@@ -19,6 +19,7 @@ import { UserReferences } from "@/components/UserReferences";
 import { ProfileCompleteness } from "@/components/ProfileCompleteness";
 import { CustomFriendshipTypeManager } from "@/components/CustomFriendshipTypeManager";
 import { XcrolPrompt } from "@/components/XcrolPrompt";
+import IntroductionRequestsManager from "@/components/IntroductionRequestsManager";
 import { z } from "zod";
 
 // Validation constants
@@ -663,6 +664,11 @@ const Profile = () => {
             <MeetupPreferencesManager userId={user.id} />
             <HostingPreferencesManager userId={user.id} />
           </div>
+        )}
+
+        {/* Introduction Requests */}
+        {user && (
+          <IntroductionRequestsManager userId={user.id} />
         )}
 
         {/* Friends List */}

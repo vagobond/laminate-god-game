@@ -26,6 +26,7 @@ import { LeaveReferenceDialog } from "@/components/LeaveReferenceDialog";
 import { MeetupRequestDialog } from "@/components/MeetupRequestDialog";
 import { HostingRequestDialog } from "@/components/HostingRequestDialog";
 import { PublicXcrolEntries } from "@/components/PublicXcrolEntries";
+import ConnectionDegreeBadge from "@/components/ConnectionDegreeBadge";
 import { Coffee, Home } from "lucide-react";
 interface Profile {
   id: string;
@@ -398,8 +399,18 @@ const PublicProfile = () => {
               </Avatar>
             </div>
 
-            {/* Name */}
-            <h1 className="text-2xl font-bold text-center mb-2">{displayName}</h1>
+            {/* Name and Connection Degree */}
+            <div className="text-center mb-2">
+              <h1 className="text-2xl font-bold">{displayName}</h1>
+              {!isOwnProfile && resolvedUserId && (
+                <div className="mt-2 flex justify-center">
+                  <ConnectionDegreeBadge 
+                    profileId={resolvedUserId} 
+                    currentUserId={currentUser?.id || null} 
+                  />
+                </div>
+              )}
+            </div>
 
             {/* Hometown */}
             {hometown && (
