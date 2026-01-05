@@ -22,6 +22,7 @@ import UserXcrol from "./pages/UserXcrol";
 import EveryCountry from "./pages/EveryCountry";
 import NotFound from "./pages/NotFound";
 import AppHeader from "./components/AppHeader";
+import OAuthAuthorize from "./pages/OAuthAuthorize";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const App = () => (
           <Route path="/my-xcrol" element={<MyXcrol />} />
           <Route path="/xcrol/:username" element={<UserXcrol />} />
           <Route path="/every-country" element={<EveryCountry />} />
+          <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

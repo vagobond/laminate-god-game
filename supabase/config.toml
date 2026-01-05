@@ -17,3 +17,15 @@ verify_jwt = false
 
 [functions.send-country-invite]
 verify_jwt = true
+
+[functions.oauth-authorize]
+verify_jwt = false
+
+[functions.oauth-token]
+verify_jwt = false
+
+[functions.oauth-userinfo]
+verify_jwt = false
+
+[functions.oauth-connection-degree]
+verify_jwt = false
