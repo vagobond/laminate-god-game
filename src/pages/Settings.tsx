@@ -7,9 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Bell, Shield, Eye, ArrowLeft, Trash2, AlertTriangle, Loader2 } from "lucide-react";
+import { Bell, Shield, Eye, ArrowLeft, Trash2, AlertTriangle, Loader2, Link2, Code } from "lucide-react";
 import { toast } from "sonner";
 import BlockedUsersManager from "@/components/BlockedUsersManager";
+import ConnectedAppsManager from "@/components/ConnectedAppsManager";
+import DeveloperAppsManager from "@/components/DeveloperAppsManager";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -282,6 +284,38 @@ const Settings = () => {
             </CardHeader>
             <CardContent>
               <BlockedUsersManager />
+            </CardContent>
+          </Card>
+
+          {/* Connected Apps Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Link2 className="w-5 h-5" />
+                Connected Apps
+              </CardTitle>
+              <CardDescription>
+                Apps you've authorized to access your XCROL account
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ConnectedAppsManager />
+            </CardContent>
+          </Card>
+
+          {/* Developer Apps Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Code className="w-5 h-5" />
+                Developer
+              </CardTitle>
+              <CardDescription>
+                Create OAuth apps to let other sites use "Login with XCROL"
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DeveloperAppsManager />
             </CardContent>
           </Card>
 

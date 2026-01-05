@@ -676,6 +676,201 @@ export type Database = {
         }
         Relationships: []
       }
+      oauth_authorization_codes: {
+        Row: {
+          client_id: string
+          code: string
+          code_challenge: string | null
+          code_challenge_method: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          redirect_uri: string
+          scopes: string[]
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          code?: string
+          code_challenge?: string | null
+          code_challenge_method?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          redirect_uri: string
+          scopes?: string[]
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          code?: string
+          code_challenge?: string | null
+          code_challenge_method?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          redirect_uri?: string
+          scopes?: string[]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oauth_authorization_codes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "oauth_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oauth_clients: {
+        Row: {
+          client_id: string
+          client_secret: string
+          created_at: string
+          description: string | null
+          homepage_url: string | null
+          id: string
+          is_verified: boolean | null
+          logo_url: string | null
+          name: string
+          owner_id: string
+          redirect_uris: string[]
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string
+          client_secret?: string
+          created_at?: string
+          description?: string | null
+          homepage_url?: string | null
+          id?: string
+          is_verified?: boolean | null
+          logo_url?: string | null
+          name: string
+          owner_id: string
+          redirect_uris?: string[]
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          client_secret?: string
+          created_at?: string
+          description?: string | null
+          homepage_url?: string | null
+          id?: string
+          is_verified?: boolean | null
+          logo_url?: string | null
+          name?: string
+          owner_id?: string
+          redirect_uris?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      oauth_scopes: {
+        Row: {
+          category: string
+          description: string
+          id: string
+          name: string
+        }
+        Insert: {
+          category?: string
+          description: string
+          id: string
+          name: string
+        }
+        Update: {
+          category?: string
+          description?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      oauth_tokens: {
+        Row: {
+          access_token: string
+          access_token_expires_at: string
+          client_id: string
+          created_at: string
+          id: string
+          refresh_token: string | null
+          refresh_token_expires_at: string | null
+          revoked: boolean | null
+          scopes: string[]
+          user_id: string
+        }
+        Insert: {
+          access_token?: string
+          access_token_expires_at?: string
+          client_id: string
+          created_at?: string
+          id?: string
+          refresh_token?: string | null
+          refresh_token_expires_at?: string | null
+          revoked?: boolean | null
+          scopes?: string[]
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          access_token_expires_at?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          refresh_token?: string | null
+          refresh_token_expires_at?: string | null
+          revoked?: boolean | null
+          scopes?: string[]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oauth_tokens_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "oauth_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oauth_user_authorizations: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          scopes: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          scopes?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          scopes?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oauth_user_authorizations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "oauth_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
