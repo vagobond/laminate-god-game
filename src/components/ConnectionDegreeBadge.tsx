@@ -135,8 +135,42 @@ const ConnectionDegreeBadge = ({ profileId, currentUserId }: ConnectionDegreeBad
     }
   };
 
-  if (loading || !currentUserId || currentUserId === profileId || degree === null) {
+  if (currentUserId === profileId) {
     return null;
+  }
+
+  if (!currentUserId) {
+    return (
+      <Badge
+        variant="outline"
+        role="button"
+        tabIndex={0}
+        className="cursor-pointer select-none bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+        onClick={() => navigate("/auth")}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") navigate("/auth");
+        }}
+      >
+        Sign in to see connection
+      </Badge>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Badge variant="outline" className="select-none bg-secondary/30 text-muted-foreground">
+        Checking connection…
+        <Loader2 className="ml-2 h-3.5 w-3.5 animate-spin" />
+      </Badge>
+    );
+  }
+
+  if (degree === null || degree === 0) {
+    return (
+      <Badge variant="outline" className="select-none bg-secondary/30 text-muted-foreground">
+        No connection
+      </Badge>
+    );
   }
 
   const getDegreeLabel = (deg: number) => {
@@ -146,11 +180,11 @@ const ConnectionDegreeBadge = ({ profileId, currentUserId }: ConnectionDegreeBad
     return `${deg}th`;
   };
 
-  const getDegreeColor = (deg: number) => {
-    if (deg === 1) return "bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30";
-    if (deg === 2) return "bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30";
-    if (deg === 3) return "bg-purple-500/20 text-purple-700 dark:text-purple-400 border-purple-500/30";
-    return "bg-muted text-muted-foreground border-muted";
+  const getDegreeTone = (deg: number) => {
+    if (deg === 1) return "bg-primary/10 text-primary border-primary/20";
+    if (deg === 2) return "bg-accent/40 text-foreground border-border";
+    if (deg === 3) return "bg-secondary/40 text-foreground border-border";
+    return "bg-secondary/30 text-foreground border-border";
   };
 
   // Find the first-degree friend in the chain who can introduce (index 1 in path)
@@ -167,7 +201,7 @@ const ConnectionDegreeBadge = ({ profileId, currentUserId }: ConnectionDegreeBad
     <>
       <Badge 
         variant="outline" 
-        className={`cursor-pointer hover:opacity-80 transition-opacity ${getDegreeColor(degree)}`}
+        className={`cursor-pointer select-none hover:opacity-80 transition-opacity ${getDegreeTone(degree)}`}
         onClick={handleBadgeClick}
       >
         {getDegreeLabel(degree)} connection
