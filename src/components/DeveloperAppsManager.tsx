@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Plus, Trash2, Eye, EyeOff, Copy, ExternalLink, Code } from "lucide-react";
+import { Loader2, Plus, Trash2, Eye, EyeOff, Copy, ExternalLink, Code, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -47,11 +47,21 @@ const DeveloperAppsManager = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showCredentialsDialog, setShowCredentialsDialog] = useState<OAuthApp | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<OAuthApp | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState<OAuthApp | null>(null);
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [updating, setUpdating] = useState(false);
 
   const [newApp, setNewApp] = useState({
+    name: "",
+    description: "",
+    homepage_url: "",
+    redirect_uris: "",
+    logo_url: "",
+  });
+
+  const [editApp, setEditApp] = useState({
     name: "",
     description: "",
     homepage_url: "",
@@ -173,6 +183,73 @@ const DeveloperAppsManager = () => {
     setShowSecrets(prev => ({ ...prev, [appId]: !prev[appId] }));
   };
 
+  const openEditDialog = (app: OAuthApp) => {
+    setEditApp({
+      name: app.name,
+      description: app.description || "",
+      homepage_url: app.homepage_url || "",
+      redirect_uris: app.redirect_uris.join("\n"),
+      logo_url: app.logo_url || "",
+    });
+    setShowEditDialog(app);
+  };
+
+  const handleUpdateApp = async () => {
+    if (!showEditDialog) return;
+    
+    if (!editApp.name.trim()) {
+      toast.error("App name is required");
+      return;
+    }
+
+    const redirectUris = editApp.redirect_uris
+      .split("\n")
+      .map(uri => uri.trim())
+      .filter(Boolean);
+
+    if (redirectUris.length === 0) {
+      toast.error("At least one redirect URI is required");
+      return;
+    }
+
+    // Validate URIs
+    for (const uri of redirectUris) {
+      try {
+        new URL(uri);
+      } catch {
+        toast.error(`Invalid redirect URI: ${uri}`);
+        return;
+      }
+    }
+
+    setUpdating(true);
+    try {
+      const { data, error } = await supabase
+        .from("oauth_clients")
+        .update({
+          name: editApp.name.trim(),
+          description: editApp.description.trim() || null,
+          homepage_url: editApp.homepage_url.trim() || null,
+          redirect_uris: redirectUris,
+          logo_url: editApp.logo_url.trim() || null,
+        })
+        .eq("id", showEditDialog.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setApps(prev => prev.map(a => a.id === data.id ? data : a));
+      setShowEditDialog(null);
+      toast.success("App updated successfully!");
+    } catch (error) {
+      console.error("Error updating app:", error);
+      toast.error("Failed to update app");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -280,14 +357,23 @@ const DeveloperAppsManager = () => {
                   </p>
                 </div>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={() => setShowDeleteConfirm(app)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openEditDialog(app)}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => setShowDeleteConfirm(app)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -426,6 +512,86 @@ const DeveloperAppsManager = () => {
           <DialogFooter>
             <Button onClick={() => setShowCredentialsDialog(null)}>
               I've Saved My Credentials
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit App Dialog */}
+      <Dialog open={!!showEditDialog} onOpenChange={() => setShowEditDialog(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit App</DialogTitle>
+            <DialogDescription>
+              Update your OAuth app settings.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-name">App Name *</Label>
+              <Input
+                id="edit-name"
+                placeholder="My Awesome App"
+                value={editApp.name}
+                onChange={(e) => setEditApp(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                placeholder="What does your app do?"
+                value={editApp.description}
+                onChange={(e) => setEditApp(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="edit-homepage_url">Homepage URL</Label>
+              <Input
+                id="edit-homepage_url"
+                type="url"
+                placeholder="https://myapp.com"
+                value={editApp.homepage_url}
+                onChange={(e) => setEditApp(prev => ({ ...prev, homepage_url: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="edit-redirect_uris">Redirect URIs * (one per line)</Label>
+              <Textarea
+                id="edit-redirect_uris"
+                placeholder="https://myapp.com/auth/callback&#10;http://localhost:3000/auth/callback"
+                value={editApp.redirect_uris}
+                onChange={(e) => setEditApp(prev => ({ ...prev, redirect_uris: e.target.value }))}
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Users will be redirected here after authorization
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="edit-logo_url">Logo URL</Label>
+              <Input
+                id="edit-logo_url"
+                type="url"
+                placeholder="https://myapp.com/logo.png"
+                value={editApp.logo_url}
+                onChange={(e) => setEditApp(prev => ({ ...prev, logo_url: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateApp} disabled={updating}>
+              {updating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
