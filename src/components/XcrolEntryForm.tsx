@@ -14,6 +14,7 @@ interface XcrolEntryFormProps {
   userId: string;
   onEntrySaved?: () => void;
   compact?: boolean;
+  prefillLink?: string;
 }
 
 const PRIVACY_LEVELS = [
@@ -24,7 +25,7 @@ const PRIVACY_LEVELS = [
   { value: "public", label: "Public - everyone on the internet" },
 ];
 
-export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false }: XcrolEntryFormProps) => {
+export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillLink = "" }: XcrolEntryFormProps) => {
   const { todayDate, loading: dateLoading } = useHometownDate(userId);
   const [content, setContent] = useState("");
   const [link, setLink] = useState("");
@@ -56,12 +57,14 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false }: XcrolE
       if (data) {
         setTodayEntry(data);
         setContent(data.content);
-        setLink(data.link || "");
+        // Use prefillLink if provided and no existing link, otherwise use existing link
+        setLink(data.link || prefillLink);
         setPrivacyLevel(data.privacy_level);
       } else {
         setTodayEntry(null);
         setContent("");
-        setLink("");
+        // Use prefillLink for new entries
+        setLink(prefillLink);
         setPrivacyLevel("private");
       }
     } catch (error) {
