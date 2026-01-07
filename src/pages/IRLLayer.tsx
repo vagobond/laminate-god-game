@@ -426,7 +426,7 @@ const IRLLayer = () => {
 
   // Add meetup markers to the map
   useEffect(() => {
-    if (!map.current || meetups.length === 0) return;
+    if (!map.current) return;
 
     const mapInstance = map.current;
 
@@ -473,7 +473,13 @@ const IRLLayer = () => {
     if (mapInstance.isStyleLoaded()) {
       addMeetupMarkers();
     } else {
-      mapInstance.on("load", addMeetupMarkers);
+      const onLoad = () => addMeetupMarkers();
+      mapInstance.on("load", onLoad);
+      return () => {
+        mapInstance.off("load", onLoad);
+        meetupMarkersRef.current.forEach(marker => marker.remove());
+        meetupMarkersRef.current = [];
+      };
     }
 
     return () => {
