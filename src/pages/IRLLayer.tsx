@@ -8,7 +8,9 @@ import { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { X, Globe, ChevronRight, Users } from "lucide-react";
+import { X, Globe, ChevronRight, Users, CalendarIcon } from "lucide-react";
+import { CreateMeetupDialog } from "@/components/CreateMeetupDialog";
+import { MeetupsListModal } from "@/components/MeetupsListModal";
 
 interface ProfileData {
   id: string;
@@ -29,10 +31,26 @@ interface HometownGroup {
   profiles: ProfileData[];
 }
 
+interface Meetup {
+  id: string;
+  creator_id: string;
+  title: string;
+  description: string | null;
+  location_name: string;
+  location_address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  start_datetime: string | null;
+  end_datetime: string | null;
+  is_open_ended: boolean;
+  created_at: string;
+}
+
 const IRLLayer = () => {
   const navigate = useNavigate();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const meetupMarkersRef = useRef<mapboxgl.Marker[]>([]);
   
   const [user, setUser] = useState<User | null>(null);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
@@ -43,6 +61,9 @@ const IRLLayer = () => {
   const [allHometowns, setAllHometowns] = useState<ProfileData[]>([]);
   const [selectedHometown, setSelectedHometown] = useState<HometownGroup | null>(null);
   const [showExploreModal, setShowExploreModal] = useState(false);
+  const [meetups, setMeetups] = useState<Meetup[]>([]);
+  const [showMeetupsModal, setShowMeetupsModal] = useState(false);
+  const [showCreateMeetup, setShowCreateMeetup] = useState(false);
   const [expandedHometown, setExpandedHometown] = useState<string | null>(null);
 
   useEffect(() => {
@@ -92,6 +113,20 @@ const IRLLayer = () => {
     setAllHometowns((data || []) as ProfileData[]);
   };
 
+  const loadMeetups = async () => {
+    const { data, error } = await supabase
+      .from("meetups")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error loading meetups:", error);
+      return;
+    }
+
+    setMeetups((data || []) as Meetup[]);
+  };
+
   // Fetch Mapbox token from edge function
   useEffect(() => {
     const fetchToken = async () => {
@@ -109,6 +144,7 @@ const IRLLayer = () => {
 
   useEffect(() => {
     loadAllHometowns();
+    loadMeetups();
   }, []);
 
   // Group profiles by hometown
@@ -388,6 +424,64 @@ const IRLLayer = () => {
     };
   }, [allHometowns, groupedHometowns]);
 
+  // Add meetup markers to the map
+  useEffect(() => {
+    if (!map.current || meetups.length === 0) return;
+
+    const mapInstance = map.current;
+
+    const addMeetupMarkers = () => {
+      // Clear existing meetup markers
+      meetupMarkersRef.current.forEach(marker => marker.remove());
+      meetupMarkersRef.current = [];
+
+      meetups.forEach(meetup => {
+        if (!meetup.latitude || !meetup.longitude) return;
+
+        // Create custom marker element
+        const el = document.createElement("div");
+        el.className = "meetup-marker";
+        el.style.width = "32px";
+        el.style.height = "32px";
+        el.style.borderRadius = "50%";
+        el.style.backgroundColor = "#EAB308";
+        el.style.border = "3px solid white";
+        el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+        el.style.cursor = "pointer";
+        el.style.display = "flex";
+        el.style.alignItems = "center";
+        el.style.justifyContent = "center";
+        el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
+
+        const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+          <div style="padding: 8px; max-width: 200px;">
+            <h3 style="font-weight: bold; margin-bottom: 4px;">${meetup.title}</h3>
+            <p style="font-size: 12px; color: #666;">${meetup.location_name}</p>
+            ${meetup.description ? `<p style="font-size: 12px; margin-top: 4px;">${meetup.description}</p>` : ""}
+          </div>
+        `);
+
+        const marker = new mapboxgl.Marker(el)
+          .setLngLat([meetup.longitude, meetup.latitude])
+          .setPopup(popup)
+          .addTo(mapInstance);
+
+        meetupMarkersRef.current.push(marker);
+      });
+    };
+
+    if (mapInstance.isStyleLoaded()) {
+      addMeetupMarkers();
+    } else {
+      mapInstance.on("load", addMeetupMarkers);
+    }
+
+    return () => {
+      meetupMarkersRef.current.forEach(marker => marker.remove());
+      meetupMarkersRef.current = [];
+    };
+  }, [meetups]);
+
   const handleClaimHometown = async () => {
     if (!user || !selectedLocation) return;
 
@@ -483,14 +577,26 @@ const IRLLayer = () => {
           <h1 className="text-4xl md:text-5xl font-bold text-glow">The World</h1>
           <p className="text-foreground/80 mt-2">Claim your hometown on the Laminate map</p>
         </div>
-        <div className="flex gap-3">
-          <Button onClick={() => setShowExploreModal(true)} variant="mystical" className="gap-2">
-            <Globe className="w-4 h-4" />
-            Explore Hometowns
-          </Button>
-          <Button onClick={() => navigate("/powers")} variant="outline">
-            Back to Powers
-          </Button>
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-3">
+            <Button onClick={() => setShowExploreModal(true)} className="gap-2 bg-purple-600 hover:bg-purple-700 text-white">
+              <Globe className="w-4 h-4" />
+              Explore Hometowns
+            </Button>
+            <Button onClick={() => setShowMeetupsModal(true)} className="gap-2 bg-yellow-500 hover:bg-yellow-600 text-black">
+              <CalendarIcon className="w-4 h-4" />
+              Meetups/Events
+            </Button>
+            <Button onClick={() => navigate("/powers")} variant="outline">
+              Back to Powers
+            </Button>
+          </div>
+          <button
+            onClick={() => setShowCreateMeetup(true)}
+            className="text-sm text-yellow-500 hover:text-yellow-400 underline text-right"
+          >
+            Create Meetup/Event
+          </button>
         </div>
       </div>
 
@@ -714,6 +820,29 @@ const IRLLayer = () => {
           </div>
         </div>
       )}
+
+      {/* Meetups List Modal */}
+      <MeetupsListModal
+        open={showMeetupsModal}
+        onClose={() => setShowMeetupsModal(false)}
+        onSelectMeetup={(meetup) => {
+          if (map.current && meetup.latitude && meetup.longitude) {
+            map.current.flyTo({
+              center: [meetup.longitude, meetup.latitude],
+              zoom: 12,
+              duration: 1500,
+            });
+          }
+        }}
+      />
+
+      {/* Create Meetup Dialog */}
+      <CreateMeetupDialog
+        open={showCreateMeetup}
+        onOpenChange={setShowCreateMeetup}
+        onMeetupCreated={loadMeetups}
+        mapboxToken={mapboxToken}
+      />
     </div>
   );
 };
