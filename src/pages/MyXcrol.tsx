@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,6 +45,8 @@ const PRIVACY_LABELS: Record<string, string> = {
 
 const MyXcrol = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const prefillLink = searchParams.get("link") || "";
   const [user, setUser] = useState<any>(null);
   const [entries, setEntries] = useState<XcrolEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,7 +152,7 @@ const MyXcrol = () => {
         </div>
 
         {/* Daily Entry Form */}
-        <XcrolEntryForm userId={user.id} onEntrySaved={loadEntries} />
+        <XcrolEntryForm userId={user.id} onEntrySaved={loadEntries} prefillLink={prefillLink} />
 
         {/* Past Entries */}
         <Card>
