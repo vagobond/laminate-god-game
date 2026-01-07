@@ -78,14 +78,14 @@ export const MeetupsListModal = ({ open, onClose, onSelectMeetup }: MeetupsListM
 
   return (
     <div className="fixed inset-0 bg-background/80 flex items-center justify-center p-4 z-50">
-      <div className="bg-card border border-yellow-500/30 rounded-lg p-6 max-w-lg w-full space-y-4 max-h-[80vh] overflow-hidden flex flex-col">
+      <div className="bg-card border border-border rounded-lg p-6 max-w-lg w-full space-y-4 max-h-[80vh] overflow-hidden flex flex-col">
         <div className="flex justify-between items-start">
           <div>
             <h2 className="text-2xl font-bold flex items-center gap-2">
               <CalendarIcon className="w-6 h-6 text-yellow-500" />
               Meetups & Events
             </h2>
-            <p className="text-foreground/70 text-sm mt-1">
+            <p className="text-muted-foreground text-sm mt-1">
               {meetups.length} active meetup{meetups.length !== 1 ? 's' : ''}
             </p>
           </div>
@@ -96,9 +96,9 @@ export const MeetupsListModal = ({ open, onClose, onSelectMeetup }: MeetupsListM
 
         <div className="overflow-y-auto flex-1 space-y-3">
           {loading ? (
-            <p className="text-center py-8 text-foreground/60">Loading meetups...</p>
+            <p className="text-center py-8 text-muted-foreground">Loading meetups...</p>
           ) : meetups.length === 0 ? (
-            <p className="text-foreground/60 text-center py-8">
+            <p className="text-muted-foreground text-center py-8">
               No meetups yet. Be the first to create one!
             </p>
           ) : (
@@ -111,27 +111,27 @@ export const MeetupsListModal = ({ open, onClose, onSelectMeetup }: MeetupsListM
                     onClose();
                   }
                 }}
-                className="border border-yellow-500/20 rounded-lg p-4 bg-yellow-500/5 hover:bg-yellow-500/10 cursor-pointer transition-colors"
+                className="border border-border rounded-lg p-4 bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
-                    <CalendarIcon className="w-5 h-5 text-yellow-500" />
+                  <div className="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center flex-shrink-0">
+                    <CalendarIcon className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg">{meetup.title}</h3>
+                    <h3 className="font-semibold text-lg text-foreground">{meetup.title}</h3>
                     
-                    <div className="flex items-center gap-1 text-sm text-foreground/70 mt-1">
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                       <MapPin className="w-3 h-3" />
                       <span>{meetup.location_name}</span>
                     </div>
 
                     {meetup.is_open_ended ? (
-                      <div className="flex items-center gap-1 text-sm text-foreground/70 mt-1">
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                         <Clock className="w-3 h-3" />
                         <span className="italic">Open-ended</span>
                       </div>
                     ) : meetup.start_datetime && (
-                      <div className="flex items-center gap-1 text-sm text-foreground/70 mt-1">
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                         <Clock className="w-3 h-3" />
                         <span>
                           {format(new Date(meetup.start_datetime), "MMM d, yyyy 'at' h:mm a")}
@@ -140,7 +140,7 @@ export const MeetupsListModal = ({ open, onClose, onSelectMeetup }: MeetupsListM
                     )}
 
                     {meetup.description && (
-                      <p className="text-sm text-foreground/60 mt-2 line-clamp-2">
+                      <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                         {meetup.description}
                       </p>
                     )}
@@ -151,16 +151,16 @@ export const MeetupsListModal = ({ open, onClose, onSelectMeetup }: MeetupsListM
                           e.stopPropagation();
                           navigate(`/u/${meetup.creator_id}`);
                         }}
-                        className="flex items-center gap-2 mt-3 pt-2 border-t border-border/50"
+                        className="flex items-center gap-2 mt-3 pt-2 border-t border-border/50 hover:underline"
                       >
                         <Avatar className="w-6 h-6">
                           <AvatarImage src={meetup.creator.avatar_url || undefined} />
-                          <AvatarFallback className="text-xs">
+                          <AvatarFallback className="text-xs bg-primary/10">
                             {(meetup.creator.display_name || "A").slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-xs text-foreground/60">
-                          Created by {meetup.creator.display_name || "Anonymous"}
+                        <span className="text-sm text-foreground">
+                          {meetup.creator.display_name || "Anonymous"}
                         </span>
                       </div>
                     )}
