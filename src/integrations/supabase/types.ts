@@ -646,6 +646,54 @@ export type Database = {
         }
         Relationships: []
       }
+      meetups: {
+        Row: {
+          created_at: string
+          creator_id: string
+          description: string | null
+          end_datetime: string | null
+          id: string
+          is_open_ended: boolean
+          latitude: number | null
+          location_address: string | null
+          location_name: string
+          longitude: number | null
+          start_datetime: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          end_datetime?: string | null
+          id?: string
+          is_open_ended?: boolean
+          latitude?: number | null
+          location_address?: string | null
+          location_name: string
+          longitude?: number | null
+          start_datetime?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          end_datetime?: string | null
+          id?: string
+          is_open_ended?: boolean
+          latitude?: number | null
+          location_address?: string | null
+          location_name?: string
+          longitude?: number | null
+          start_datetime?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
