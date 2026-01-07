@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Inbox, Mail, MailOpen, Trash2, ExternalLink, Reply } from "lucide-react";
+import { Inbox, Mail, MailOpen, Trash2, ExternalLink, Reply, UserPlus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -33,6 +33,7 @@ interface Message {
   read_at: string | null;
   sender?: SenderProfile;
   recipient?: SenderProfile;
+  type: "message" | "friend_request";
 }
 
 const platformLabels: Record<string, string> = {
@@ -81,16 +82,35 @@ const MessagesInbox = () => {
       
       setCurrentUserId(user.id);
 
-      const { data, error } = await supabase
+      // Fetch regular messages
+      const { data: messagesData, error: messagesError } = await supabase
         .from("messages")
         .select("*")
         .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (messagesError) throw messagesError;
 
-      // Fetch sender and recipient profiles with contact info for platform links
-      const allUserIds = [...new Set((data || []).flatMap(m => [m.from_user_id, m.to_user_id]))];
+      // Fetch friend requests with messages (only pending ones sent to user)
+      const { data: friendRequestsData, error: friendRequestsError } = await supabase
+        .from("friend_requests")
+        .select("*")
+        .eq("to_user_id", user.id)
+        .not("message", "is", null)
+        .order("created_at", { ascending: false });
+
+      if (friendRequestsError) throw friendRequestsError;
+
+      // Filter out friend requests with empty messages
+      const friendRequestsWithMessages = (friendRequestsData || []).filter(
+        fr => fr.message && fr.message.trim() !== ""
+      );
+
+      // Collect all user IDs for profile lookup
+      const messageUserIds = (messagesData || []).flatMap(m => [m.from_user_id, m.to_user_id]);
+      const friendRequestUserIds = friendRequestsWithMessages.map(fr => fr.from_user_id);
+      const allUserIds = [...new Set([...messageUserIds, ...friendRequestUserIds])];
+
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, display_name, avatar_url, linkedin_url, contact_email, instagram_url, whatsapp, phone_number, link")
@@ -98,13 +118,34 @@ const MessagesInbox = () => {
 
       const profileMap = new Map<string, SenderProfile>(profiles?.map(p => [p.id, p as SenderProfile]) || []);
 
-      const messagesWithProfiles = (data || []).map(m => ({
+      // Transform regular messages
+      const regularMessages: Message[] = (messagesData || []).map(m => ({
         ...m,
         sender: profileMap.get(m.from_user_id),
         recipient: profileMap.get(m.to_user_id),
+        type: "message" as const,
       }));
 
-      setMessages(messagesWithProfiles as Message[]);
+      // Transform friend requests into message format
+      const friendRequestMessages: Message[] = friendRequestsWithMessages.map(fr => ({
+        id: fr.id,
+        from_user_id: fr.from_user_id,
+        to_user_id: fr.to_user_id,
+        content: fr.message!,
+        platform_suggestion: null,
+        created_at: fr.created_at,
+        read_at: null, // Friend requests don't have read status
+        sender: profileMap.get(fr.from_user_id),
+        recipient: profileMap.get(fr.to_user_id),
+        type: "friend_request" as const,
+      }));
+
+      // Combine and sort by date
+      const allMessages = [...regularMessages, ...friendRequestMessages].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setMessages(allMessages);
     } catch (error) {
       console.error("Error loading messages:", error);
     } finally {
@@ -130,14 +171,17 @@ const MessagesInbox = () => {
     }
   };
 
-  const deleteMessage = async (messageId: string) => {
+  const deleteMessage = async (messageId: string, type: "message" | "friend_request") => {
     try {
-      const { error } = await supabase
-        .from("messages")
-        .delete()
-        .eq("id", messageId);
+      if (type === "message") {
+        const { error } = await supabase
+          .from("messages")
+          .delete()
+          .eq("id", messageId);
 
-      if (error) throw error;
+        if (error) throw error;
+      }
+      // Don't allow deleting friend requests from here - they should be handled in friends list
 
       setMessages(prev => prev.filter(m => m.id !== messageId));
       toast({
@@ -153,8 +197,10 @@ const MessagesInbox = () => {
   };
 
   const unreadCount = messages.filter(
-    m => m.to_user_id === currentUserId && !m.read_at
+    m => m.to_user_id === currentUserId && !m.read_at && m.type === "message"
   ).length;
+
+  const friendRequestCount = messages.filter(m => m.type === "friend_request").length;
 
   if (loading) {
     return (
@@ -177,6 +223,11 @@ const MessagesInbox = () => {
               {unreadCount} new
             </Badge>
           )}
+          {friendRequestCount > 0 && (
+            <Badge variant="secondary" className="ml-1">
+              {friendRequestCount} friend request{friendRequestCount > 1 ? "s" : ""}
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -188,13 +239,18 @@ const MessagesInbox = () => {
           <div className="space-y-3">
             {messages.map((message) => {
               const isReceived = message.to_user_id === currentUserId;
-              const isUnread = isReceived && !message.read_at;
+              const isUnread = isReceived && !message.read_at && message.type === "message";
+              const isFriendRequest = message.type === "friend_request";
               
               return (
                 <div
-                  key={message.id}
+                  key={`${message.type}-${message.id}`}
                   className={`p-4 rounded-lg border transition-colors ${
-                    isUnread ? "bg-primary/5 border-primary/20" : "bg-secondary/30"
+                    isFriendRequest 
+                      ? "bg-amber-500/10 border-amber-500/30" 
+                      : isUnread 
+                        ? "bg-primary/5 border-primary/20" 
+                        : "bg-secondary/30"
                   }`}
                   onClick={() => isUnread && markAsRead(message.id)}
                 >
@@ -222,31 +278,54 @@ const MessagesInbox = () => {
                         >
                           {message.sender?.display_name || "Unknown"}
                         </span>
-                        <span className="text-xs text-muted-foreground">→</span>
-                        <span 
-                          className="font-medium cursor-pointer hover:text-primary hover:underline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/u/${message.to_user_id}`);
-                          }}
-                        >
-                          {message.to_user_id === currentUserId 
-                            ? "you" 
-                            : (message.recipient?.display_name || "Unknown")}
-                        </span>
-                        {isUnread && (
-                          <Mail className="w-4 h-4 text-primary" />
-                        )}
-                        {!isUnread && isReceived && (
-                          <MailOpen className="w-4 h-4 text-muted-foreground" />
+                        {isFriendRequest ? (
+                          <Badge variant="outline" className="text-amber-600 border-amber-500/50">
+                            <UserPlus className="w-3 h-3 mr-1" />
+                            Friend Request
+                          </Badge>
+                        ) : (
+                          <>
+                            <span className="text-xs text-muted-foreground">→</span>
+                            <span 
+                              className="font-medium cursor-pointer hover:text-primary hover:underline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/u/${message.to_user_id}`);
+                              }}
+                            >
+                              {message.to_user_id === currentUserId 
+                                ? "you" 
+                                : (message.recipient?.display_name || "Unknown")}
+                            </span>
+                            {isUnread && (
+                              <Mail className="w-4 h-4 text-primary" />
+                            )}
+                            {!isUnread && isReceived && (
+                              <MailOpen className="w-4 h-4 text-muted-foreground" />
+                            )}
+                          </>
                         )}
                       </div>
                       <MarkdownContent 
                         content={message.content} 
                         className="mt-1 text-sm break-words block"
                       />
+                      {isFriendRequest && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2 text-amber-600 border-amber-500/50 hover:bg-amber-500/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate("/profile?tab=friends");
+                          }}
+                        >
+                          <UserPlus className="w-3 h-3 mr-1" />
+                          Respond to Request
+                        </Button>
+                      )}
                       {message.platform_suggestion && message.platform_suggestion !== "none" && (() => {
-const platformUrl = getPlatformUrl(message.platform_suggestion, message.sender);
+                        const platformUrl = getPlatformUrl(message.platform_suggestion, message.sender);
                         return platformUrl ? (
                           <a
                             href={platformUrl}
@@ -270,7 +349,7 @@ const platformUrl = getPlatformUrl(message.platform_suggestion, message.sender);
                       </p>
                     </div>
                     <div className="flex flex-col gap-1">
-                      {isReceived && (
+                      {isReceived && !isFriendRequest && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -283,17 +362,19 @@ const platformUrl = getPlatformUrl(message.platform_suggestion, message.sender);
                           <Reply className="w-4 h-4" />
                         </Button>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteMessage(message.id);
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {!isFriendRequest && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteMessage(message.id, message.type);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
