@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { WelcomeModal } from "@/components/WelcomeModal";
 
@@ -40,6 +40,8 @@ type AuthView = "default" | "forgot-password" | "reset-password-sent" | "update-
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnUrl = searchParams.get("returnUrl");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -67,20 +69,30 @@ const Auth = () => {
         return;
       }
 
-      // If user visits /auth while already signed in, bounce them home.
+      // If user visits /auth while already signed in, bounce them to returnUrl or home.
       if (event === 'INITIAL_SESSION' && session && authView !== "update-password") {
-        navigate("/");
+        if (returnUrl) {
+          // Redirect to the OAuth flow or other return URL
+          window.location.href = returnUrl;
+        } else {
+          navigate("/");
+        }
         return;
       }
 
-      // After a successful sign-in/sign-up, show the invite modal.
+      // After a successful sign-in/sign-up, redirect to returnUrl or show welcome modal.
       if (event === 'SIGNED_IN' && session && authView !== "update-password") {
-        setShowWelcomeModal(true);
+        if (returnUrl) {
+          // Redirect to the OAuth flow or other return URL
+          window.location.href = returnUrl;
+        } else {
+          setShowWelcomeModal(true);
+        }
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, authView]);
+  }, [navigate, authView, returnUrl]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
