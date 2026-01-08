@@ -54,7 +54,28 @@ Deno.serve(async (req) => {
       has_code_verifier: !!body.code_verifier
     });
 
-    const { grant_type, code, redirect_uri, client_id, client_secret, refresh_token, code_verifier } = body;
+    let {
+      grant_type,
+      code,
+      redirect_uri,
+      client_id,
+      client_secret,
+      refresh_token,
+      code_verifier,
+    } = body;
+
+    // Support RFC6749 client_secret_basic in addition to client_secret in body
+    const authHeader = req.headers.get("Authorization") ?? req.headers.get("authorization");
+    if (authHeader?.startsWith("Basic ")) {
+      try {
+        const decoded = atob(authHeader.substring(6));
+        const [basicClientId, basicClientSecret] = decoded.split(":");
+        client_id = client_id || basicClientId;
+        client_secret = client_secret || basicClientSecret;
+      } catch {
+        console.warn("Failed to parse Basic auth header");
+      }
+    }
 
     if (grant_type === "authorization_code") {
       if (!code || !redirect_uri || !client_id) {
@@ -155,6 +176,7 @@ Deno.serve(async (req) => {
           client_id: authCode.client_id,
           user_id: authCode.user_id,
           scopes: authCode.scopes,
+          revoked: false,
         })
         .select("access_token, refresh_token, access_token_expires_at, scopes")
         .single();
@@ -192,7 +214,7 @@ Deno.serve(async (req) => {
         .from("oauth_tokens")
         .select("*, oauth_clients!inner(client_id, client_secret)")
         .eq("refresh_token", refresh_token)
-        .eq("revoked", false)
+        .or("revoked.is.null,revoked.eq.false")
         .single();
 
       if (tokenError || !existingToken) {
@@ -236,6 +258,7 @@ Deno.serve(async (req) => {
           client_id: existingToken.client_id,
           user_id: existingToken.user_id,
           scopes: existingToken.scopes,
+          revoked: false,
         })
         .select("access_token, refresh_token, access_token_expires_at, scopes")
         .single();
