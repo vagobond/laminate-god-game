@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Inbox, Mail, MailOpen, Trash2, ExternalLink, Reply, UserPlus, ChevronDown, ChevronUp } from "lucide-react";
+import { Inbox, Mail, MailOpen, Trash2, ExternalLink, Reply, UserPlus, ChevronDown, ChevronUp, ArrowLeft, MessageCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
 interface SenderProfile {
   id: string;
   display_name: string | null;
@@ -40,6 +41,15 @@ interface Message {
   sender?: SenderProfile;
   recipient?: SenderProfile;
   type: "message" | "friend_request";
+}
+
+interface ConversationThread {
+  otherUserId: string;
+  otherUser: SenderProfile | undefined;
+  messages: Message[];
+  unreadCount: number;
+  latestMessage: Message;
+  hasFriendRequest: boolean;
 }
 
 const platformLabels: Record<string, string> = {
@@ -71,6 +81,8 @@ const getPlatformUrl = (platform: string, sender?: SenderProfile): string | null
 
 const MessagesInbox = () => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [threads, setThreads] = useState<ConversationThread[]>([]);
+  const [selectedThread, setSelectedThread] = useState<ConversationThread | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
@@ -96,6 +108,62 @@ const MessagesInbox = () => {
   useEffect(() => {
     loadMessages();
   }, []);
+
+  // Group messages into threads whenever messages change
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const threadMap = new Map<string, Message[]>();
+
+    messages.forEach(message => {
+      const otherUserId = message.from_user_id === currentUserId 
+        ? message.to_user_id 
+        : message.from_user_id;
+      
+      if (!threadMap.has(otherUserId)) {
+        threadMap.set(otherUserId, []);
+      }
+      threadMap.get(otherUserId)!.push(message);
+    });
+
+    const groupedThreads: ConversationThread[] = Array.from(threadMap.entries()).map(([otherUserId, msgs]) => {
+      // Sort messages by date ascending (oldest first) for the thread view
+      const sortedMessages = [...msgs].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+      
+      const latestMessage = msgs.reduce((latest, msg) => 
+        new Date(msg.created_at) > new Date(latest.created_at) ? msg : latest
+      );
+
+      const unreadCount = msgs.filter(
+        m => m.to_user_id === currentUserId && !m.read_at && m.type === "message"
+      ).length;
+
+      const hasFriendRequest = msgs.some(m => m.type === "friend_request");
+
+      // Get the other user's profile from any message
+      const otherUser = msgs[0]?.from_user_id === otherUserId 
+        ? msgs[0]?.sender 
+        : msgs[0]?.recipient;
+
+      return {
+        otherUserId,
+        otherUser,
+        messages: sortedMessages,
+        unreadCount,
+        latestMessage,
+        hasFriendRequest,
+      };
+    });
+
+    // Sort threads by latest message date (most recent first)
+    groupedThreads.sort(
+      (a, b) => new Date(b.latestMessage.created_at).getTime() - new Date(a.latestMessage.created_at).getTime()
+    );
+
+    setThreads(groupedThreads);
+  }, [messages, currentUserId]);
 
   const loadMessages = async () => {
     try {
@@ -156,7 +224,7 @@ const MessagesInbox = () => {
         content: fr.message!,
         platform_suggestion: null,
         created_at: fr.created_at,
-        read_at: null, // Friend requests don't have read status
+        read_at: null,
         sender: profileMap.get(fr.from_user_id),
         recipient: profileMap.get(fr.to_user_id),
         type: "friend_request" as const,
@@ -186,7 +254,6 @@ const MessagesInbox = () => {
         prev.map(m => m.id === messageId ? { ...m, read_at: new Date().toISOString() } : m)
       );
       
-      // Dispatch event to notify NotificationBell to refresh
       window.dispatchEvent(new CustomEvent('messages-updated'));
     } catch (error) {
       console.error("Error marking as read:", error);
@@ -203,7 +270,6 @@ const MessagesInbox = () => {
 
         if (error) throw error;
       }
-      // Don't allow deleting friend requests from here - they should be handled in friends list
 
       setMessages(prev => prev.filter(m => m.id !== messageId));
       toast({
@@ -218,11 +284,8 @@ const MessagesInbox = () => {
     }
   };
 
-  const unreadCount = messages.filter(
-    m => m.to_user_id === currentUserId && !m.read_at && m.type === "message"
-  ).length;
-
-  const friendRequestCount = messages.filter(m => m.type === "friend_request").length;
+  const totalUnreadCount = threads.reduce((sum, t) => sum + t.unreadCount, 0);
+  const friendRequestCount = threads.filter(t => t.hasFriendRequest).length;
 
   if (loading) {
     return (
@@ -234,103 +297,70 @@ const MessagesInbox = () => {
     );
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Inbox className="w-5 h-5" />
-          Messages
-          {unreadCount > 0 && (
-            <Badge variant="destructive" className="ml-2">
-              {unreadCount} new
-            </Badge>
-          )}
-          {friendRequestCount > 0 && (
-            <Badge variant="secondary" className="ml-1">
-              {friendRequestCount} friend request{friendRequestCount > 1 ? "s" : ""}
-            </Badge>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {messages.length === 0 ? (
-          <p className="text-center text-muted-foreground py-4">
-            No messages yet
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {messages.map((message) => {
+  // Thread detail view
+  if (selectedThread) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSelectedThread(null)}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <Avatar 
+              className="w-8 h-8 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+              onClick={() => navigate(`/u/${selectedThread.otherUserId}`)}
+            >
+              <AvatarImage src={selectedThread.otherUser?.avatar_url || undefined} />
+              <AvatarFallback>
+                {(selectedThread.otherUser?.display_name || "?").slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span 
+              className="cursor-pointer hover:text-primary hover:underline"
+              onClick={() => navigate(`/u/${selectedThread.otherUserId}`)}
+            >
+              {selectedThread.otherUser?.display_name || "Unknown"}
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            {selectedThread.messages.map((message) => {
               const isReceived = message.to_user_id === currentUserId;
               const isUnread = isReceived && !message.read_at && message.type === "message";
               const isFriendRequest = message.type === "friend_request";
+
+              // Mark as read when viewing
+              if (isUnread) {
+                markAsRead(message.id);
+              }
               
               return (
                 <div
                   key={`${message.type}-${message.id}`}
-                  className={`p-4 rounded-lg border transition-colors ${
+                  className={`p-3 rounded-lg ${
                     isFriendRequest 
-                      ? "bg-amber-500/10 border-amber-500/30" 
-                      : isUnread 
-                        ? "bg-primary/5 border-primary/20" 
-                        : "bg-secondary/30"
+                      ? "bg-amber-500/10 border border-amber-500/30" 
+                      : isReceived
+                        ? "bg-secondary/50 mr-8"
+                        : "bg-primary/10 ml-8"
                   }`}
-                  onClick={() => isUnread && markAsRead(message.id)}
                 >
-                  <div className="flex items-start gap-3">
-                    <Avatar 
-                      className="w-10 h-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/u/${message.from_user_id}`);
-                      }}
-                    >
-                      <AvatarImage src={message.sender?.avatar_url || undefined} />
-                      <AvatarFallback>
-                        {(message.sender?.display_name || "?").slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                  <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span 
-                          className="font-medium cursor-pointer hover:text-primary hover:underline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/u/${message.from_user_id}`);
-                          }}
-                        >
-                          {message.sender?.display_name || "Unknown"}
-                        </span>
-                        {isFriendRequest ? (
-                          <Badge variant="outline" className="text-amber-600 border-amber-500/50">
-                            <UserPlus className="w-3 h-3 mr-1" />
-                            Friend Request
-                          </Badge>
-                        ) : (
-                          <>
-                            <span className="text-xs text-muted-foreground">→</span>
-                            <span 
-                              className="font-medium cursor-pointer hover:text-primary hover:underline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/u/${message.to_user_id}`);
-                              }}
-                            >
-                              {message.to_user_id === currentUserId 
-                                ? "you" 
-                                : (message.recipient?.display_name || "Unknown")}
-                            </span>
-                            {isUnread && (
-                              <Mail className="w-4 h-4 text-primary" />
-                            )}
-                            {!isUnread && isReceived && (
-                              <MailOpen className="w-4 h-4 text-muted-foreground" />
-                            )}
-                          </>
-                        )}
-                      </div>
-                      {/* Message content with expand/collapse for long messages */}
+                      {isFriendRequest && (
+                        <Badge variant="outline" className="text-amber-600 border-amber-500/50 mb-2">
+                          <UserPlus className="w-3 h-3 mr-1" />
+                          Friend Request
+                        </Badge>
+                      )}
+                      {/* Message content */}
                       {isLongMessage(message.content) && !expandedMessages.has(message.id) ? (
-                        <div className="mt-1">
+                        <div>
                           <MarkdownContent 
                             content={message.content.slice(0, 150) + "..."} 
                             className="text-sm break-words block"
@@ -339,17 +369,14 @@ const MessagesInbox = () => {
                             variant="ghost"
                             size="sm"
                             className="mt-1 h-6 px-2 text-xs text-primary"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleExpanded(message.id);
-                            }}
+                            onClick={() => toggleExpanded(message.id)}
                           >
                             <ChevronDown className="w-3 h-3 mr-1" />
                             Read more
                           </Button>
                         </div>
                       ) : (
-                        <div className="mt-1">
+                        <div>
                           <MarkdownContent 
                             content={message.content} 
                             className="text-sm break-words block"
@@ -359,10 +386,7 @@ const MessagesInbox = () => {
                               variant="ghost"
                               size="sm"
                               className="mt-1 h-6 px-2 text-xs text-muted-foreground"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleExpanded(message.id);
-                              }}
+                              onClick={() => toggleExpanded(message.id)}
                             >
                               <ChevronUp className="w-3 h-3 mr-1" />
                               Show less
@@ -371,27 +395,12 @@ const MessagesInbox = () => {
                         </div>
                       )}
                       {isFriendRequest && (
-                        <div className="mt-2 flex gap-2 flex-wrap">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-amber-600 border-amber-500/50 hover:bg-amber-500/10"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setViewingMessage(message);
-                            }}
-                          >
-                            <Mail className="w-3 h-3 mr-1" />
-                            View Full Message
-                          </Button>
+                        <div className="mt-2">
                           <Button
                             variant="outline"
                             size="sm"
                             className="text-primary border-primary/50 hover:bg-primary/10"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate("/profile?tab=friends");
-                            }}
+                            onClick={() => navigate("/profile?tab=friends")}
                           >
                             <UserPlus className="w-3 h-3 mr-1" />
                             Accept/Decline
@@ -406,54 +415,146 @@ const MessagesInbox = () => {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-primary/10 rounded text-xs text-primary hover:bg-primary/20 transition-colors"
-                            onClick={(e) => e.stopPropagation()}
                           >
                             <ExternalLink className="w-3 h-3" />
                             Let's connect on {platformLabels[message.platform_suggestion] || message.platform_suggestion}
                           </a>
-                        ) : (
-                          <div className="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-primary/10 rounded text-xs text-primary">
-                            <ExternalLink className="w-3 h-3" />
-                            Let's connect on {platformLabels[message.platform_suggestion] || message.platform_suggestion}
-                          </div>
-                        );
+                        ) : null;
                       })()}
-                      <p className="mt-2 text-xs text-muted-foreground">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                       </p>
                     </div>
-                    <div className="flex flex-col gap-1">
-                      {isReceived && !isFriendRequest && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-muted-foreground hover:text-primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setReplyingTo(message);
-                          }}
-                        >
-                          <Reply className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {!isFriendRequest && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-muted-foreground hover:text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteMessage(message.id, message.type);
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
+                    {!isFriendRequest && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive shrink-0"
+                        onClick={() => deleteMessage(message.id, message.type)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               );
             })}
+          </div>
+          
+          {/* Reply button */}
+          <div className="mt-4 pt-4 border-t">
+            <Button
+              className="w-full"
+              onClick={() => setReplyingTo(selectedThread.messages[0])}
+            >
+              <Reply className="w-4 h-4 mr-2" />
+              Reply to {selectedThread.otherUser?.display_name || "Unknown"}
+            </Button>
+          </div>
+        </CardContent>
+
+        {replyingTo && (
+          <SendMessageDialog
+            recipientId={selectedThread.otherUserId}
+            recipientName={selectedThread.otherUser?.display_name || "Unknown"}
+            friendshipLevel="buddy"
+            open={!!replyingTo}
+            onOpenChange={(open) => {
+              if (!open) {
+                setReplyingTo(null);
+                loadMessages();
+              }
+            }}
+          />
+        )}
+      </Card>
+    );
+  }
+
+  // Thread list view
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Inbox className="w-5 h-5" />
+          Messages
+          {totalUnreadCount > 0 && (
+            <Badge variant="destructive" className="ml-2">
+              {totalUnreadCount} new
+            </Badge>
+          )}
+          {friendRequestCount > 0 && (
+            <Badge variant="secondary" className="ml-1">
+              {friendRequestCount} friend request{friendRequestCount > 1 ? "s" : ""}
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {threads.length === 0 ? (
+          <p className="text-center text-muted-foreground py-4">
+            No messages yet
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {threads.map((thread) => (
+              <div
+                key={thread.otherUserId}
+                className={`p-4 rounded-lg border cursor-pointer transition-colors hover:bg-secondary/50 ${
+                  thread.hasFriendRequest 
+                    ? "bg-amber-500/10 border-amber-500/30" 
+                    : thread.unreadCount > 0
+                      ? "bg-primary/5 border-primary/20" 
+                      : "bg-secondary/30"
+                }`}
+                onClick={() => setSelectedThread(thread)}
+              >
+                <div className="flex items-center gap-3">
+                  <Avatar 
+                    className="w-12 h-12"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/u/${thread.otherUserId}`);
+                    }}
+                  >
+                    <AvatarImage src={thread.otherUser?.avatar_url || undefined} />
+                    <AvatarFallback>
+                      {(thread.otherUser?.display_name || "?").slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">
+                        {thread.otherUser?.display_name || "Unknown"}
+                      </span>
+                      {thread.unreadCount > 0 && (
+                        <Badge variant="destructive" className="text-xs">
+                          {thread.unreadCount}
+                        </Badge>
+                      )}
+                      {thread.hasFriendRequest && (
+                        <Badge variant="outline" className="text-amber-600 border-amber-500/50 text-xs">
+                          <UserPlus className="w-3 h-3 mr-1" />
+                          Request
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {thread.latestMessage.from_user_id === currentUserId && "You: "}
+                      {thread.latestMessage.content.slice(0, 50)}
+                      {thread.latestMessage.content.length > 50 && "..."}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formatDistanceToNow(new Date(thread.latestMessage.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">{thread.messages.length}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>
