@@ -4,13 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Inbox, Mail, MailOpen, Trash2, ExternalLink, Reply, UserPlus } from "lucide-react";
+import { Inbox, Mail, MailOpen, Trash2, ExternalLink, Reply, UserPlus, ChevronDown, ChevronUp } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import SendMessageDialog from "./SendMessageDialog";
 import MarkdownContent from "./MarkdownContent";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 interface SenderProfile {
   id: string;
   display_name: string | null;
@@ -68,8 +74,24 @@ const MessagesInbox = () => {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [viewingMessage, setViewingMessage] = useState<Message | null>(null);
+  const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const toggleExpanded = (messageId: string) => {
+    setExpandedMessages(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId);
+      } else {
+        newSet.add(messageId);
+      }
+      return newSet;
+    });
+  };
+
+  const isLongMessage = (content: string) => content.length > 150;
 
   useEffect(() => {
     loadMessages();
@@ -306,23 +328,75 @@ const MessagesInbox = () => {
                           </>
                         )}
                       </div>
-                      <MarkdownContent 
-                        content={message.content} 
-                        className="mt-1 text-sm break-words block"
-                      />
+                      {/* Message content with expand/collapse for long messages */}
+                      {isLongMessage(message.content) && !expandedMessages.has(message.id) ? (
+                        <div className="mt-1">
+                          <MarkdownContent 
+                            content={message.content.slice(0, 150) + "..."} 
+                            className="text-sm break-words block"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="mt-1 h-6 px-2 text-xs text-primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleExpanded(message.id);
+                            }}
+                          >
+                            <ChevronDown className="w-3 h-3 mr-1" />
+                            Read more
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="mt-1">
+                          <MarkdownContent 
+                            content={message.content} 
+                            className="text-sm break-words block"
+                          />
+                          {isLongMessage(message.content) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="mt-1 h-6 px-2 text-xs text-muted-foreground"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleExpanded(message.id);
+                              }}
+                            >
+                              <ChevronUp className="w-3 h-3 mr-1" />
+                              Show less
+                            </Button>
+                          )}
+                        </div>
+                      )}
                       {isFriendRequest && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-2 text-amber-600 border-amber-500/50 hover:bg-amber-500/10"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate("/profile?tab=friends");
-                          }}
-                        >
-                          <UserPlus className="w-3 h-3 mr-1" />
-                          Respond to Request
-                        </Button>
+                        <div className="mt-2 flex gap-2 flex-wrap">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-amber-600 border-amber-500/50 hover:bg-amber-500/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewingMessage(message);
+                            }}
+                          >
+                            <Mail className="w-3 h-3 mr-1" />
+                            View Full Message
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-primary border-primary/50 hover:bg-primary/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate("/profile?tab=friends");
+                            }}
+                          >
+                            <UserPlus className="w-3 h-3 mr-1" />
+                            Accept/Decline
+                          </Button>
+                        </div>
                       )}
                       {message.platform_suggestion && message.platform_suggestion !== "none" && (() => {
                         const platformUrl = getPlatformUrl(message.platform_suggestion, message.sender);
@@ -398,6 +472,54 @@ const MessagesInbox = () => {
           }}
         />
       )}
+
+      {/* Full message dialog for friend requests */}
+      <Dialog open={!!viewingMessage} onOpenChange={(open) => !open && setViewingMessage(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={viewingMessage?.sender?.avatar_url || undefined} />
+                <AvatarFallback>
+                  {(viewingMessage?.sender?.display_name || "?").slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <span>Message from {viewingMessage?.sender?.display_name || "Unknown"}</span>
+            </DialogTitle>
+            <DialogDescription>
+              Friend request received {viewingMessage && formatDistanceToNow(new Date(viewingMessage.created_at), { addSuffix: true })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 p-4 bg-secondary/30 rounded-lg">
+            <MarkdownContent 
+              content={viewingMessage?.content || ""} 
+              className="text-sm break-words"
+            />
+          </div>
+          <div className="mt-4 flex gap-2 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (viewingMessage?.sender) {
+                  navigate(`/u/${viewingMessage.from_user_id}`);
+                  setViewingMessage(null);
+                }
+              }}
+            >
+              View Profile
+            </Button>
+            <Button
+              onClick={() => {
+                setViewingMessage(null);
+                navigate("/profile?tab=friends");
+              }}
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Accept/Decline Request
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
