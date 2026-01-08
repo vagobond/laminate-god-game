@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
       .from("oauth_tokens")
       .select("user_id, scopes, access_token_expires_at, revoked")
       .eq("access_token", accessToken)
-      .eq("revoked", false)
+      .or("revoked.is.null,revoked.eq.false")
       .single();
 
     if (tokenError || !token) {
