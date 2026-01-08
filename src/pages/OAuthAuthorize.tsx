@@ -61,6 +61,13 @@ const OAuthAuthorize = () => {
       
       setUser(session.user);
 
+      // Load user's default OAuth sharing preferences
+      const { data: userSettings } = await supabase
+        .from("user_settings")
+        .select("default_share_email, default_share_hometown, default_share_connections, default_share_xcrol")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
       const clientId = searchParams.get("client_id");
       const redirectUri = searchParams.get("redirect_uri");
       const scope = searchParams.get("scope") || "profile:read";
@@ -100,7 +107,26 @@ const OAuthAuthorize = () => {
       const data = await response.json();
       setClient(data.client);
       setScopes(data.scopes);
-      setSelectedScopes(data.scopes.map((s: ScopeInfo) => s.id));
+      
+      // Pre-select scopes based on user's default preferences
+      const scopeDefaults: Record<string, boolean> = {
+        "profile:read": true, // Always required
+        "profile:email": userSettings?.default_share_email ?? false,
+        "hometown:read": userSettings?.default_share_hometown ?? false,
+        "connections:read": userSettings?.default_share_connections ?? false,
+        "xcrol:read": userSettings?.default_share_xcrol ?? false,
+      };
+      
+      const preSelectedScopes = data.scopes
+        .filter((s: ScopeInfo) => scopeDefaults[s.id] ?? false)
+        .map((s: ScopeInfo) => s.id);
+      
+      // Ensure profile:read is always included
+      if (!preSelectedScopes.includes("profile:read")) {
+        preSelectedScopes.unshift("profile:read");
+      }
+      
+      setSelectedScopes(preSelectedScopes);
     } catch (err) {
       console.error("Error loading OAuth client:", err);
       setError("Failed to load authorization request");
@@ -318,6 +344,9 @@ const OAuthAuthorize = () => {
                 </div>
               ))}
             </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Selections based on your default privacy settings. Change defaults in Settings → Data & Privacy.
+            </p>
           </div>
 
           {!client?.is_verified && (
