@@ -181,39 +181,19 @@ const GettingStarted = () => {
             
             <div className="grid gap-4 mt-4">
               <div className="p-4 rounded-lg bg-background/50 border border-border/30">
-                <h3 className="font-bold text-lg mb-2">🐺 Wolfemon</h3>
-                <p className="text-sm">A creature collection game where you manage sheep, harvest wool, and earn gold. Build your flock and unlock the legendary Wolfemon!</p>
+                <h3 className="font-bold text-lg mb-2">🌍 Every Country in the World</h3>
+                <p className="text-sm">Help us get a user from every country! Invite friends and track global representation on your journey to connect the world.</p>
               </div>
               
               <div className="p-4 rounded-lg bg-background/50 border border-border/30">
-                <h3 className="font-bold text-lg mb-2">✊ Sly Doubt</h3>
-                <p className="text-sm">Join the revolution! Collect "Bloot" and perform acts of rebellion in this tongue-in-cheek political satire game.</p>
-              </div>
-              
-              <div className="p-4 rounded-lg bg-background/50 border border-border/30">
-                <h3 className="font-bold text-lg mb-2">🎯 Resolutions</h3>
-                <p className="text-sm">Make New Year's resolutions and see if you can keep them. Track your commitment to self-improvement (or watch them hilariously fail).</p>
-              </div>
-              
-              <div className="p-4 rounded-lg bg-background/50 border border-border/30">
-                <h3 className="font-bold text-lg mb-2">✈️ Dream Trip</h3>
-                <p className="text-sm">Plan your ultimate adventure by selecting dream destinations on an interactive map. Share your travel aspirations with friends!</p>
-              </div>
-              
-              <div className="p-4 rounded-lg bg-background/50 border border-border/30">
-                <h3 className="font-bold text-lg mb-2">🌍 Every Country</h3>
-                <p className="text-sm">The ultimate travel challenge—visit every country in the world! Track your progress and invite friends to join your global journey.</p>
-              </div>
-              
-              <div className="p-4 rounded-lg bg-background/50 border border-border/30">
-                <h3 className="font-bold text-lg mb-2">🏕️ Rough Living & Cure to Loneliness</h3>
-                <p className="text-sm">AI-powered adventure games that put you in survival scenarios. Make choices, face consequences, and see how long you can survive!</p>
+                <h3 className="font-bold text-lg mb-2">💜 The Cure to Loneliness and Boredom</h3>
+                <p className="text-sm">Wild, offbeat activities to cure boredom or connect with others. Get creative suggestions for making meaningful connections!</p>
               </div>
             </div>
             
             <p className="mt-4 text-primary/90 font-medium">
               <Gamepad2 className="w-4 h-4 inline mr-1" />
-              Games open in responsive modals optimized for your device. Progress is saved to your account!
+              Games open in responsive modals optimized for your device.
             </p>
           </div>
         </section>
