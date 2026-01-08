@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Mail, KeyRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +27,9 @@ const signUpSchema = z.object({
   password: z.string()
     .min(8, { message: "Password must be at least 8 characters" }),
   inviteCode: z.string().trim().optional(),
+  agreedToTerms: z.literal(true, {
+    errorMap: () => ({ message: "You must agree to the Terms and Privacy Policy" }),
+  }),
 });
 
 const resetPasswordSchema = z.object({
@@ -47,8 +51,9 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; displayName?: string; confirmPassword?: string; inviteCode?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; displayName?: string; confirmPassword?: string; inviteCode?: string; agreedToTerms?: string }>({});
   const [inviteCode, setInviteCode] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const [authView, setAuthView] = useState<AuthView>("default");
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
@@ -98,7 +103,7 @@ const Auth = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = signUpSchema.safeParse({ displayName, email, password, inviteCode });
+    const result = signUpSchema.safeParse({ displayName, email, password, inviteCode, agreedToTerms });
     if (!result.success) {
       const fieldErrors: typeof errors = {};
       result.error.errors.forEach((err) => {
@@ -593,6 +598,44 @@ const Auth = () => {
                   <p className="text-sm text-destructive">{errors.inviteCode}</p>
                 )}
                 <p className="text-xs text-muted-foreground">If someone invited you, enter their code here</p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="terms-checkbox"
+                    checked={agreedToTerms}
+                    onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                    className="mt-1"
+                  />
+                  <label
+                    htmlFor="terms-checkbox"
+                    className="text-sm leading-relaxed cursor-pointer"
+                  >
+                    I have read and agree to the{" "}
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline hover:text-primary/80"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Terms and Conditions
+                    </a>{" "}
+                    and{" "}
+                    <a
+                      href="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline hover:text-primary/80"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Privacy Policy
+                    </a>
+                  </label>
+                </div>
+                {errors.agreedToTerms && (
+                  <p className="text-sm text-destructive">{errors.agreedToTerms}</p>
+                )}
               </div>
               <Button
                 type="submit"

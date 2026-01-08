@@ -23,6 +23,8 @@ import EveryCountry from "./pages/EveryCountry";
 import NotFound from "./pages/NotFound";
 import AppHeader from "./components/AppHeader";
 import OAuthAuthorize from "./pages/OAuthAuthorize";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +55,8 @@ const App = () => (
           <Route path="/xcrol/:username" element={<UserXcrol />} />
           <Route path="/every-country" element={<EveryCountry />} />
           <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
