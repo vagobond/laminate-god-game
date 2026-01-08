@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -163,6 +163,17 @@ const IRLLayer = () => {
     return acc;
   }, {});
 
+  // Check if a location has meetups nearby (within ~50km)
+  const locationHasMeetups = useCallback((lat: number, lng: number): boolean => {
+    const threshold = 0.5; // Roughly 50km at equator
+    return meetups.some(meetup => {
+      if (!meetup.latitude || !meetup.longitude) return false;
+      const latDiff = Math.abs(meetup.latitude - lat);
+      const lngDiff = Math.abs(meetup.longitude - lng);
+      return latDiff < threshold && lngDiff < threshold;
+    });
+  }, [meetups]);
+
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken) return;
 
@@ -291,7 +302,7 @@ const IRLLayer = () => {
       if (mapInstance.getLayer("unclustered-count")) mapInstance.removeLayer("unclustered-count");
       if (mapInstance.getSource("hometowns")) mapInstance.removeSource("hometowns");
 
-      // Create GeoJSON from grouped hometowns
+      // Create GeoJSON from grouped hometowns with meetup info
       const geojsonData: GeoJSON.FeatureCollection = {
         type: "FeatureCollection",
         features: Object.values(groupedHometowns).map((group) => ({
@@ -301,6 +312,7 @@ const IRLLayer = () => {
             country: group.country,
             count: group.profiles.length,
             profiles: JSON.stringify(group.profiles),
+            hasMeetups: locationHasMeetups(group.lat, group.lng),
           },
           geometry: {
             type: "Point",
@@ -317,17 +329,23 @@ const IRLLayer = () => {
         clusterRadius: 60,
         clusterProperties: {
           sum: ["+", ["get", "count"]],
+          hasMeetups: ["any", ["get", "hasMeetups"]],
         },
       });
 
-      // Clustered circles
+      // Clustered circles - yellow if has meetups, purple otherwise
       mapInstance.addLayer({
         id: "clusters",
         type: "circle",
         source: "hometowns",
         filter: ["has", "point_count"],
         paint: {
-          "circle-color": "#8B5CF6",
+          "circle-color": [
+            "case",
+            ["get", "hasMeetups"],
+            "#EAB308", // Yellow for locations with meetups
+            "#8B5CF6"  // Purple for locations without meetups
+          ],
           "circle-radius": [
             "step",
             ["get", "sum"],
@@ -357,14 +375,19 @@ const IRLLayer = () => {
         },
       });
 
-      // Individual (unclustered) points
+      // Individual (unclustered) points - yellow if has meetups, purple otherwise
       mapInstance.addLayer({
         id: "unclustered-point",
         type: "circle",
         source: "hometowns",
         filter: ["!", ["has", "point_count"]],
         paint: {
-          "circle-color": "#8B5CF6",
+          "circle-color": [
+            "case",
+            ["get", "hasMeetups"],
+            "#EAB308", // Yellow for locations with meetups
+            "#8B5CF6"  // Purple for locations without meetups
+          ],
           "circle-radius": [
             "interpolate", ["linear"], ["get", "count"],
             1, 18,
@@ -422,7 +445,7 @@ const IRLLayer = () => {
         // Map was already destroyed, ignore cleanup
       }
     };
-  }, [allHometowns, groupedHometowns]);
+  }, [allHometowns, groupedHometowns, meetups, locationHasMeetups]);
 
   // Add meetup markers to the map
   useEffect(() => {
