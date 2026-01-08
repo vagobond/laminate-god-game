@@ -269,15 +269,15 @@ const GettingStarted = () => {
           </div>
         </section>
 
-        {/* Hometown / IRL Layer */}
+        {/* The World */}
         <section className="space-y-4 p-6 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/30">
           <div className="flex items-center gap-3">
             <MapPin className="w-8 h-8 text-primary" />
-            <h2 className="text-2xl md:text-3xl font-bold">The IRL Layer - Your Hometown Matters</h2>
+            <h2 className="text-2xl md:text-3xl font-bold">The World - Your Hometown Matters</h2>
           </div>
           <div className="space-y-4 text-foreground/80 leading-relaxed">
             <p className="text-lg">
-              The IRL Layer is an interactive world map showing where XCROL users call home.
+              The World is an interactive map showing where XCROL users call home.
             </p>
             <p>
               When you pin your hometown on the map, you're joining a global network of real people in real places:
