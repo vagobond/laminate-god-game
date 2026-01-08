@@ -1198,6 +1198,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          allow_friend_requests: boolean
+          created_at: string
+          default_share_connections: boolean
+          default_share_email: boolean
+          default_share_hometown: boolean
+          default_share_xcrol: boolean
+          email_notifications: boolean
+          friend_request_notifications: boolean
+          id: string
+          show_online_status: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allow_friend_requests?: boolean
+          created_at?: string
+          default_share_connections?: boolean
+          default_share_email?: boolean
+          default_share_hometown?: boolean
+          default_share_xcrol?: boolean
+          email_notifications?: boolean
+          friend_request_notifications?: boolean
+          id?: string
+          show_online_status?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allow_friend_requests?: boolean
+          created_at?: string
+          default_share_connections?: boolean
+          default_share_email?: boolean
+          default_share_hometown?: boolean
+          default_share_xcrol?: boolean
+          email_notifications?: boolean
+          friend_request_notifications?: boolean
+          id?: string
+          show_online_status?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       wolfemon_game_state: {
         Row: {
           created_at: string
