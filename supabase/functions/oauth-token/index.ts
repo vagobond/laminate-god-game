@@ -36,6 +36,8 @@ Deno.serve(async (req) => {
     const contentType = req.headers.get("content-type") || "";
     let body: Record<string, string>;
     
+    console.log("OAuth token request received, content-type:", contentType);
+    
     if (contentType.includes("application/x-www-form-urlencoded")) {
       const formData = await req.formData();
       body = Object.fromEntries(formData.entries()) as Record<string, string>;
@@ -43,10 +45,20 @@ Deno.serve(async (req) => {
       body = await req.json();
     }
 
+    console.log("Request body parsed:", { 
+      grant_type: body.grant_type, 
+      client_id: body.client_id,
+      redirect_uri: body.redirect_uri,
+      code: body.code ? body.code.substring(0, 10) + "..." : undefined,
+      has_client_secret: !!body.client_secret,
+      has_code_verifier: !!body.code_verifier
+    });
+
     const { grant_type, code, redirect_uri, client_id, client_secret, refresh_token, code_verifier } = body;
 
     if (grant_type === "authorization_code") {
       if (!code || !redirect_uri || !client_id) {
+        console.error("Missing required parameters:", { code: !!code, redirect_uri: !!redirect_uri, client_id: !!client_id });
         return new Response(
           JSON.stringify({ error: "invalid_request", error_description: "Missing required parameters" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -54,6 +66,7 @@ Deno.serve(async (req) => {
       }
 
       // Get authorization code
+      console.log("Looking up authorization code...");
       const { data: authCode, error: codeError } = await supabase
         .from("oauth_authorization_codes")
         .select("*, oauth_clients!inner(id, client_id, client_secret)")
@@ -61,11 +74,21 @@ Deno.serve(async (req) => {
         .single();
 
       if (codeError || !authCode) {
+        console.error("Auth code lookup failed:", codeError);
         return new Response(
           JSON.stringify({ error: "invalid_grant", error_description: "Invalid authorization code" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+      
+      console.log("Auth code found:", {
+        id: authCode.id,
+        client_id_from_db: authCode.oauth_clients.client_id,
+        client_id_from_request: client_id,
+        expires_at: authCode.expires_at,
+        redirect_uri_db: authCode.redirect_uri,
+        redirect_uri_request: redirect_uri
+      });
 
       // Check expiration
       if (new Date(authCode.expires_at) < new Date()) {
