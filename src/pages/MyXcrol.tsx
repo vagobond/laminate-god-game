@@ -46,7 +46,8 @@ const PRIVACY_LABELS: Record<string, string> = {
 const MyXcrol = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const prefillLink = searchParams.get("link") || "";
+  // Support both "link" and "optional_link" query params for external integrations
+  const prefillLink = searchParams.get("link") || searchParams.get("optional_link") || "";
   const [user, setUser] = useState<any>(null);
   const [entries, setEntries] = useState<XcrolEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,7 +123,14 @@ const MyXcrol = () => {
             <p className="text-center text-muted-foreground">
               Please sign in to access your Xcrol diary.
             </p>
-            <Button onClick={() => navigate("/auth")} className="w-full">
+            <Button 
+              onClick={() => {
+                // Preserve the current URL so user returns here after login
+                const returnUrl = window.location.pathname + window.location.search;
+                navigate(`/auth?returnUrl=${encodeURIComponent(returnUrl)}`);
+              }} 
+              className="w-full"
+            >
               Sign In
             </Button>
           </CardContent>

@@ -50,6 +50,9 @@ const App = () => (
           <Route path="/getting-started" element={<GettingStarted />} />
           <Route path="/invite-friends" element={<InviteFriends />} />
           <Route path="/my-xcrol" element={<MyXcrol />} />
+          <Route path="/my-xcrol/edit" element={<MyXcrol />} />
+          <Route path="/myxcrol" element={<MyXcrol />} />
+          <Route path="/myxcrol/edit" element={<MyXcrol />} />
           <Route path="/xcrol/:username" element={<UserXcrol />} />
           <Route path="/every-country" element={<EveryCountry />} />
           <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
