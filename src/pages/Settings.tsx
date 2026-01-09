@@ -579,7 +579,15 @@ const Settings = () => {
                   Developer
                 </CardTitle>
                 <CardDescription>
-                  Create OAuth apps to let other sites use "Login with XCROL"
+                  Create OAuth apps to let other sites use "Login with XCROL".{" "}
+                  <a 
+                    href="https://xcrol.com/developers" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    View documentation →
+                  </a>
                 </CardDescription>
               </CardHeader>
               <CardContent>
