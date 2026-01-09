@@ -49,23 +49,33 @@ const MyXcrol = () => {
   // Support both "link" and "optional_link" query params for external integrations
   const prefillLink = searchParams.get("link") || searchParams.get("optional_link") || "";
   const [user, setUser] = useState<any>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [entries, setEntries] = useState<XcrolEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const { todayDate, loading: dateLoading, timezone } = useHometownDate(user?.id ?? null);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (!session?.user) setLoading(false);
+      setAuthChecked(true);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (!session?.user) setLoading(false);
+      setAuthChecked(true);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (authChecked && !user) {
+      const returnUrl = window.location.pathname + window.location.search;
+      navigate(`/auth?returnUrl=${encodeURIComponent(returnUrl)}`, { replace: true });
+    }
+  }, [authChecked, user, navigate]);
 
   useEffect(() => {
     if (user?.id && !dateLoading) {
@@ -112,6 +122,14 @@ const MyXcrol = () => {
     }
   };
 
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center p-4 pt-20">
+        <div className="text-muted-foreground">Checking sign-in…</div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center p-4 pt-20">
@@ -123,12 +141,11 @@ const MyXcrol = () => {
             <p className="text-center text-muted-foreground">
               Please sign in to access your Xcrol diary.
             </p>
-            <Button 
+            <Button
               onClick={() => {
-                // Preserve the current URL so user returns here after login
                 const returnUrl = window.location.pathname + window.location.search;
                 navigate(`/auth?returnUrl=${encodeURIComponent(returnUrl)}`);
-              }} 
+              }}
               className="w-full"
             >
               Sign In

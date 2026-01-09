@@ -59,42 +59,66 @@ const Auth = () => {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   useEffect(() => {
+    let didRedirect = false;
+
+    const redirectTo = (url: string) => {
+      if (didRedirect) return;
+      didRedirect = true;
+      window.location.href = url;
+    };
+
+    const bounceIfAlreadySignedIn = (session: any | null) => {
+      if (!session || authView === "update-password") return;
+      if (returnUrl) {
+        redirectTo(returnUrl);
+      } else {
+        navigate("/");
+      }
+    };
+
     // Check URL hash for password recovery event
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const type = hashParams.get('type');
+    const type = hashParams.get("type");
 
-    if (type === 'recovery') {
+    if (type === "recovery") {
       setAuthView("update-password");
       return;
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
+    // Set up auth state listener FIRST
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
         setAuthView("update-password");
         return;
       }
 
       // If user visits /auth while already signed in, bounce them to returnUrl or home.
-      if (event === 'INITIAL_SESSION' && session && authView !== "update-password") {
-        if (returnUrl) {
-          // Redirect to the OAuth flow or other return URL
-          window.location.href = returnUrl;
-        } else {
-          navigate("/");
-        }
+      if (event === "INITIAL_SESSION") {
+        bounceIfAlreadySignedIn(session);
         return;
       }
 
       // After a successful sign-in/sign-up, redirect to returnUrl or show welcome modal.
-      if (event === 'SIGNED_IN' && session && authView !== "update-password") {
+      if (event === "SIGNED_IN" && session && authView !== "update-password") {
         if (returnUrl) {
-          // Redirect to the OAuth flow or other return URL
-          window.location.href = returnUrl;
+          redirectTo(returnUrl);
         } else {
           setShowWelcomeModal(true);
         }
       }
     });
+
+    // THEN check for existing session (covers cases where INITIAL_SESSION doesn't fire)
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        bounceIfAlreadySignedIn(session);
+      })
+      .catch(() => {
+        // ignore
+      });
 
     return () => subscription.unsubscribe();
   }, [navigate, authView, returnUrl]);
@@ -147,7 +171,7 @@ const Auth = () => {
         email: result.data.email,
         password: result.data.password,
         options: {
-          emailRedirectTo: "https://laminate-god-game.lovable.app/",
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             display_name: result.data.displayName,
             invite_code: result.data.inviteCode || null,
@@ -238,7 +262,7 @@ const Auth = () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(result.data, {
-        redirectTo: "https://laminate-god-game.lovable.app/auth",
+        redirectTo: `${window.location.origin}/auth`,
       });
 
       if (error) throw error;
@@ -347,7 +371,7 @@ const Auth = () => {
             setLoading(true);
             try {
               const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: "https://laminate-god-game.lovable.app/auth",
+                redirectTo: `${window.location.origin}/auth`,
               });
               if (error) throw error;
               toast.success("Reset email resent!");
@@ -516,7 +540,7 @@ const Auth = () => {
                         type: 'signup',
                         email: email,
                         options: {
-                          emailRedirectTo: "https://laminate-god-game.lovable.app/",
+                          emailRedirectTo: `${window.location.origin}/`,
                         }
                       });
                       if (error) throw error;
