@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,7 +45,21 @@ const SendMessageDialog = ({
   const [message, setMessage] = useState("");
   const [platformSuggestion, setPlatformSuggestion] = useState<string>("");
   const [sending, setSending] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Track auth state to avoid stale session issues
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id ?? null);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user?.id ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Build platforms list based on friendship level if availablePlatforms not provided
   const getPlatforms = (): Platform[] => {
@@ -110,20 +124,20 @@ const SendMessageDialog = ({
       return;
     }
 
+    // Use tracked userId instead of making a new auth call
+    if (!userId) {
+      toast({
+        title: "Not logged in",
+        description: "Please log in to send messages.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSending(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Not logged in",
-          description: "Please log in to send messages.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const { error } = await supabase.from("messages").insert({
-        from_user_id: user.id,
+        from_user_id: userId,
         to_user_id: recipientId,
         content: message.trim(),
         platform_suggestion: platformSuggestion || null,
