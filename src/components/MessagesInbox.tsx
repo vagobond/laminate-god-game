@@ -142,10 +142,18 @@ const MessagesInbox = () => {
 
       const hasFriendRequest = msgs.some(m => m.type === "friend_request");
 
-      // Get the other user's profile from any message
-      const otherUser = msgs[0]?.from_user_id === otherUserId 
-        ? msgs[0]?.sender 
-        : msgs[0]?.recipient;
+      // Get the other user's profile - look through all messages to find it
+      let otherUser: SenderProfile | undefined;
+      for (const msg of msgs) {
+        if (msg.from_user_id === otherUserId && msg.sender) {
+          otherUser = msg.sender;
+          break;
+        }
+        if (msg.to_user_id === otherUserId && msg.recipient) {
+          otherUser = msg.recipient;
+          break;
+        }
+      }
 
       return {
         otherUserId,
@@ -163,6 +171,14 @@ const MessagesInbox = () => {
     );
 
     setThreads(groupedThreads);
+    
+    // If there's a selected thread, update it with fresh data
+    if (selectedThread) {
+      const updatedThread = groupedThreads.find(t => t.otherUserId === selectedThread.otherUserId);
+      if (updatedThread) {
+        setSelectedThread(updatedThread);
+      }
+    }
   }, [messages, currentUserId]);
 
   const loadMessages = async () => {
@@ -201,12 +217,21 @@ const MessagesInbox = () => {
       const friendRequestUserIds = friendRequestsWithMessages.map(fr => fr.from_user_id);
       const allUserIds = [...new Set([...messageUserIds, ...friendRequestUserIds])];
 
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url, linkedin_url, contact_email, instagram_url, whatsapp, phone_number, link")
-        .in("id", allUserIds);
+      let profileMap = new Map<string, SenderProfile>();
+      
+      // Only query profiles if we have user IDs to look up
+      if (allUserIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, display_name, avatar_url, linkedin_url, contact_email, instagram_url, whatsapp, phone_number, link")
+          .in("id", allUserIds);
 
-      const profileMap = new Map<string, SenderProfile>(profiles?.map(p => [p.id, p as SenderProfile]) || []);
+        if (profilesError) {
+          console.error("Error loading profiles:", profilesError);
+        } else {
+          profileMap = new Map<string, SenderProfile>(profiles?.map(p => [p.id, p as SenderProfile]) || []);
+        }
+      }
 
       // Transform regular messages
       const regularMessages: Message[] = (messagesData || []).map(m => ({
