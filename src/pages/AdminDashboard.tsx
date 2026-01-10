@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Users, Shield, RefreshCw, Send, MessageSquare, Flag, Star, Trash2, Check, X, UserX } from "lucide-react";
+import { ArrowLeft, Users, Shield, RefreshCw, Send, MessageSquare, Flag, Star, Trash2, Check, X, UserX, Copy } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -513,8 +513,36 @@ export default function AdminDashboard() {
           <TabsContent value="users">
             <Card>
               <CardHeader>
-                <CardTitle>Registered Users</CardTitle>
-                <CardDescription>All users registered on the platform</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Registered Users</CardTitle>
+                    <CardDescription>All users registered on the platform</CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const emails = users
+                        .map(u => u.email)
+                        .filter((email): email is string => !!email)
+                        .join(", ");
+                      
+                      if (!emails) {
+                        toast.error("No emails to copy");
+                        return;
+                      }
+                      
+                      navigator.clipboard.writeText(emails).then(() => {
+                        toast.success(`Copied ${users.filter(u => u.email).length} emails to clipboard`);
+                      }).catch(() => {
+                        toast.error("Failed to copy emails");
+                      });
+                    }}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy All Emails
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
