@@ -76,12 +76,33 @@ const Auth = () => {
       }
     };
 
-    // Check URL hash for password recovery event
+    // Check URL hash for auth events (email confirmation, password recovery)
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const type = hashParams.get("type");
+    const accessToken = hashParams.get("access_token");
+    const refreshToken = hashParams.get("refresh_token");
 
     if (type === "recovery") {
       setAuthView("update-password");
+      return;
+    }
+
+    // Handle email confirmation - if we have tokens in the hash, set the session
+    if (type === "signup" && accessToken && refreshToken) {
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      }).then(({ data, error }) => {
+        if (!error && data.session) {
+          // Clear the hash from URL
+          window.history.replaceState(null, '', window.location.pathname);
+          toast.success("Email confirmed! Welcome to Xcrol!");
+          setShowWelcomeModal(true);
+        } else {
+          console.error("Failed to set session from email confirmation:", error);
+          toast.error("Email confirmed but there was an issue signing you in. Please try logging in.");
+        }
+      });
       return;
     }
 
