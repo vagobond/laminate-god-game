@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import { Scroll, Link as LinkIcon, Save, Loader2, AlertTriangle } from "lucide-react";
 import { useHometownDate } from "@/hooks/use-hometown-date";
+import { UserMentionInput } from "@/components/UserMentionInput";
 
 interface XcrolEntryFormProps {
   userId: string;
@@ -155,12 +155,13 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <Textarea
+          <UserMentionInput
             value={content}
-            onChange={(e) => setContent(e.target.value.slice(0, 240))}
-            placeholder="What's on your mind today? (240 characters max)"
-            className="min-h-[80px] resize-none"
+            onChange={(val) => setContent(val.slice(0, 240))}
+            placeholder="What's on your mind today? Tag friends with @username (240 characters max)"
             maxLength={240}
+            className="min-h-[80px]"
+            rows={3}
           />
           <div className="text-xs text-muted-foreground text-right mt-1">
             {content.length}/240

@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { MessageSquare, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { UserMentionInput } from "@/components/UserMentionInput";
 
 type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | "fake_friend" | "not_friend" | null;
 
@@ -189,14 +189,12 @@ const SendMessageDialog = ({
         <div className="space-y-4 pt-4">
           <div className="space-y-2">
             <Label htmlFor="message">Your message</Label>
-            <Textarea
-              id="message"
-              placeholder="Write a short message..."
+            <UserMentionInput
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={setMessage}
+              placeholder="Write a short message... Tag users with @username"
               maxLength={500}
               rows={3}
-              className="resize-none"
             />
             <p className="text-xs text-muted-foreground text-right">
               {message.length}/500
