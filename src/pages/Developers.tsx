@@ -247,12 +247,19 @@ Authorization: Bearer ACCESS_TOKEN`} />
                     Response:
                   </p>
                   <CodeBlock code={`{
-  "id": "user-uuid",
-  "display_name": "John Doe",
+  "sub": "user-uuid",
+  "name": "John Doe",
   "username": "johndoe",
-  "avatar_url": "https://...",
-  "bio": "Hello world"
+  "picture": "https://...",
+  "bio": "Hello world",
+  "link": "https://..."
 }`} />
+                  <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                    <p className="text-sm text-blue-600 dark:text-blue-400">
+                      <strong>ℹ️ Note:</strong> The response uses standard OAuth claims: <code className="bg-muted px-1 rounded">sub</code> (user ID), 
+                      <code className="bg-muted px-1 rounded">name</code> (display name), and <code className="bg-muted px-1 rounded">picture</code> (avatar URL).
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -302,7 +309,14 @@ async function handleCallback(code) {
   });
   
   const user = await userResponse.json();
-  console.log("Logged in as:", user.display_name);
+  
+  // Map standard OAuth claims
+  const userData = {
+    id: user.sub,           // Standard OAuth 'sub' claim
+    displayName: user.name, // Standard OAuth 'name' claim
+    avatarUrl: user.picture // Standard OAuth 'picture' claim
+  };
+  console.log("Logged in as:", userData.displayName);
 }`} />
               </TabsContent>
 
@@ -342,7 +356,14 @@ def handle_callback(code):
         headers={"Authorization": f"Bearer {tokens['access_token']}"}
     )
     user = user_response.json()
-    print(f"Logged in as: {user['display_name']}")`} />
+    
+    # Map standard OAuth claims
+    user_data = {
+        "id": user["sub"],           # Standard OAuth 'sub' claim
+        "display_name": user["name"], # Standard OAuth 'name' claim
+        "avatar_url": user["picture"] # Standard OAuth 'picture' claim
+    }
+    print(f"Logged in as: {user_data['display_name']}")`} />
               </TabsContent>
 
               <TabsContent value="curl" className="mt-4">
@@ -425,9 +446,37 @@ curl "${endpoints.userinfo}" \\
 
                 <div>
                   <h3 className="font-semibold text-red-500 mb-2">❌ "Redirect URI not registered" error</h3>
+                  <p className="text-muted-foreground text-sm mb-2">
+                    The redirect_uri in your request must <strong>exactly</strong> match one of your registered redirect URIs.
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                    <li>Check for trailing slashes (<code className="bg-muted px-1 rounded">/callback</code> vs <code className="bg-muted px-1 rounded">/callback/</code>)</li>
+                    <li>Check protocol (<code className="bg-muted px-1 rounded">http</code> vs <code className="bg-muted px-1 rounded">https</code>)</li>
+                    <li>Check exact domain and path matching</li>
+                    <li>For multi-environment apps, register <strong>all</strong> redirect URIs (dev, staging, production)</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-red-500 mb-2">❌ "Failed to load authorization request" or blank page</h3>
+                  <p className="text-muted-foreground text-sm mb-2">
+                    Your preview/development URL is different from the registered production URL.
+                  </p>
                   <p className="text-muted-foreground text-sm">
-                    The redirect_uri in your request must exactly match one of your registered redirect URIs. 
-                    Check for trailing slashes, http vs https, and exact path matching.
+                    <strong>Solution:</strong> Register both development and production redirect URIs in your Xcrol app settings, 
+                    or hardcode the production redirect URI when building the authorize URL.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-red-500 mb-2">❌ "Session expired or invalid" after redirect</h3>
+                  <p className="text-muted-foreground text-sm mb-2">
+                    The OAuth state was stored in <code className="bg-muted px-1 rounded">sessionStorage</code> on one domain but the callback redirected to a different domain. 
+                    <code className="bg-muted px-1 rounded">sessionStorage</code> is not shared across origins.
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    <strong>Solution:</strong> Ensure the OAuth flow starts and ends on the same domain. 
+                    For multi-environment apps, use the same domain for both initiating auth and receiving the callback.
                   </p>
                 </div>
 
@@ -436,6 +485,65 @@ curl "${endpoints.userinfo}" \\
                   <p className="text-muted-foreground text-sm">
                     Authorization codes expire after 10 minutes and can only be used once. 
                     Make sure you're exchanging the code immediately after receiving it.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-red-500 mb-2">❌ "Invalid user data" or user profile not saving correctly</h3>
+                  <p className="text-muted-foreground text-sm mb-2">
+                    You may be using incorrect field names. The <code className="bg-muted px-1 rounded">/oauth-userinfo</code> endpoint returns <strong>standard OAuth claims</strong>, not custom field names.
+                  </p>
+                  <div className="mt-3 p-3 bg-muted rounded-lg">
+                    <p className="text-sm font-medium mb-2">Correct field mapping:</p>
+                    <CodeBlock code={`const xcrolUser = await userInfoResponse.json();
+
+// Correct field mapping
+const userId = xcrolUser.sub;           // NOT 'id'
+const displayName = xcrolUser.name;     // NOT 'display_name'
+const avatarUrl = xcrolUser.picture;    // NOT 'avatar_url'
+const bio = xcrolUser.bio;
+const username = xcrolUser.username;
+const link = xcrolUser.link;`} />
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-red-500 mb-2">❌ Blank page after successful OAuth</h3>
+                  <p className="text-muted-foreground text-sm mb-2">
+                    Silent JavaScript errors in the callback handler, often due to field mapping issues.
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    <strong>Solution:</strong> Add comprehensive error handling and log the actual API response to debug field names:
+                  </p>
+                  <div className="mt-2">
+                    <CodeBlock code={`console.log("Xcrol user data:", JSON.stringify(xcrolUser));`} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* Multi-Environment Setup */}
+          <section>
+            <h2 className="text-2xl font-bold mb-6">Multi-Environment Setup</h2>
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <p className="text-muted-foreground">
+                  If you have multiple environments (development, staging, production), you'll need to register 
+                  all redirect URIs in your Xcrol app settings.
+                </p>
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm font-medium mb-2">Example redirect URIs to register:</p>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground font-mono">
+                    <li>http://localhost:3000/auth/callback</li>
+                    <li>https://myapp-staging.vercel.app/auth/callback</li>
+                    <li>https://myapp.com/auth/callback</li>
+                  </ul>
+                </div>
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    <strong>⚠️ Important:</strong> Ensure the OAuth flow starts and ends on the same domain to avoid 
+                    <code className="bg-muted px-1 rounded mx-1">sessionStorage</code> issues with state validation.
                   </p>
                 </div>
               </CardContent>
