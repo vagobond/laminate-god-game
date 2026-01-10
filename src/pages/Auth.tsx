@@ -40,7 +40,7 @@ const resetPasswordSchema = z.object({
   path: ["confirmPassword"],
 });
 
-type AuthView = "default" | "forgot-password" | "reset-password-sent" | "update-password";
+type AuthView = "default" | "forgot-password" | "reset-password-sent" | "update-password" | "email-not-confirmed";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -259,10 +259,38 @@ const Auth = () => {
         password: result.data.password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check if the error is due to unconfirmed email
+        if (error.message.toLowerCase().includes("email not confirmed") || 
+            error.message.toLowerCase().includes("email_not_confirmed")) {
+          setAuthView("email-not-confirmed");
+          return;
+        }
+        throw error;
+      }
       toast.success("Signed in successfully!");
     } catch (error: any) {
       toast.error(error.message || "Failed to sign in");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth`,
+        }
+      });
+
+      if (error) throw error;
+      toast.success("Confirmation email sent! Check your inbox.");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to resend confirmation email");
     } finally {
       setLoading(false);
     }
@@ -468,6 +496,36 @@ const Auth = () => {
     </div>
   );
 
+  const renderEmailNotConfirmed = () => (
+    <div className="text-center space-y-4 py-6">
+      <div className="mx-auto w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center">
+        <Mail className="w-8 h-8 text-amber-500" />
+      </div>
+      <h3 className="text-xl font-semibold">Email Not Confirmed</h3>
+      <p className="text-muted-foreground">
+        Your email address <span className="font-medium text-foreground">{email}</span> hasn't been confirmed yet.
+      </p>
+      <p className="text-sm text-muted-foreground">
+        Please check your inbox for the confirmation email, or click below to resend it.
+      </p>
+      <div className="flex flex-col gap-2 mt-4">
+        <Button
+          variant="divine"
+          disabled={loading}
+          onClick={handleResendConfirmation}
+        >
+          {loading ? "Sending..." : "Resend Confirmation Email"}
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => setAuthView("default")}
+        >
+          Back to Sign In
+        </Button>
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
     if (authView === "forgot-password") {
       return renderForgotPasswordForm();
@@ -479,6 +537,10 @@ const Auth = () => {
     
     if (authView === "update-password") {
       return renderUpdatePasswordForm();
+    }
+
+    if (authView === "email-not-confirmed") {
+      return renderEmailNotConfirmed();
     }
 
     return (
