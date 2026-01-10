@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { XcrolReactions } from "@/components/XcrolReactions";
+import { MentionText } from "@/components/MentionText";
 
 interface RiverEntryCardProps {
   entry: {
@@ -77,7 +78,7 @@ export const RiverEntryCard = ({ entry }: RiverEntryCardProps) => {
             </div>
 
             <p className="mt-2 text-foreground whitespace-pre-wrap break-words">
-              {entry.content}
+              <MentionText content={entry.content} />
             </p>
 
             {entry.link && (

@@ -40,6 +40,13 @@ const MarkdownContent = ({ content, className = "" }: MarkdownContentProps) => {
       '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-primary/80">$1</a>'
     );
 
+    // @username mentions - link to user profile
+    // Match @username where username is 2-30 alphanumeric characters
+    html = html.replace(
+      /@([a-zA-Z0-9]{2,30})\b/g,
+      '<a href="/$1" class="text-primary font-medium hover:underline">@$1</a>'
+    );
+
     // Line breaks
     html = html.replace(/\n/g, "<br />");
 
