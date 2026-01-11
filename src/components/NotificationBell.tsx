@@ -502,8 +502,9 @@ const NotificationBell = () => {
 
                 {/* New references received */}
                 {newReferences.map((ref) => {
+                  // Use username route if available, otherwise use userId route
                   const profilePath = ref.from_profile?.username 
-                    ? `/u/${ref.from_profile.username}` 
+                    ? `/${ref.from_profile.username}` 
                     : `/u/${ref.from_user_id}`;
                   
                   const getRefTypeEmoji = (type: string) => {
