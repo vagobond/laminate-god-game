@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, Info } from "lucide-react";
+import { Bell, Info, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -45,6 +45,20 @@ interface PendingFriendship {
   };
 }
 
+interface NewReference {
+  id: string;
+  from_user_id: string;
+  reference_type: string;
+  rating: number | null;
+  created_at: string;
+  from_profile?: {
+    display_name: string | null;
+    avatar_url: string | null;
+    username: string | null;
+  };
+  hasLeftReturn?: boolean;
+}
+
 type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | "fake_friend" | "secret_enemy" | "not_friend";
 
 const NotificationBell = () => {
@@ -52,12 +66,14 @@ const NotificationBell = () => {
   const [user, setUser] = useState<any>(null);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [pendingFriendships, setPendingFriendships] = useState<PendingFriendship[]>([]);
+  const [newReferences, setNewReferences] = useState<NewReference[]>([]);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [selectedRequest, setSelectedRequest] = useState<FriendRequest | null>(null);
   const [selectedPendingFriendship, setSelectedPendingFriendship] = useState<PendingFriendship | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<FriendshipLevel>("buddy");
   const [processing, setProcessing] = useState(false);
   const [hasShownMessageToast, setHasShownMessageToast] = useState(false);
+  const [hasShownReferenceToast, setHasShownReferenceToast] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -76,6 +92,7 @@ const NotificationBell = () => {
       loadRequests();
       loadPendingFriendships();
       loadUnreadMessages();
+      loadNewReferences();
     }
   }, [user]);
 
@@ -110,6 +127,28 @@ const NotificationBell = () => {
     }
   }, [unreadMessageCount, hasShownMessageToast, navigate]);
 
+  // Show toast for new references (once per session/page load)
+  useEffect(() => {
+    if (newReferences.length > 0 && !hasShownReferenceToast) {
+      const currentPath = window.location.pathname;
+      // Don't show toast if already on profile page
+      if (!currentPath.startsWith('/profile')) {
+        const firstName = newReferences[0].from_profile?.display_name?.split(' ')[0] || 'Someone';
+        toast.info(
+          `${firstName} left you a reference!`,
+          {
+            action: {
+              label: 'View',
+              onClick: () => navigate('/profile'),
+            },
+            duration: 5000,
+          }
+        );
+        setHasShownReferenceToast(true);
+      }
+    }
+  }, [newReferences, hasShownReferenceToast, navigate]);
+
   const loadUnreadMessages = async () => {
     if (!user) return;
 
@@ -120,6 +159,60 @@ const NotificationBell = () => {
       .is("read_at", null);
 
     setUnreadMessageCount(count || 0);
+  };
+
+  const loadNewReferences = async () => {
+    if (!user) return;
+
+    // Get references from the last 30 days that the user hasn't seen
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data, error } = await supabase
+      .from("user_references")
+      .select("id, from_user_id, reference_type, rating, created_at")
+      .eq("to_user_id", user.id)
+      .gte("created_at", thirtyDaysAgo.toISOString())
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error loading references:", error);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      setNewReferences([]);
+      return;
+    }
+
+    // Load profiles and check if user has left a return reference
+    const referencesWithDetails = await Promise.all(
+      data.map(async (ref) => {
+        const [profileResult, returnRefResult] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("display_name, avatar_url, username")
+            .eq("id", ref.from_user_id)
+            .single(),
+          supabase
+            .from("user_references")
+            .select("id")
+            .eq("from_user_id", user.id)
+            .eq("to_user_id", ref.from_user_id)
+            .limit(1)
+        ]);
+
+        return {
+          ...ref,
+          from_profile: profileResult.data || undefined,
+          hasLeftReturn: (returnRefResult.data?.length ?? 0) > 0
+        };
+      })
+    );
+
+    // Only show references where user hasn't left a return reference
+    const unreturned = referencesWithDetails.filter(ref => !ref.hasLeftReturn);
+    setNewReferences(unreturned);
   };
 
   const loadRequests = async () => {
@@ -286,7 +379,7 @@ const NotificationBell = () => {
 
   if (!user) return null;
 
-  const totalNotifications = requests.length + pendingFriendships.length + unreadMessageCount;
+  const totalNotifications = requests.length + pendingFriendships.length + unreadMessageCount + newReferences.length;
 
   return (
     <>
@@ -406,6 +499,60 @@ const NotificationBell = () => {
                     </div>
                   </div>
                 ))}
+
+                {/* New references received */}
+                {newReferences.map((ref) => {
+                  const profilePath = ref.from_profile?.username 
+                    ? `/u/${ref.from_profile.username}` 
+                    : `/u/${ref.from_user_id}`;
+                  
+                  const getRefTypeEmoji = (type: string) => {
+                    switch (type) {
+                      case 'host': return '🏠';
+                      case 'guest': return '🧳';
+                      case 'business': return '💼';
+                      default: return '☕';
+                    }
+                  };
+
+                  return (
+                    <div key={ref.id} className="p-3 bg-yellow-500/10 rounded-lg space-y-2 border border-yellow-500/30">
+                      <div className="flex items-center gap-3">
+                        <Avatar 
+                          className="h-10 w-10 cursor-pointer" 
+                          onClick={() => navigate(profilePath)}
+                        >
+                          <AvatarImage src={ref.from_profile?.avatar_url || undefined} />
+                          <AvatarFallback>
+                            {(ref.from_profile?.display_name || "?").slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p 
+                            className="font-medium truncate cursor-pointer hover:underline"
+                            onClick={() => navigate(profilePath)}
+                          >
+                            {ref.from_profile?.display_name || "Someone"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Left you a {getRefTypeEmoji(ref.reference_type)} reference
+                            {ref.rating && ` (${ref.rating}★)`}
+                          </p>
+                        </div>
+                        <Star className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+                      </div>
+                      <Button 
+                        size="sm" 
+                        className="w-full"
+                        variant="outline"
+                        onClick={() => navigate(profilePath)}
+                      >
+                        <Star className="h-4 w-4 mr-2" />
+                        Leave Reference Back
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
