@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { XcrolReactions } from "@/components/XcrolReactions";
 import { MentionText } from "@/components/MentionText";
+import type { ReactionData } from "@/pages/TheRiver";
 
 interface RiverEntryCardProps {
   entry: {
@@ -21,6 +22,8 @@ interface RiverEntryCardProps {
       username: string | null;
     };
   };
+  initialReactions?: ReactionData[];
+  onReactionsChange?: (reactions: ReactionData[]) => void;
 }
 
 const PRIVACY_CONFIG: Record<string, { icon: React.ElementType; label: string; color: string }> = {
@@ -31,7 +34,7 @@ const PRIVACY_CONFIG: Record<string, { icon: React.ElementType; label: string; c
   private: { icon: Lock, label: "Private", color: "text-muted-foreground" },
 };
 
-export const RiverEntryCard = ({ entry }: RiverEntryCardProps) => {
+export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange }: RiverEntryCardProps) => {
   const navigate = useNavigate();
   const config = PRIVACY_CONFIG[entry.privacy_level] || PRIVACY_CONFIG.private;
   const PrivacyIcon = config.icon;
@@ -102,6 +105,8 @@ export const RiverEntryCard = ({ entry }: RiverEntryCardProps) => {
                 entryId={entry.id} 
                 authorId={entry.user_id}
                 authorName={entry.author.display_name || entry.author.username || "User"}
+                initialReactions={initialReactions}
+                onReactionsChange={onReactionsChange}
               />
             </div>
           </div>

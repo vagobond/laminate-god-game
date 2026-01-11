@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/select";
 import { RiverEntryCard } from "@/components/RiverEntryCard";
 
+import type { Reaction } from "@/components/XcrolReactions";
+
 interface RiverEntry {
   id: string;
   content: string;
@@ -32,6 +34,12 @@ interface FriendshipMap {
   [userId: string]: string;
 }
 
+export type ReactionData = Reaction;
+
+export interface ReactionsMap {
+  [entryId: string]: Reaction[];
+}
+
 const FILTER_OPTIONS = [
   { value: "all", label: "All Posts" },
   { value: "close_friend", label: "Close Friends" },
@@ -47,6 +55,7 @@ export default function TheRiver() {
   const [user, setUser] = useState<User | null>(null);
   const [entries, setEntries] = useState<RiverEntry[]>([]);
   const [friendships, setFriendships] = useState<FriendshipMap>({});
+  const [reactions, setReactions] = useState<ReactionsMap>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [page, setPage] = useState(0);
@@ -127,16 +136,45 @@ export default function TheRiver() {
       return;
     }
 
-    // Fetch author profiles
+    // Fetch author profiles and reactions in parallel
+    const entryIds = data.map((e) => e.id);
     const userIds = [...new Set(data.map((e) => e.user_id))];
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, display_name, avatar_url, username")
-      .in("id", userIds);
+    
+    const [profilesResult, reactionsResult] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url, username")
+        .in("id", userIds),
+      supabase
+        .from("xcrol_reactions")
+        .select("entry_id, emoji, user_id")
+        .in("entry_id", entryIds)
+    ]);
 
-    const profileMap: Record<string, typeof profiles extends (infer T)[] | null ? T : never> = {};
-    profiles?.forEach((p) => {
+    const profileMap: Record<string, typeof profilesResult.data extends (infer T)[] | null ? T : never> = {};
+    profilesResult.data?.forEach((p) => {
       profileMap[p.id] = p;
+    });
+
+    // Group reactions by entry_id
+    const newReactionsMap: ReactionsMap = {};
+    reactionsResult.data?.forEach((r) => {
+      if (!newReactionsMap[r.entry_id]) {
+        newReactionsMap[r.entry_id] = [];
+      }
+      const existing = newReactionsMap[r.entry_id].find(x => x.emoji === r.emoji);
+      if (existing) {
+        existing.count++;
+        if (user && r.user_id === user.id) {
+          existing.hasReacted = true;
+        }
+      } else {
+        newReactionsMap[r.entry_id].push({
+          emoji: r.emoji,
+          count: 1,
+          hasReacted: user ? r.user_id === user.id : false
+        });
+      }
     });
 
     const entriesWithAuthors: RiverEntry[] = data.map((entry) => ({
@@ -150,9 +188,11 @@ export default function TheRiver() {
 
     if (loadMore) {
       setEntries((prev) => [...prev, ...entriesWithAuthors]);
+      setReactions((prev) => ({ ...prev, ...newReactionsMap }));
       setPage(currentPage);
     } else {
       setEntries(entriesWithAuthors);
+      setReactions(newReactionsMap);
     }
 
     setHasMore(data.length === PAGE_SIZE);
@@ -258,7 +298,14 @@ export default function TheRiver() {
         {!loading && filteredEntries.length > 0 && (
           <div className="space-y-4">
             {filteredEntries.map((entry) => (
-              <RiverEntryCard key={entry.id} entry={entry} />
+              <RiverEntryCard 
+                key={entry.id} 
+                entry={entry} 
+                initialReactions={reactions[entry.id] || []}
+                onReactionsChange={(newReactions) => {
+                  setReactions(prev => ({ ...prev, [entry.id]: newReactions }));
+                }}
+              />
             ))}
 
             {/* Load more */}

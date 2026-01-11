@@ -8,7 +8,7 @@ import SendMessageDialog from "@/components/SendMessageDialog";
 
 const AVAILABLE_EMOJIS = ["❤️", "👍", "🔥", "😂", "😮", "😢", "🙏", "✨"];
 
-interface Reaction {
+export interface Reaction {
   emoji: string;
   count: number;
   hasReacted: boolean;
@@ -19,15 +19,18 @@ interface XcrolReactionsProps {
   compact?: boolean;
   authorId?: string;
   authorName?: string;
+  initialReactions?: Reaction[];
+  onReactionsChange?: (reactions: Reaction[]) => void;
 }
 
-export const XcrolReactions = ({ entryId, compact = false, authorId, authorName }: XcrolReactionsProps) => {
-  const [reactions, setReactions] = useState<Reaction[]>([]);
+export const XcrolReactions = ({ entryId, compact = false, authorId, authorName, initialReactions, onReactionsChange }: XcrolReactionsProps) => {
+  const [reactions, setReactions] = useState<Reaction[]>(initialReactions || []);
   const [userId, setUserId] = useState<string | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [friendshipLevel, setFriendshipLevel] = useState<string | null>(null);
   const pendingOps = useRef<Set<string>>(new Set());
+  const hasInitialReactions = useRef(!!initialReactions);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -35,9 +38,19 @@ export const XcrolReactions = ({ entryId, compact = false, authorId, authorName 
     });
   }, []);
 
+  // Only load reactions from DB if not provided initially
   useEffect(() => {
-    loadReactions();
+    if (!hasInitialReactions.current) {
+      loadReactions();
+    }
   }, [entryId, userId]);
+
+  // Update reactions when initialReactions prop changes
+  useEffect(() => {
+    if (initialReactions) {
+      setReactions(initialReactions);
+    }
+  }, [initialReactions]);
 
   useEffect(() => {
     if (userId && authorId && userId !== authorId) {
@@ -117,6 +130,8 @@ export const XcrolReactions = ({ entryId, compact = false, authorId, authorName 
           updated.push({ emoji, count: 1, hasReacted: true });
         }
       }
+      // Notify parent of changes
+      onReactionsChange?.(updated);
       return updated;
     });
 
