@@ -161,6 +161,25 @@ const NotificationBell = () => {
     setUnreadMessageCount(count || 0);
   };
 
+  const getDismissedReferenceIds = (): string[] => {
+    try {
+      const stored = localStorage.getItem('dismissed_reference_notifications');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const dismissReferenceNotification = (refId: string) => {
+    const dismissed = getDismissedReferenceIds();
+    if (!dismissed.includes(refId)) {
+      dismissed.push(refId);
+      localStorage.setItem('dismissed_reference_notifications', JSON.stringify(dismissed));
+    }
+    // Remove from state immediately
+    setNewReferences(prev => prev.filter(ref => ref.id !== refId));
+  };
+
   const loadNewReferences = async () => {
     if (!user) return;
 
@@ -185,9 +204,20 @@ const NotificationBell = () => {
       return;
     }
 
+    // Get dismissed notification IDs
+    const dismissedIds = getDismissedReferenceIds();
+
+    // Filter out already dismissed notifications
+    const undismissedData = data.filter(ref => !dismissedIds.includes(ref.id));
+
+    if (undismissedData.length === 0) {
+      setNewReferences([]);
+      return;
+    }
+
     // Load profiles and check if user has left a return reference
     const referencesWithDetails = await Promise.all(
-      data.map(async (ref) => {
+      undismissedData.map(async (ref) => {
         const [profileResult, returnRefResult] = await Promise.all([
           supabase
             .from("profiles")
@@ -521,7 +551,10 @@ const NotificationBell = () => {
                       <div className="flex items-center gap-3">
                         <Avatar 
                           className="h-10 w-10 cursor-pointer" 
-                          onClick={() => navigate(profilePath)}
+                          onClick={() => {
+                            dismissReferenceNotification(ref.id);
+                            navigate(profilePath);
+                          }}
                         >
                           <AvatarImage src={ref.from_profile?.avatar_url || undefined} />
                           <AvatarFallback>
@@ -531,7 +564,10 @@ const NotificationBell = () => {
                         <div className="flex-1 min-w-0">
                           <p 
                             className="font-medium truncate cursor-pointer hover:underline"
-                            onClick={() => navigate(profilePath)}
+                            onClick={() => {
+                              dismissReferenceNotification(ref.id);
+                              navigate(profilePath);
+                            }}
                           >
                             {ref.from_profile?.display_name || "Someone"}
                           </p>
@@ -546,7 +582,10 @@ const NotificationBell = () => {
                         size="sm" 
                         className="w-full"
                         variant="outline"
-                        onClick={() => navigate(profilePath)}
+                        onClick={() => {
+                          dismissReferenceNotification(ref.id);
+                          navigate(profilePath);
+                        }}
                       >
                         <Star className="h-4 w-4 mr-2" />
                         Leave Reference Back
