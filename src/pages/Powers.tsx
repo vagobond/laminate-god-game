@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Waves } from "lucide-react";
+import { Globe, Waves } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -58,6 +58,7 @@ const Powers = () => {
                   onClick={() => navigate("/irl-layer")}
                   className="w-full sm:w-auto min-w-[250px]"
                 >
+                  <Globe className="mr-2 h-5 w-5" />
                   THE WORLD
                 </Button>
               </TooltipTrigger>
