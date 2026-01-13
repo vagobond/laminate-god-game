@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Globe, Waves } from "lucide-react";
+import { Globe, Waves, Droplets } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -81,6 +81,23 @@ const Powers = () => {
               </TooltipTrigger>
               <TooltipContent>
                 <p>See what your friends are up to</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="divine" 
+                  size="xl"
+                  onClick={() => navigate("/my-xcrol")}
+                  className="w-full sm:w-auto min-w-[250px]"
+                >
+                  <Droplets className="mr-2 h-5 w-5" />
+                  THE BROOK
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Private two-person streams with someone special</p>
               </TooltipContent>
             </Tooltip>
             

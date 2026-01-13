@@ -74,6 +74,144 @@ export type Database = {
         }
         Relationships: []
       }
+      brook_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brook_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "brook_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brook_posts: {
+        Row: {
+          brook_id: string
+          content: string
+          created_at: string
+          id: string
+          link: string | null
+          user_id: string
+        }
+        Insert: {
+          brook_id: string
+          content: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          user_id: string
+        }
+        Update: {
+          brook_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brook_posts_brook_id_fkey"
+            columns: ["brook_id"]
+            isOneToOne: false
+            referencedRelation: "brooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brook_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brook_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "brook_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brooks: {
+        Row: {
+          created_at: string
+          custom_name: string | null
+          id: string
+          inactivity_days: number
+          invite_email: string | null
+          last_post_at: string | null
+          status: string
+          updated_at: string
+          user1_id: string
+          user2_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_name?: string | null
+          id?: string
+          inactivity_days?: number
+          invite_email?: string | null
+          last_post_at?: string | null
+          status?: string
+          updated_at?: string
+          user1_id: string
+          user2_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_name?: string | null
+          id?: string
+          inactivity_days?: number
+          invite_email?: string | null
+          last_post_at?: string | null
+          status?: string
+          updated_at?: string
+          user1_id?: string
+          user2_id?: string
+        }
+        Relationships: []
+      }
       country_invites: {
         Row: {
           completed_at: string | null
@@ -1361,6 +1499,11 @@ export type Database = {
         Returns: boolean
       }
       calculate_layer_points: { Args: { layer_id: string }; Returns: number }
+      can_create_brook: { Args: { p_user_id: string }; Returns: boolean }
+      can_post_in_brook: {
+        Args: { p_brook_id: string; p_user_id: string }
+        Returns: boolean
+      }
       get_available_invites: {
         Args: { user_id: string }
         Returns: {
@@ -1429,6 +1572,10 @@ export type Database = {
           private_email: string
           whatsapp: string
         }[]
+      }
+      has_brook_with: {
+        Args: { p_other_id: string; p_user_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
