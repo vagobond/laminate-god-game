@@ -88,7 +88,6 @@ const SECTION_BUILTIN_FIELDS: Record<string, { key: keyof ProfileData; label: st
     { key: "phone_number", label: "Phone Number", placeholder: "+1 555-123-4567" },
     { key: "private_email", label: "Private Email", placeholder: "personal@example.com", type: "email" },
   ],
-  fake_friend: [],
   secret_enemy: [],
 };
 
@@ -118,17 +117,11 @@ const FRIENDSHIP_SECTIONS = [
     color: "text-purple-500",
   },
   {
-    value: "fake_friend",
-    label: "Fake Friends",
-    description: "People you've accepted as friends but don't fully trust. They'll only see public info.",
-    color: "text-orange-500",
-  },
-  {
     value: "secret_enemy",
     label: "Secret Enemies",
-    description: "They think they're your friend, but you can give them decoy information here.",
+    description: "People you've accepted as friends but don't fully trust. They get no real access, or you can give them decoy info.",
     color: "text-red-500",
-    warning: "⚠️ Don't give secret enemies your real contact information! Enter fake/decoy info here.",
+    warning: "⚠️ Don't give secret enemies your real contact information! Enter fake/decoy info here if desired.",
   },
 ];
 

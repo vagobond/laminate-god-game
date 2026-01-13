@@ -62,7 +62,7 @@ interface FriendsListProps {
   showLevels?: boolean;
 }
 
-type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | "fake_friend" | "secret_enemy";
+type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | "secret_enemy";
 type FriendshipSelection = FriendshipLevel | "custom";
 
 interface CustomFriendshipType {
@@ -75,8 +75,7 @@ const levelLabels: Record<string, string> = {
   buddy: "Buddy",
   friendly_acquaintance: "Acquaintance",
   secret_friend: "Secret Friend",
-  fake_friend: "Friend", // Display as normal friend to the fake friend
-  secret_enemy: "Close Friend", // Display as close friend to the secret enemy
+  secret_enemy: "Friend", // Display as normal friend to the secret enemy
 };
 
 const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps) => {
@@ -438,9 +437,8 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
   }
 
   // Separate regular friends from hidden categories for the owner
-  const regularFriends = friends.filter(f => !["secret_friend", "fake_friend", "secret_enemy"].includes(f.level));
+  const regularFriends = friends.filter(f => !["secret_friend", "secret_enemy"].includes(f.level));
   const secretFriends = friends.filter(f => f.level === "secret_friend");
-  const fakeFriends = friends.filter(f => f.level === "fake_friend");
   const secretEnemies = friends.filter(f => f.level === "secret_enemy");
 
   const renderFriendItem = (friend: Friend, showLevelBadge = false) => (
@@ -464,7 +462,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
           </p>
         </div>
         {/* Only show level badges to the profile owner */}
-        {showLevelBadge && isOwnProfile && !["secret_friend", "fake_friend", "secret_enemy"].includes(friend.level) && (
+        {showLevelBadge && isOwnProfile && !["secret_friend", "secret_enemy"].includes(friend.level) && (
           <Badge 
             variant={friend.uses_custom_type ? "default" : "secondary"} 
             className={`text-xs ${friend.uses_custom_type ? "bg-primary/80" : ""}`}
@@ -631,22 +629,11 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
             </div>
           )}
 
-          {/* Owner-only: Fake Friends */}
-          {isOwnProfile && fakeFriends.length > 0 && (
-            <div className="mt-6 pt-4 border-t border-border">
-              <h4 className="text-sm font-medium text-orange-500 mb-3">Fake Friends ({fakeFriends.length})</h4>
-              <p className="text-xs text-muted-foreground mb-2">They think they're your friend, but get no real access.</p>
-              <div className="space-y-2">
-                {fakeFriends.map((friend) => renderFriendItem(friend, false))}
-              </div>
-            </div>
-          )}
-
           {/* Owner-only: Secret Enemies */}
           {isOwnProfile && secretEnemies.length > 0 && (
             <div className="mt-6 pt-4 border-t border-border">
               <h4 className="text-sm font-medium text-red-500 mb-3">Secret Enemies ({secretEnemies.length})</h4>
-              <p className="text-xs text-muted-foreground mb-2">They think they're close friends, but see decoy info.</p>
+              <p className="text-xs text-muted-foreground mb-2">They think they're your friend, but get no real access or see decoy info.</p>
               <div className="space-y-2">
                 {secretEnemies.map((friend) => renderFriendItem(friend, false))}
               </div>
@@ -769,19 +756,11 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
               </Label>
             </div>
 
-            <div className="flex items-start space-x-3 p-3 rounded-lg border border-amber-500/50 hover:bg-amber-500/10">
-              <RadioGroupItem value="fake_friend" id="edit_fake_friend" className="mt-1" />
-              <Label htmlFor="edit_fake_friend" className="flex-1 cursor-pointer">
-                <span className="font-medium text-amber-600">Fake Friend</span>
-                <p className="text-sm text-muted-foreground">They'll think you're friends, but they get no access.</p>
-              </Label>
-            </div>
-
             <div className="flex items-start space-x-3 p-3 rounded-lg border border-red-500/50 hover:bg-red-500/10">
               <RadioGroupItem value="secret_enemy" id="edit_secret_enemy" className="mt-1" />
               <Label htmlFor="edit_secret_enemy" className="flex-1 cursor-pointer">
                 <span className="font-medium text-red-600">Secret Enemy</span>
-                <p className="text-sm text-muted-foreground">They'll think you're close friends, but only see generic/fake info.</p>
+                <p className="text-sm text-muted-foreground">They'll think you're friends, but get no access or see decoy info.</p>
               </Label>
             </div>
             </RadioGroup>
@@ -888,19 +867,11 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
                 </Label>
               </div>
 
-              <div className="flex items-start space-x-3 p-3 rounded-lg border border-amber-500/50 hover:bg-amber-500/10">
-                <RadioGroupItem value="fake_friend" id="accept_fake_friend" className="mt-1" />
-                <Label htmlFor="accept_fake_friend" className="flex-1 cursor-pointer">
-                  <span className="font-medium text-amber-600">Fake Friend</span>
-                  <p className="text-sm text-muted-foreground">They'll think you're friends, but get no access.</p>
-                </Label>
-              </div>
-
               <div className="flex items-start space-x-3 p-3 rounded-lg border border-red-500/50 hover:bg-red-500/10">
                 <RadioGroupItem value="secret_enemy" id="accept_secret_enemy" className="mt-1" />
                 <Label htmlFor="accept_secret_enemy" className="flex-1 cursor-pointer">
                   <span className="font-medium text-red-600">Secret Enemy</span>
-                  <p className="text-sm text-muted-foreground">They'll see fake/generic info.</p>
+                  <p className="text-sm text-muted-foreground">They'll think you're friends, but get no access or see decoy info.</p>
                 </Label>
               </div>
             </RadioGroup>

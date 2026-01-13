@@ -164,7 +164,7 @@ export const XcrolReactions = ({ entryId, compact = false, authorId, authorName,
   }, [userId, reactions, entryId, loadReactions]);
 
   const canRespond = authorId && authorName && userId && userId !== authorId && friendshipLevel && 
-    friendshipLevel !== "not_friend" && friendshipLevel !== "fake_friend";
+    friendshipLevel !== "not_friend" && friendshipLevel !== "secret_enemy";
 
   return (
     <div className="flex items-center gap-1 flex-wrap">

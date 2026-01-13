@@ -180,10 +180,10 @@ const GettingStarted = () => {
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
-                <Eye className="w-5 h-5 text-orange-500 mt-0.5" />
+                <Eye className="w-5 h-5 text-red-500 mt-0.5" />
                 <div>
-                  <strong className="text-orange-500">Fake Friend</strong>
-                  <p className="text-sm">Appears as a friend publicly, but has minimal actual access. For social situations requiring diplomacy.</p>
+                  <strong className="text-red-500">Secret Enemy</strong>
+                  <p className="text-sm">Appears as a friend publicly, but has minimal actual access. For social situations requiring diplomacy. You can optionally give them decoy information.</p>
                 </div>
               </div>
             </div>
