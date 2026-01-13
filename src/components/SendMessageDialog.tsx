@@ -8,7 +8,7 @@ import { MessageSquare, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { UserMentionInput } from "@/components/UserMentionInput";
 
-type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | "fake_friend" | "not_friend" | null;
+type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | "secret_enemy" | "not_friend" | null;
 
 interface Platform {
   id: string;
@@ -166,7 +166,7 @@ const SendMessageDialog = ({
   };
 
   // Only show if there's any valid friendship level
-  if (!friendshipLevel || friendshipLevel === "not_friend" || friendshipLevel === "fake_friend") {
+  if (!friendshipLevel || friendshipLevel === "not_friend" || friendshipLevel === "secret_enemy") {
     return null;
   }
 

@@ -59,7 +59,7 @@ interface NewReference {
   hasLeftReturn?: boolean;
 }
 
-type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | "fake_friend" | "secret_enemy" | "not_friend";
+type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | "secret_enemy" | "not_friend";
 
 const NotificationBell = () => {
   const navigate = useNavigate();
@@ -326,11 +326,9 @@ const NotificationBell = () => {
 
       const message = selectedLevel === "not_friend"
         ? "Request declined"
-        : selectedLevel === "fake_friend" 
-          ? "Request handled (they'll think you're friends)" 
-          : selectedLevel === "secret_enemy"
-            ? "Request handled (they'll think you're friends, but get no real info)"
-            : "Friend request accepted!";
+        : selectedLevel === "secret_enemy"
+          ? "Request handled (they'll think you're friends, but get no real info)"
+          : "Friend request accepted!";
       toast.success(message);
       setSelectedRequest(null);
       setSelectedLevel("buddy");
@@ -679,23 +677,6 @@ const NotificationBell = () => {
               </Popover>
             </div>
             
-            <div className="flex items-center justify-between p-2 rounded-lg border border-amber-500/50 hover:bg-amber-500/10">
-              <div className="flex items-center gap-3">
-                <RadioGroupItem value="fake_friend" id="fake_friend" />
-                <Label htmlFor="fake_friend" className="cursor-pointer font-medium text-amber-600">Fake Friend</Label>
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent side="left" className="w-64 text-sm">
-                  They'll think you accepted, but they get no access and won't appear in your list.
-                </PopoverContent>
-              </Popover>
-            </div>
-            
             <div className="flex items-center justify-between p-2 rounded-lg border border-red-500/50 hover:bg-red-500/10">
               <div className="flex items-center gap-3">
                 <RadioGroupItem value="secret_enemy" id="secret_enemy" />
@@ -708,7 +689,7 @@ const NotificationBell = () => {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent side="left" className="w-64 text-sm">
-                  They'll think you're close friends, but only see generic/fake contact info. Perfect for people you don't trust.
+                  They'll think you're friends, but get no access or see decoy info. Perfect for people you don't trust.
                 </PopoverContent>
               </Popover>
             </div>

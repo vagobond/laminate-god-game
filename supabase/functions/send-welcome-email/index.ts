@@ -237,7 +237,7 @@ const handler = async (req: Request): Promise<Response> => {
                   <span class="level-tag">Buddy</span>
                   <span class="level-tag">Friendly Acquaintance</span>
                   <span class="level-tag">Secret Friend</span>
-                  <span class="level-tag">Fake Friend</span>
+                  <span class="level-tag">Secret Enemy</span>
                 </div>
                 <p style="margin-top: 16px;">Each level controls what someone can see about you. Your data, your rules.</p>
                 
