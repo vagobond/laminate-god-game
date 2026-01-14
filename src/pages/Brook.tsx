@@ -264,7 +264,7 @@ const Brook = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center p-4 pt-20">
+      <div className="min-h-screen flex items-center justify-center p-4 pt-20">
         <div className="text-muted-foreground">Loading...</div>
       </div>
     );
@@ -272,14 +272,14 @@ const Brook = () => {
 
   if (!brook) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center p-4 pt-20">
+      <div className="min-h-screen flex items-center justify-center p-4 pt-20">
         <div className="text-muted-foreground">Brook not found</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 p-4 pt-20">
+    <div className="min-h-screen p-4 pt-20">
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
