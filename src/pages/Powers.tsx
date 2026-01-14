@@ -76,15 +76,14 @@ const Powers = () => {
                   <Button 
                     variant="mystical" 
                     size="xl"
-                    onClick={() => navigate("/irl-layer")}
+                    onClick={handleProfileClick}
                     className="w-full sm:w-auto min-w-[250px]"
                   >
-                    <Globe className="mr-2 h-5 w-5" />
-                    THE WORLD
+                    YOU
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Claim your hometown. See where other users live in the world. Explore.</p>
+                  <p>Set up your profile, friend-trust levels, hosting, and meetup status</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -110,14 +109,15 @@ const Powers = () => {
                   <Button 
                     variant="mystical" 
                     size="xl"
-                    onClick={handleProfileClick}
+                    onClick={() => navigate("/irl-layer")}
                     className="w-full sm:w-auto min-w-[250px]"
                   >
-                    YOU
+                    <Globe className="mr-2 h-5 w-5" />
+                    THE WORLD
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Set up your profile, friend-trust levels, hosting, and meetup status</p>
+                  <p>Claim your hometown. See where other users live in the world. Explore.</p>
                 </TooltipContent>
               </Tooltip>
             </div>
