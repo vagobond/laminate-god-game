@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Scroll, Lock, Users, UserCheck, Heart, ExternalLink, Trash2 } from "lucide-react";
 import { XcrolEntryForm } from "@/components/XcrolEntryForm";
+import { BrookList } from "@/components/BrookList";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useHometownDate } from "@/hooks/use-hometown-date";
@@ -52,6 +53,7 @@ const MyXcrol = () => {
   const [authChecked, setAuthChecked] = useState(false);
   const [entries, setEntries] = useState<XcrolEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [username, setUsername] = useState<string | null>(null);
   const { todayDate, loading: dateLoading, timezone } = useHometownDate(user?.id ?? null);
 
   useEffect(() => {
@@ -80,8 +82,19 @@ const MyXcrol = () => {
   useEffect(() => {
     if (user?.id && !dateLoading) {
       loadEntries();
+      loadUsername();
     }
   }, [user?.id, dateLoading, todayDate]);
+
+  const loadUsername = async () => {
+    if (!user?.id) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .single();
+    setUsername(data?.username ?? null);
+  };
 
   const loadEntries = async () => {
     if (!user?.id) return;
@@ -175,6 +188,9 @@ const MyXcrol = () => {
             Your personal daily diary. One update per day, 240 characters.
           </p>
         </div>
+
+        {/* Brooks Section */}
+        <BrookList userId={user.id} currentUsername={username} />
 
         {/* Daily Entry Form */}
         <XcrolEntryForm userId={user.id} onEntrySaved={loadEntries} prefillLink={prefillLink} />
