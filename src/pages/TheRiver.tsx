@@ -43,12 +43,50 @@ export interface ReactionsMap {
 const FILTER_OPTIONS = [
   { value: "all", label: "All Posts" },
   { value: "close_friend", label: "Close Friends" },
+  { value: "family", label: "Family" },
   { value: "buddy", label: "Buddies & Above" },
   { value: "friendly_acquaintance", label: "Acquaintances & Above" },
   { value: "public", label: "Public Only" },
 ];
 
+// Hierarchy for standard friendship levels (Family is independent)
 const FRIENDSHIP_HIERARCHY = ["close_friend", "secret_friend", "buddy", "friendly_acquaintance"];
+
+// Helper to check if viewer can see a post based on privacy level and friendship
+const canViewPost = (
+  postPrivacy: string,
+  viewerFriendshipLevel: string | undefined,
+  isOwnPost: boolean
+): boolean => {
+  // Own posts always visible
+  if (isOwnPost) return true;
+  
+  // Public posts visible to everyone
+  if (postPrivacy === "public") return true;
+  
+  // Private posts only visible to owner (handled above)
+  if (postPrivacy === "private") return false;
+  
+  // No friendship = can't see non-public posts
+  if (!viewerFriendshipLevel) return false;
+  
+  // Family privacy level: visible to family AND close_friend/secret_friend
+  if (postPrivacy === "family") {
+    return ["family", "close_friend", "secret_friend"].includes(viewerFriendshipLevel);
+  }
+  
+  // Standard hierarchy-based visibility
+  const postIndex = FRIENDSHIP_HIERARCHY.indexOf(postPrivacy);
+  const viewerIndex = FRIENDSHIP_HIERARCHY.indexOf(viewerFriendshipLevel);
+  
+  // If either is not in hierarchy, check exact match
+  if (postIndex === -1 || viewerIndex === -1) {
+    return false;
+  }
+  
+  // Viewer can see post if their level is at or above the required level
+  return viewerIndex <= postIndex;
+};
 
 export default function TheRiver() {
   const navigate = useNavigate();
@@ -200,17 +238,31 @@ export default function TheRiver() {
   };
 
   const getFilteredEntries = () => {
-    if (filter === "all") return entries;
+    // First, filter to only posts the user can actually see
+    const visibleEntries = entries.filter((e) => {
+      const isOwnPost = e.user_id === user?.id;
+      const friendshipLevel = friendships[e.user_id];
+      return canViewPost(e.privacy_level, friendshipLevel, isOwnPost);
+    });
+
+    // Then apply the UI filter
+    if (filter === "all") return visibleEntries;
     if (filter === "public") {
-      return entries.filter((e) => e.privacy_level === "public");
+      return visibleEntries.filter((e) => e.privacy_level === "public");
+    }
+    if (filter === "family") {
+      // Show posts from family members (regardless of post privacy level they can see)
+      return visibleEntries.filter((e) => {
+        if (e.user_id === user?.id) return true;
+        return friendships[e.user_id] === "family";
+      });
     }
 
-    // Filter by friendship level
+    // Filter by friendship level in hierarchy
     const filterIndex = FRIENDSHIP_HIERARCHY.indexOf(filter);
-    if (filterIndex === -1) return entries;
+    if (filterIndex === -1) return visibleEntries;
 
-    return entries.filter((e) => {
-      // Own posts always visible
+    return visibleEntries.filter((e) => {
       if (e.user_id === user?.id) return true;
       
       const level = friendships[e.user_id];
