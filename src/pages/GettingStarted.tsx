@@ -160,6 +160,13 @@ const GettingStarted = () => {
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
+                <Users className="w-5 h-5 text-orange-500 mt-0.5" />
+                <div>
+                  <strong className="text-orange-500">Family</strong>
+                  <p className="text-sm">Family members get access to phone number, private email, and full birthday by default. Other information is your choice.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
                 <Star className="w-5 h-5 text-yellow-500 mt-0.5" />
                 <div>
                   <strong className="text-yellow-500">Buddy</strong>

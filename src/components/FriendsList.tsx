@@ -62,7 +62,7 @@ interface FriendsListProps {
   showLevels?: boolean;
 }
 
-type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | "secret_enemy";
+type FriendshipLevel = "close_friend" | "family" | "buddy" | "friendly_acquaintance" | "secret_friend" | "secret_enemy";
 type FriendshipSelection = FriendshipLevel | "custom";
 
 interface CustomFriendshipType {
@@ -72,6 +72,7 @@ interface CustomFriendshipType {
 
 const levelLabels: Record<string, string> = {
   close_friend: "Close Friend",
+  family: "Family",
   buddy: "Buddy",
   friendly_acquaintance: "Acquaintance",
   secret_friend: "Secret Friend",
@@ -720,6 +721,14 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
                 <p className="text-sm text-muted-foreground">Can see your WhatsApp, phone number, or private email.</p>
               </Label>
             </div>
+
+            <div className="flex items-start space-x-3 p-3 rounded-lg border border-orange-500/50 hover:bg-orange-500/10">
+              <RadioGroupItem value="family" id="edit_family" className="mt-1" />
+              <Label htmlFor="edit_family" className="flex-1 cursor-pointer">
+                <span className="font-medium text-orange-500">Family</span>
+                <p className="text-sm text-muted-foreground">Phone, private email, and full birthday by default.</p>
+              </Label>
+            </div>
             
             <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
               <RadioGroupItem value="buddy" id="edit_buddy" className="mt-1" />
@@ -830,6 +839,14 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
                 <Label htmlFor="accept_close_friend" className="flex-1 cursor-pointer">
                   <span className="font-medium">Close Friend</span>
                   <p className="text-sm text-muted-foreground">Can see your WhatsApp, phone, or private email.</p>
+                </Label>
+              </div>
+
+              <div className="flex items-start space-x-3 p-3 rounded-lg border border-orange-500/50 hover:bg-orange-500/10">
+                <RadioGroupItem value="family" id="accept_family" className="mt-1" />
+                <Label htmlFor="accept_family" className="flex-1 cursor-pointer">
+                  <span className="font-medium text-orange-500">Family</span>
+                  <p className="text-sm text-muted-foreground">Phone, private email, and full birthday by default.</p>
                 </Label>
               </div>
               

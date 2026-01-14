@@ -76,6 +76,10 @@ const SECTION_BUILTIN_FIELDS: Record<string, { key: keyof ProfileData; label: st
     { key: "phone_number", label: "Phone Number", placeholder: "+1 555-123-4567" },
     { key: "private_email", label: "Private Email", placeholder: "personal@example.com", type: "email" },
   ],
+  family: [
+    { key: "phone_number", label: "Phone Number", placeholder: "+1 555-123-4567" },
+    { key: "private_email", label: "Private Email", placeholder: "personal@example.com", type: "email" },
+  ],
   buddy: [
     { key: "instagram_url", label: "Instagram", placeholder: "@username or https://instagram.com/..." },
   ],
@@ -99,9 +103,15 @@ const FRIENDSHIP_SECTIONS = [
     color: "text-green-500",
   },
   {
+    value: "family",
+    label: "Family",
+    description: "Family members get access to phone, private email, and full birthday by default",
+    color: "text-orange-500",
+  },
+  {
     value: "buddy",
     label: "Buddies",
-    description: "Buddies and close friends can see these links",
+    description: "Buddies and above can see these links",
     color: "text-blue-500",
   },
   {
