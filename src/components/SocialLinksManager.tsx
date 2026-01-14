@@ -105,7 +105,7 @@ const FRIENDSHIP_SECTIONS = [
   {
     value: "family",
     label: "Family",
-    description: "Family members get access to phone, private email, and full birthday by default",
+    description: "Independent category - phone, private email, and full birthday only (no social links by default)",
     color: "text-orange-500",
   },
   {
