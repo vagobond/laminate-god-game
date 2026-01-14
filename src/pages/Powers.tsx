@@ -127,7 +127,7 @@ const Powers = () => {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
-                    variant="divine" 
+                    variant="mystical" 
                     size="xl"
                     onClick={() => navigate("/my-xcrol")}
                     className="w-full sm:w-auto min-w-[250px]"
