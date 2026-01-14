@@ -726,7 +726,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
               <RadioGroupItem value="family" id="edit_family" className="mt-1" />
               <Label htmlFor="edit_family" className="flex-1 cursor-pointer">
                 <span className="font-medium text-orange-500">Family</span>
-                <p className="text-sm text-muted-foreground">Phone, private email, and full birthday by default.</p>
+                <p className="text-sm text-muted-foreground">Independent category: phone, private email, and full birthday only. No social links.</p>
               </Label>
             </div>
             
@@ -846,7 +846,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
                 <RadioGroupItem value="family" id="accept_family" className="mt-1" />
                 <Label htmlFor="accept_family" className="flex-1 cursor-pointer">
                   <span className="font-medium text-orange-500">Family</span>
-                  <p className="text-sm text-muted-foreground">Phone, private email, and full birthday by default.</p>
+                  <p className="text-sm text-muted-foreground">Independent category: phone, private email, and full birthday only. No social links.</p>
                 </Label>
               </div>
               

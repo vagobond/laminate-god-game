@@ -163,7 +163,7 @@ const GettingStarted = () => {
                 <Users className="w-5 h-5 text-orange-500 mt-0.5" />
                 <div>
                   <strong className="text-orange-500">Family</strong>
-                  <p className="text-sm">Family members get access to phone number, private email, and full birthday by default. Other information is your choice.</p>
+                  <p className="text-sm">An independent category outside the trust hierarchy. Family members get phone number, private email, and full birthday—but not social links or other friend-tier info unless you choose to share.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
