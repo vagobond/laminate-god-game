@@ -18,6 +18,7 @@ import GettingStarted from "./pages/GettingStarted";
 import InviteFriends from "./pages/InviteFriends";
 import MyXcrol from "./pages/MyXcrol";
 import UserXcrol from "./pages/UserXcrol";
+import Brook from "./pages/Brook";
 import EveryCountry from "./pages/EveryCountry";
 import NotFound from "./pages/NotFound";
 import AppHeader from "./components/AppHeader";
@@ -54,6 +55,7 @@ const App = () => (
           <Route path="/myxcrol" element={<MyXcrol />} />
           <Route path="/myxcrol/edit" element={<MyXcrol />} />
           <Route path="/xcrol/:username" element={<UserXcrol />} />
+          <Route path="/brook/:brookId" element={<Brook />} />
           <Route path="/every-country" element={<EveryCountry />} />
           <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
           <Route path="/terms" element={<Terms />} />
