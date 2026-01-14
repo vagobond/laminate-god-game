@@ -213,6 +213,7 @@ const GettingStarted = () => {
             </p>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li><strong>Close Friend:</strong> Only your closest friends can see this</li>
+              <li><strong>Family:</strong> Family members (phone, email, full birthday by default)</li>
               <li><strong>Buddy:</strong> Buddies and above can access</li>
               <li><strong>Friendly Acquaintance:</strong> All connected friends can view</li>
               <li><strong>Nobody:</strong> Hidden from everyone except you</li>
