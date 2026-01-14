@@ -20,6 +20,7 @@ interface XcrolEntryFormProps {
 const PRIVACY_LEVELS = [
   { value: "private", label: "Private - me only" },
   { value: "close_friend", label: "Close Friends" },
+  { value: "family", label: "Family" },
   { value: "buddy", label: "Buddies & above" },
   { value: "friendly_acquaintance", label: "Friendly Acquaintances & above" },
   { value: "public", label: "Public - everyone on the internet" },
