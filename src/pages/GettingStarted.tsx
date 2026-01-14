@@ -14,6 +14,7 @@ import {
   Sparkles,
   Scroll,
   Waves,
+  Droplets,
   MessageCircle,
   Coffee,
   Home,
@@ -265,6 +266,70 @@ const GettingStarted = () => {
             </ul>
             <p className="text-sm text-muted-foreground">
               The River respects privacy—you'll only see entries from friends who've granted you access at their chosen level.
+            </p>
+          </div>
+        </section>
+
+        {/* The Brook */}
+        <section className="space-y-4 p-6 rounded-xl bg-card/50 border border-border/50">
+          <div className="flex items-center gap-3">
+            <Droplets className="w-8 h-8 text-primary" />
+            <h2 className="text-2xl md:text-3xl font-bold">The Brook - Private Two-Person Streams</h2>
+          </div>
+          <div className="space-y-4 text-foreground/80 leading-relaxed">
+            <p>
+              The Brook is a private, two-person version of The River. Each Brook is a dedicated space 
+              where exactly two people can share daily updates, just with each other.
+            </p>
+            
+            <div className="p-4 bg-secondary/30 rounded-lg">
+              <h4 className="font-semibold mb-2">How Brooks Work</h4>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>You can have up to <strong>5 active Brooks</strong></li>
+                <li>Each user can post <strong>once per day per Brook</strong></li>
+                <li>Brook posts <strong>don't count</strong> as your daily Xcrol entry</li>
+                <li>Posts are limited to <strong>240 characters</strong> with an optional link</li>
+                <li>Posts appear in <strong>strict chronological order</strong>—no algorithms</li>
+              </ul>
+            </div>
+
+            <div className="p-4 bg-secondary/30 rounded-lg">
+              <h4 className="font-semibold mb-2">Starting a Brook</h4>
+              <ol className="list-decimal list-inside space-y-1 text-sm">
+                <li>Go to <strong>My Xcrol</strong> and click "Start a Brook"</li>
+                <li>Invite an existing XCROL user or invite by email</li>
+                <li>The Brook is created once the recipient accepts</li>
+                <li>Your Brooks appear at the top of your My Xcrol page</li>
+              </ol>
+            </div>
+
+            <div className="p-4 bg-secondary/30 rounded-lg">
+              <h4 className="font-semibold mb-2">Interactions</h4>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>React to posts with emoji</li>
+                <li>Add comments to posts</li>
+                <li>All interactions are visible only to the two participants</li>
+              </ul>
+            </div>
+
+            <div className="p-4 bg-secondary/30 rounded-lg">
+              <h4 className="font-semibold mb-2">Inactivity Handling</h4>
+              <p className="text-sm mb-2">
+                If no posts occur for a configurable number of days (3, 7, or 9), the active user is gently prompted with options:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li><strong>Let it rest:</strong> Keep the Brook but take a break (default)</li>
+                <li><strong>Archive:</strong> Private and reversible—bring it back anytime</li>
+                <li><strong>Send one gentle nudge:</strong> A single, non-intrusive reminder</li>
+              </ul>
+              <p className="text-sm text-muted-foreground mt-2">
+                The other person is never notified when you rest or archive a Brook.
+              </p>
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              <strong>Privacy first:</strong> Brooks are fully private—not visible on profiles, no public indicators, 
+              no streaks, read receipts, typing indicators, or activity metrics. Just calm, daily awareness.
             </p>
           </div>
         </section>
