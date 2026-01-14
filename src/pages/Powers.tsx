@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Globe, Waves, Droplets } from "lucide-react";
+import { Globe, Waves } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -35,6 +35,25 @@ const Powers = () => {
     }
   };
 
+  // Custom two-wave icon (like Waves but with 2 lines instead of 3)
+  const TwoWaves = ({ className }: { className?: string }) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M2 10c.6.5 1.2 1 2.5 1C7 11 7 9 9.5 9c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+      <path d="M2 16c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+    </svg>
+  );
+
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="text-center space-y-16 animate-fade-in max-w-4xl">
@@ -49,73 +68,79 @@ const Powers = () => {
         </div>
 
         <TooltipProvider>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center flex-wrap">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="mystical" 
-                  size="xl"
-                  onClick={() => navigate("/irl-layer")}
-                  className="w-full sm:w-auto min-w-[250px]"
-                >
-                  <Globe className="mr-2 h-5 w-5" />
-                  THE WORLD
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Claim your hometown. See where other users live in the world. Explore.</p>
-              </TooltipContent>
-            </Tooltip>
+          <div className="flex flex-col items-center gap-6">
+            {/* Top row: The World, The River, You */}
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="mystical" 
+                    size="xl"
+                    onClick={() => navigate("/irl-layer")}
+                    className="w-full sm:w-auto min-w-[250px]"
+                  >
+                    <Globe className="mr-2 h-5 w-5" />
+                    THE WORLD
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Claim your hometown. See where other users live in the world. Explore.</p>
+                </TooltipContent>
+              </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="divine" 
-                  size="xl"
-                  onClick={() => navigate("/the-river")}
-                  className="w-full sm:w-auto min-w-[250px]"
-                >
-                  <Waves className="mr-2 h-5 w-5" />
-                  THE RIVER
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>See what your friends are up to</p>
-              </TooltipContent>
-            </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="divine" 
+                    size="xl"
+                    onClick={() => navigate("/the-river")}
+                    className="w-full sm:w-auto min-w-[250px]"
+                  >
+                    <Waves className="mr-2 h-5 w-5" />
+                    THE RIVER
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>See what your friends are up to</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="mystical" 
+                    size="xl"
+                    onClick={handleProfileClick}
+                    className="w-full sm:w-auto min-w-[250px]"
+                  >
+                    YOU
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Set up your profile, friend-trust levels, hosting, and meetup status</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="divine" 
-                  size="xl"
-                  onClick={() => navigate("/my-xcrol")}
-                  className="w-full sm:w-auto min-w-[250px]"
-                >
-                  <Droplets className="mr-2 h-5 w-5" />
-                  THE BROOK
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Private two-person streams with someone special</p>
-              </TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="mystical" 
-                  size="xl"
-                  onClick={handleProfileClick}
-                  className="w-full sm:w-auto min-w-[250px]"
-                >
-                  YOU
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Set up your profile, friend-trust levels, hosting, and meetup status</p>
-              </TooltipContent>
-            </Tooltip>
+            {/* Second row: The Brook (centered under The River) */}
+            <div className="flex justify-center">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="divine" 
+                    size="xl"
+                    onClick={() => navigate("/my-xcrol")}
+                    className="w-full sm:w-auto min-w-[250px]"
+                  >
+                    <TwoWaves className="mr-2 h-5 w-5" />
+                    THE BROOK
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Private two-person streams with someone special</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
         </TooltipProvider>
 
