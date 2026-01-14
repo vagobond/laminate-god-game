@@ -1598,6 +1598,7 @@ export type Database = {
       app_role: "admin" | "moderator" | "user"
       friendship_level:
         | "close_friend"
+        | "family"
         | "buddy"
         | "friendly_acquaintance"
         | "secret_friend"
@@ -1737,6 +1738,7 @@ export const Constants = {
       app_role: ["admin", "moderator", "user"],
       friendship_level: [
         "close_friend",
+        "family",
         "buddy",
         "friendly_acquaintance",
         "secret_friend",
