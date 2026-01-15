@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Globe, Waves, TreePine, Layers } from "lucide-react";
+import { Globe, Waves, Layers } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -54,11 +54,42 @@ const Powers = () => {
     </svg>
   );
 
+  // Tree of Life icon for YOU
+  const TreeOfLife = ({ className }: { className?: string }) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      {/* Trunk */}
+      <path d="M12 22V8" />
+      {/* Main branches */}
+      <path d="M12 8c-3-3-6-2-7-1" />
+      <path d="M12 8c3-3 6-2 7-1" />
+      {/* Middle branches */}
+      <path d="M12 11c-2.5-2-5-1.5-6-.5" />
+      <path d="M12 11c2.5-2 5-1.5 6-.5" />
+      {/* Lower branches */}
+      <path d="M12 14c-2-1.5-4-1-5 0" />
+      <path d="M12 14c2-1.5 4-1 5 0" />
+      {/* Roots */}
+      <path d="M12 22c-1 0-3-1-4-2" />
+      <path d="M12 22c1 0 3-1 4-2" />
+    </svg>
+  );
+
   // Custom two trees icon for The Forest
   const TwoTrees = ({ className }: { className?: string }) => (
     <div className={`inline-flex items-center ${className}`}>
-      <TreePine className="h-5 w-5 -mr-1" />
-      <TreePine className="h-5 w-5" />
+      <TreeOfLife className="h-5 w-5 -mr-1" />
+      <TreeOfLife className="h-5 w-5" />
     </div>
   );
 
@@ -87,7 +118,7 @@ const Powers = () => {
                     onClick={handleProfileClick}
                     className="w-full sm:w-auto min-w-[250px]"
                   >
-                    <TreePine className="mr-2 h-5 w-5" />
+                    <TreeOfLife className="mr-2 h-5 w-5" />
                     YOU
                   </Button>
                 </TooltipTrigger>
