@@ -7,6 +7,7 @@ import Welcome from "./pages/Welcome";
 import Powers from "./pages/Powers";
 import Auth from "./pages/Auth";
 import TheRiver from "./pages/TheRiver";
+import TheForest from "./pages/TheForest";
 import MiniGamesHub from "./pages/MiniGamesHub";
 import IRLLayer from "./pages/IRLLayer";
 import Profile from "./pages/Profile";
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/powers" element={<Powers />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/the-river" element={<TheRiver />} />
+          <Route path="/the-forest" element={<TheForest />} />
           <Route path="/mini-games-hub" element={<MiniGamesHub />} />
           <Route path="/irl-layer" element={<IRLLayer />} />
           <Route path="/profile" element={<Profile />} />

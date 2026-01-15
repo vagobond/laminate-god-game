@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Globe, Waves } from "lucide-react";
+import { Globe, Waves, TreePine, Layers } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -54,6 +54,14 @@ const Powers = () => {
     </svg>
   );
 
+  // Custom two trees icon for The Forest
+  const TwoTrees = ({ className }: { className?: string }) => (
+    <div className={`inline-flex items-center ${className}`}>
+      <TreePine className="h-5 w-5 -mr-1" />
+      <TreePine className="h-5 w-5" />
+    </div>
+  );
+
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="text-center space-y-16 animate-fade-in max-w-4xl">
@@ -69,7 +77,7 @@ const Powers = () => {
 
         <TooltipProvider>
           <div className="flex flex-col items-center gap-6">
-            {/* Top row: The World, The River, You */}
+            {/* Top row: YOU, The River, The World */}
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -79,6 +87,7 @@ const Powers = () => {
                     onClick={handleProfileClick}
                     className="w-full sm:w-auto min-w-[250px]"
                   >
+                    <TreePine className="mr-2 h-5 w-5" />
                     YOU
                   </Button>
                 </TooltipTrigger>
@@ -122,8 +131,25 @@ const Powers = () => {
               </Tooltip>
             </div>
 
-            {/* Second row: The Brook (centered under The River) */}
-            <div className="flex justify-center">
+            {/* Second row: The Forest (under YOU), The Brook (under River), The Strata (under World) */}
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="mystical" 
+                    size="xl"
+                    onClick={() => navigate("/the-forest")}
+                    className="w-full sm:w-auto min-w-[250px]"
+                  >
+                    <TwoTrees className="mr-2" />
+                    THE FOREST
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Your network of friends and connections</p>
+                </TooltipContent>
+              </Tooltip>
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
@@ -138,6 +164,23 @@ const Powers = () => {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Private two-person streams with someone special</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="mystical" 
+                    size="xl"
+                    onClick={() => navigate("/settings")}
+                    className="w-full sm:w-auto min-w-[250px]"
+                  >
+                    <Layers className="mr-2 h-5 w-5" />
+                    THE STRATA
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Your settings and preferences</p>
                 </TooltipContent>
               </Tooltip>
             </div>
