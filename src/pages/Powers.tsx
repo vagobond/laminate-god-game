@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Globe, Waves, Layers } from "lucide-react";
+import { Globe, Waves, TreePine, Layers } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -54,7 +54,7 @@ const Powers = () => {
     </svg>
   );
 
-  // Tree of Life icon for YOU
+  // Celtic Tree of Life icon for YOU - circular design with branches and roots
   const TreeOfLife = ({ className }: { className?: string }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -63,33 +63,36 @@ const Powers = () => {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
     >
+      {/* Outer circle */}
+      <circle cx="12" cy="12" r="10" />
       {/* Trunk */}
-      <path d="M12 22V8" />
-      {/* Main branches */}
-      <path d="M12 8c-3-3-6-2-7-1" />
-      <path d="M12 8c3-3 6-2 7-1" />
-      {/* Middle branches */}
-      <path d="M12 11c-2.5-2-5-1.5-6-.5" />
-      <path d="M12 11c2.5-2 5-1.5 6-.5" />
-      {/* Lower branches */}
-      <path d="M12 14c-2-1.5-4-1-5 0" />
-      <path d="M12 14c2-1.5 4-1 5 0" />
-      {/* Roots */}
-      <path d="M12 22c-1 0-3-1-4-2" />
-      <path d="M12 22c1 0 3-1 4-2" />
+      <path d="M12 20V10" />
+      {/* Upper branches spreading into circle */}
+      <path d="M12 10c-2-3-5-4-7-3" />
+      <path d="M12 10c2-3 5-4 7-3" />
+      <path d="M12 10c-1-2-3-5-5-6" />
+      <path d="M12 10c1-2 3-5 5-6" />
+      {/* Side branches */}
+      <path d="M12 12c-3-1-6 0-7 2" />
+      <path d="M12 12c3-1 6 0 7 2" />
+      {/* Roots curving into knotwork */}
+      <path d="M12 20c-2 0-4-1-5-2" />
+      <path d="M12 20c2 0 4-1 5-2" />
+      <path d="M12 20c-1.5 1-3 2-5 1" />
+      <path d="M12 20c1.5 1 3 2 5 1" />
     </svg>
   );
 
-  // Custom two trees icon for The Forest
+  // Two pine trees icon for The Forest
   const TwoTrees = ({ className }: { className?: string }) => (
     <div className={`inline-flex items-center ${className}`}>
-      <TreeOfLife className="h-5 w-5 -mr-1" />
-      <TreeOfLife className="h-5 w-5" />
+      <TreePine className="h-5 w-5 -mr-1" />
+      <TreePine className="h-5 w-5" />
     </div>
   );
 
