@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { User as UserIcon, LogIn, LogOut, Settings, Shield, Mail, Scroll, Users, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useUnreadMessages } from "@/hooks/use-unread-messages";
 
 const UserMenu = () => {
   const navigate = useNavigate();
@@ -21,14 +22,13 @@ const UserMenu = () => {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const { unreadCount, refreshUnreadCount } = useUnreadMessages(user?.id || null);
 
   useEffect(() => {
     const reset = () => {
       setAvatarUrl(null);
       setDisplayName(null);
       setIsAdmin(false);
-      setUnreadCount(0);
     };
 
     // IMPORTANT: keep auth change handler synchronous to avoid auth deadlocks
@@ -52,32 +52,8 @@ const UserMenu = () => {
     // Defer data fetches outside onAuthStateChange to avoid deadlocks
     loadProfile(user.id);
     checkAdminStatus(user.id);
-    loadUnreadCount(user.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
-
-  // Keep unread badge in sync when messages are marked read elsewhere
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const handleMessagesUpdated = () => {
-      loadUnreadCount(user.id);
-    };
-
-    window.addEventListener("messages-updated", handleMessagesUpdated);
-    return () => window.removeEventListener("messages-updated", handleMessagesUpdated);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
-
-  const loadUnreadCount = async (userId: string) => {
-    const { count } = await supabase
-      .from("messages")
-      .select("*", { count: "exact", head: true })
-      .eq("to_user_id", userId)
-      .is("read_at", null);
-    
-    setUnreadCount(count || 0);
-  };
 
   const loadProfile = async (userId: string) => {
     const { data } = await supabase
@@ -136,7 +112,7 @@ const UserMenu = () => {
   return (
     <DropdownMenu
       onOpenChange={(open) => {
-        if (open && user?.id) loadUnreadCount(user.id);
+        if (open && user?.id) refreshUnreadCount();
       }}
     >
       <DropdownMenuTrigger asChild>
