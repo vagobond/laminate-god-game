@@ -24,6 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useUnreadMessages } from "@/hooks/use-unread-messages";
 
 interface FriendRequest {
   id: string;
@@ -67,7 +68,7 @@ const NotificationBell = () => {
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [pendingFriendships, setPendingFriendships] = useState<PendingFriendship[]>([]);
   const [newReferences, setNewReferences] = useState<NewReference[]>([]);
-  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const { unreadCount: unreadMessageCount } = useUnreadMessages(user?.id || null);
   const [selectedRequest, setSelectedRequest] = useState<FriendRequest | null>(null);
   const [selectedPendingFriendship, setSelectedPendingFriendship] = useState<PendingFriendship | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<FriendshipLevel>("buddy");
@@ -91,19 +92,8 @@ const NotificationBell = () => {
     if (user) {
       loadRequests();
       loadPendingFriendships();
-      loadUnreadMessages();
       loadNewReferences();
     }
-  }, [user]);
-
-  // Listen for messages-updated event to refresh unread count
-  useEffect(() => {
-    const handleMessagesUpdated = () => {
-      loadUnreadMessages();
-    };
-    
-    window.addEventListener('messages-updated', handleMessagesUpdated);
-    return () => window.removeEventListener('messages-updated', handleMessagesUpdated);
   }, [user]);
 
   // Show toast for unread messages (once per session/page load)
@@ -149,17 +139,6 @@ const NotificationBell = () => {
     }
   }, [newReferences, hasShownReferenceToast, navigate]);
 
-  const loadUnreadMessages = async () => {
-    if (!user) return;
-
-    const { count } = await supabase
-      .from("messages")
-      .select("*", { count: "exact", head: true })
-      .eq("to_user_id", user.id)
-      .is("read_at", null);
-
-    setUnreadMessageCount(count || 0);
-  };
 
   const getDismissedReferenceIds = (): string[] => {
     try {
@@ -215,30 +194,33 @@ const NotificationBell = () => {
       return;
     }
 
-    // Load profiles and check if user has left a return reference
-    const referencesWithDetails = await Promise.all(
-      undismissedData.map(async (ref) => {
-        const [profileResult, returnRefResult] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("display_name, avatar_url, username")
-            .eq("id", ref.from_user_id)
-            .single(),
-          supabase
-            .from("user_references")
-            .select("id")
-            .eq("from_user_id", user.id)
-            .eq("to_user_id", ref.from_user_id)
-            .limit(1)
-        ]);
+    // Batch load all profiles at once instead of N+1 queries
+    const fromUserIds = [...new Set(undismissedData.map(ref => ref.from_user_id))];
+    
+    const [profilesResult, returnRefsResult] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url, username")
+        .in("id", fromUserIds),
+      supabase
+        .from("user_references")
+        .select("to_user_id")
+        .eq("from_user_id", user.id)
+        .in("to_user_id", fromUserIds)
+    ]);
 
-        return {
-          ...ref,
-          from_profile: profileResult.data || undefined,
-          hasLeftReturn: (returnRefResult.data?.length ?? 0) > 0
-        };
-      })
+    const profilesMap = new Map(
+      (profilesResult.data || []).map(p => [p.id, p])
     );
+    const returnRefSet = new Set(
+      (returnRefsResult.data || []).map(r => r.to_user_id)
+    );
+
+    const referencesWithDetails = undismissedData.map(ref => ({
+      ...ref,
+      from_profile: profilesMap.get(ref.from_user_id) || undefined,
+      hasLeftReturn: returnRefSet.has(ref.from_user_id)
+    }));
 
     // Only show references where user hasn't left a return reference
     const unreturned = referencesWithDetails.filter(ref => !ref.hasLeftReturn);
@@ -259,21 +241,27 @@ const NotificationBell = () => {
       return;
     }
 
-    // Load profiles for each request
-    const requestsWithProfiles = await Promise.all(
-      (data || []).map(async (req) => {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("display_name, avatar_url")
-          .eq("id", req.from_user_id)
-          .single();
-        
-        return {
-          ...req,
-          from_profile: profileData || undefined,
-        };
-      })
+    if (!data || data.length === 0) {
+      setRequests([]);
+      return;
+    }
+
+    // Batch load all profiles at once instead of N+1 queries
+    const fromUserIds = [...new Set(data.map(req => req.from_user_id))];
+    
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url")
+      .in("id", fromUserIds);
+
+    const profilesMap = new Map(
+      (profiles || []).map(p => [p.id, p])
     );
+
+    const requestsWithProfiles = data.map(req => ({
+      ...req,
+      from_profile: profilesMap.get(req.from_user_id) || undefined,
+    }));
 
     setRequests(requestsWithProfiles);
   };
@@ -292,21 +280,27 @@ const NotificationBell = () => {
       return;
     }
 
-    // Load profiles for each pending friendship
-    const friendshipsWithProfiles = await Promise.all(
-      (data || []).map(async (friendship) => {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("display_name, avatar_url")
-          .eq("id", friendship.friend_id)
-          .single();
-        
-        return {
-          ...friendship,
-          friend_profile: profileData || undefined,
-        };
-      })
+    if (!data || data.length === 0) {
+      setPendingFriendships([]);
+      return;
+    }
+
+    // Batch load all profiles at once instead of N+1 queries
+    const friendIds = [...new Set(data.map(f => f.friend_id))];
+    
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url")
+      .in("id", friendIds);
+
+    const profilesMap = new Map(
+      (profiles || []).map(p => [p.id, p])
     );
+
+    const friendshipsWithProfiles = data.map(friendship => ({
+      ...friendship,
+      friend_profile: profilesMap.get(friendship.friend_id) || undefined,
+    }));
 
     setPendingFriendships(friendshipsWithProfiles);
   };
