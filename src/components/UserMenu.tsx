@@ -146,10 +146,7 @@ const UserMenu = () => {
           My Profile
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => {
-            const handle = (username ?? "").replace(/^@+/, "");
-            navigate(handle ? `/@${handle}#friends` : `/u/${user.id}#friends`);
-          }}
+          onClick={() => navigate("/the-forest")}
           className="cursor-pointer"
         >
           <Users className="w-4 h-4 mr-2" />
