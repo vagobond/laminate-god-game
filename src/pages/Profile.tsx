@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { User, MapPin, Link as LinkIcon, Save, ArrowLeft, Upload, Loader2, Eye, Share2 } from "lucide-react";
 import BlockedUsersManager from "@/components/BlockedUsersManager";
-import FriendsList from "@/components/FriendsList";
+import ProfileFriendsList from "@/components/ProfileFriendsList";
 import { ProfileGameStats } from "@/components/ProfileGameStats";
 import { SocialLinksManager } from "@/components/SocialLinksManager";
 import { PersonalInfoManager, PersonalInfoData, VisibilityLevel } from "@/components/PersonalInfoManager";
@@ -674,7 +674,7 @@ const Profile = () => {
         {/* Friends List */}
         {user && (
           <div id="friends" className="scroll-mt-6">
-            <FriendsList userId={user.id} viewerId={user.id} showLevels={true} />
+            <ProfileFriendsList userId={user.id} viewerId={user.id} />
           </div>
         )}
 

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import AddFriendButton from "@/components/AddFriendButton";
-import FriendsList from "@/components/FriendsList";
+import ProfileFriendsList from "@/components/ProfileFriendsList";
 import { ProfileGameStats } from "@/components/ProfileGameStats";
 import SendMessageDialog from "@/components/SendMessageDialog";
 import { UserReferences } from "@/components/UserReferences";
@@ -706,7 +706,7 @@ const PublicProfile = () => {
         {/* Friends List */}
         {resolvedUserId && (
           <div id="friends" className="scroll-mt-24">
-            <FriendsList 
+            <ProfileFriendsList 
               userId={resolvedUserId} 
               viewerId={currentUser?.id || null}
             />
