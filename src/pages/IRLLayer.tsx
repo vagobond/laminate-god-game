@@ -89,7 +89,7 @@ const IRLLayer = () => {
   const loadUserProfile = async (userId: string) => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("hometown_city, hometown_country, hometown_latitude, hometown_longitude, hometown_description")
+      .select("hometown_city, hometown_country, hometown_latitude, hometown_longitude, hometown_description, last_hometown_change")
       .eq("id", userId)
       .maybeSingle();
 
@@ -99,6 +99,9 @@ const IRLLayer = () => {
     }
 
     if (data?.hometown_city) {
+      setUserHometown(data);
+    } else if (data) {
+      // Store the last_hometown_change even if no hometown yet
       setUserHometown(data);
     }
   };
@@ -204,9 +207,19 @@ const IRLLayer = () => {
         return;
       }
 
-      if (userHometown) {
-        toast.info("You've already claimed a hometown");
-        return;
+      if (userHometown?.hometown_city) {
+        // Check if 90 days have passed since last change
+        if (userHometown.last_hometown_change) {
+          const lastChange = new Date(userHometown.last_hometown_change);
+          const daysSinceChange = Math.floor((Date.now() - lastChange.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysSinceChange < 90) {
+            const daysRemaining = 90 - daysSinceChange;
+            toast.info(`You can change your hometown in ${daysRemaining} days`);
+            return;
+          }
+        } else {
+          // Legacy user with hometown but no last_hometown_change - allow change
+        }
       }
 
       const { lng, lat } = e.lngLat;
@@ -516,6 +529,8 @@ const IRLLayer = () => {
   const handleClaimHometown = async () => {
     if (!user || !selectedLocation) return;
 
+    const isChangingHometown = !!userHometown?.hometown_city;
+
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -524,6 +539,7 @@ const IRLLayer = () => {
         hometown_latitude: selectedLocation.lat,
         hometown_longitude: selectedLocation.lng,
         hometown_description: hometownDescription,
+        last_hometown_change: new Date().toISOString(),
       })
       .eq("id", user.id);
 
@@ -533,13 +549,17 @@ const IRLLayer = () => {
       return;
     }
 
-    toast.success(`You've claimed ${selectedLocation.city}!`);
+    toast.success(isChangingHometown 
+      ? `You've moved to ${selectedLocation.city}!` 
+      : `You've claimed ${selectedLocation.city}!`
+    );
     setUserHometown({
       hometown_city: selectedLocation.city,
       hometown_country: selectedLocation.country,
       hometown_latitude: selectedLocation.lat,
       hometown_longitude: selectedLocation.lng,
       hometown_description: hometownDescription,
+      last_hometown_change: new Date().toISOString(),
     });
     setShowClaimForm(false);
     setSelectedLocation(null);

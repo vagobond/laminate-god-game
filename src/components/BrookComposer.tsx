@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Link2, Send } from "lucide-react";
+import { Link2, Send, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 interface BrookComposerProps {
