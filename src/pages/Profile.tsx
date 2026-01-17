@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { User, MapPin, Link as LinkIcon, Save, ArrowLeft, Upload, Loader2, Eye, Share2 } from "lucide-react";
+import { User, MapPin, Link as LinkIcon, Save, ArrowLeft, Upload, Loader2, Eye, Share2, Pencil } from "lucide-react";
 import BlockedUsersManager from "@/components/BlockedUsersManager";
 import ProfileFriendsList from "@/components/ProfileFriendsList";
 import { ProfileGameStats } from "@/components/ProfileGameStats";
@@ -579,8 +579,17 @@ const Profile = () => {
                 Hometown
               </label>
               {hometown ? (
-                <div className="p-3 bg-secondary/50 rounded-md text-foreground">
-                  {hometown}
+                <div className="flex items-center gap-2">
+                  <div className="p-3 bg-secondary/50 rounded-md text-foreground flex-1">
+                    {hometown}
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate("/irl-layer")}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
                 </div>
               ) : (
                 <div className="p-3 bg-secondary/30 rounded-md text-muted-foreground italic">
