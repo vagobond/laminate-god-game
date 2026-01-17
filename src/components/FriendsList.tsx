@@ -447,33 +447,34 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
       key={friend.id}
       className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors"
     >
-      <div
-        className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+      <Avatar 
+        className="h-10 w-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
         onClick={() => navigate(`/u/${friend.friend_id}`)}
       >
-        <Avatar className="h-10 w-10">
-          <AvatarImage src={friend.profile?.avatar_url || undefined} />
-          <AvatarFallback>
-            {(friend.profile?.display_name || "?").slice(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">
-            {friend.profile?.display_name || "Unknown"}
-          </p>
-        </div>
-        {/* Only show level badges to the profile owner */}
-        {showLevelBadge && isOwnProfile && !["secret_friend", "secret_enemy"].includes(friend.level) && (
-          <Badge 
-            variant={friend.uses_custom_type ? "default" : "secondary"} 
-            className={`text-xs ${friend.uses_custom_type ? "bg-primary/80" : ""}`}
-          >
-            {friend.uses_custom_type && customFriendshipType 
-              ? customFriendshipType.name 
-              : (levelLabels[friend.level] || friend.level)}
-          </Badge>
-        )}
+        <AvatarImage src={friend.profile?.avatar_url || undefined} />
+        <AvatarFallback>
+          {(friend.profile?.display_name || "?").slice(0, 2).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+      <div 
+        className="flex-1 min-w-0 cursor-pointer"
+        onClick={() => navigate(`/u/${friend.friend_id}`)}
+      >
+        <p className="font-medium truncate hover:text-primary transition-colors">
+          {friend.profile?.display_name || "Unknown"}
+        </p>
       </div>
+      {/* Only show level badges to the profile owner */}
+      {showLevelBadge && isOwnProfile && !["secret_friend", "secret_enemy"].includes(friend.level) && (
+        <Badge 
+          variant={friend.uses_custom_type ? "default" : "secondary"} 
+          className={`text-xs ${friend.uses_custom_type ? "bg-primary/80" : ""}`}
+        >
+          {friend.uses_custom_type && customFriendshipType 
+            ? customFriendshipType.name 
+            : (levelLabels[friend.level] || friend.level)}
+        </Badge>
+      )}
       {isOwnProfile && (
         <div className="flex gap-1">
           <Tooltip>
@@ -533,7 +534,10 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
     <>
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle 
+            className="text-lg flex items-center gap-2 cursor-pointer hover:text-primary transition-colors"
+            onClick={() => navigate("/the-forest")}
+          >
             <Users className="w-5 h-5" />
             Friends ({regularFriends.length})
           </CardTitle>
