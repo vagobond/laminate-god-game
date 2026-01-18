@@ -35,20 +35,27 @@ const BlockedUsersManager = () => {
 
       if (error) throw error;
 
-      const blockedWithProfiles = await Promise.all(
-        (data || []).map(async (block) => {
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("display_name, avatar_url")
-            .eq("id", block.blocked_id)
-            .single();
+      if (!data || data.length === 0) {
+        setBlockedUsers([]);
+        setLoading(false);
+        return;
+      }
 
-          return {
-            ...block,
-            profile: profileData || undefined,
-          };
-        })
+      // Batch fetch profiles using .in() instead of N+1 queries
+      const blockedIds = [...new Set(data.map(b => b.blocked_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url")
+        .in("id", blockedIds);
+
+      const profilesMap = new Map(
+        (profiles || []).map(p => [p.id, { display_name: p.display_name, avatar_url: p.avatar_url }])
       );
+
+      const blockedWithProfiles = data.map(block => ({
+        ...block,
+        profile: profilesMap.get(block.blocked_id),
+      }));
 
       setBlockedUsers(blockedWithProfiles);
     } catch (error) {

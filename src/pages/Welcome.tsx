@@ -2,31 +2,25 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import scrollOpenGif from "@/assets/scroll-paper-open-up.gif";
 
 const Welcome = () => {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [animationPhase, setAnimationPhase] = useState<"gif" | "dissolve" | "complete">("gif");
   const [isGifLoading, setIsGifLoading] = useState(true);
-  const [checkingAuth, setCheckingAuth] = useState(true);
 
   // Check if user is already logged in - redirect to powers
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        navigate("/powers", { replace: true });
-      } else {
-        setCheckingAuth(false);
-      }
-    };
-    checkAuth();
-  }, [navigate]);
+    if (!authLoading && user) {
+      navigate("/powers", { replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   // Transition to content after GIF plays (approximately 3 seconds)
   useEffect(() => {
-    if (checkingAuth || isGifLoading) return;
+    if (authLoading || isGifLoading) return;
     
     const timer = setTimeout(() => {
       setAnimationPhase("dissolve");
@@ -36,10 +30,10 @@ const Welcome = () => {
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [checkingAuth, isGifLoading]);
+  }, [authLoading, isGifLoading]);
 
   // Show nothing while checking auth to prevent flash
-  if (checkingAuth) {
+  if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
