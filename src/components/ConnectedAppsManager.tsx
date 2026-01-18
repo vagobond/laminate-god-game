@@ -70,34 +70,31 @@ const ConnectedAppsManager = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
+      // First get the authorizations
+      const { data: authorizations, error } = await supabase
         .from("oauth_user_authorizations")
-        .select(`
-          id,
-          scopes,
-          created_at,
-          updated_at,
-          oauth_clients (
-            id,
-            name,
-            description,
-            logo_url,
-            homepage_url,
-            is_verified
-          )
-        `)
+        .select("id, scopes, created_at, updated_at, client_id")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      const formattedApps = (data || []).map((item: any) => ({
-        id: item.id,
-        scopes: item.scopes,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        client: item.oauth_clients,
-      }));
+      // Then get client info for each authorized app using the secure function
+      const formattedApps: ConnectedApp[] = [];
+      for (const auth of authorizations || []) {
+        const { data: clientInfo } = await supabase
+          .rpc("get_authorized_app_info", { p_client_id: auth.client_id });
+        
+        if (clientInfo && clientInfo.length > 0) {
+          formattedApps.push({
+            id: auth.id,
+            scopes: auth.scopes,
+            created_at: auth.created_at,
+            updated_at: auth.updated_at,
+            client: clientInfo[0],
+          });
+        }
+      }
 
       setApps(formattedApps);
     } catch (error) {

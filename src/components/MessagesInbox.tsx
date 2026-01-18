@@ -18,15 +18,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+// Only include non-sensitive profile fields needed for inbox display
 interface SenderProfile {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
-  linkedin_url: string | null;
-  contact_email: string | null;
-  instagram_url: string | null;
-  whatsapp: string | null;
-  phone_number: string | null;
   link: string | null;
 }
 
@@ -60,23 +56,12 @@ const platformLabels: Record<string, string> = {
   phone: "Phone",
 };
 
+// Platform URL generation - only uses public profile link
+// Sensitive contact info (phone, email, etc.) should be accessed through proper channels
 const getPlatformUrl = (platform: string, sender?: SenderProfile): string | null => {
   if (!sender) return null;
-  
-  switch (platform) {
-    case "linkedin":
-      return sender.linkedin_url;
-    case "email":
-      return sender.contact_email ? `mailto:${sender.contact_email}` : null;
-    case "instagram":
-      return sender.instagram_url;
-    case "whatsapp":
-      return sender.whatsapp ? `https://wa.me/${sender.whatsapp.replace(/\D/g, '')}` : null;
-    case "phone":
-      return sender.phone_number ? `tel:${sender.phone_number}` : null;
-    default:
-      return sender.link;
-  }
+  // Only return the public link - contact info requires viewing the user's profile
+  return sender.link || null;
 };
 
 const MessagesInbox = () => {
@@ -221,9 +206,11 @@ const MessagesInbox = () => {
       
       // Only query profiles if we have user IDs to look up
       if (allUserIds.length > 0) {
+        // Only query basic public profile info needed for inbox display
+        // Do NOT query sensitive fields like phone_number, whatsapp, contact_email etc.
         const { data: profiles, error: profilesError } = await supabase
           .from("profiles")
-          .select("id, display_name, avatar_url, linkedin_url, contact_email, instagram_url, whatsapp, phone_number, link")
+          .select("id, display_name, avatar_url, link")
           .in("id", allUserIds);
 
         if (profilesError) {
