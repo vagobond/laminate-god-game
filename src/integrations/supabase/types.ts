@@ -907,6 +907,13 @@ export type Database = {
             referencedRelation: "oauth_clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "oauth_authorization_codes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "oauth_clients_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       oauth_clients: {
@@ -1020,6 +1027,13 @@ export type Database = {
             referencedRelation: "oauth_clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "oauth_tokens_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "oauth_clients_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       oauth_user_authorizations: {
@@ -1053,6 +1067,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "oauth_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oauth_user_authorizations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "oauth_clients_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1487,7 +1508,45 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      oauth_clients_public: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          description: string | null
+          homepage_url: string | null
+          id: string | null
+          is_verified: boolean | null
+          logo_url: string | null
+          name: string | null
+          redirect_uris: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          homepage_url?: string | null
+          id?: string | null
+          is_verified?: boolean | null
+          logo_url?: string | null
+          name?: string | null
+          redirect_uris?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          homepage_url?: string | null
+          id?: string | null
+          is_verified?: boolean | null
+          logo_url?: string | null
+          name?: string | null
+          redirect_uris?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_friend_request: {
@@ -1506,6 +1565,17 @@ export type Database = {
       can_post_in_brook: {
         Args: { p_brook_id: string; p_user_id: string }
         Returns: boolean
+      }
+      get_authorized_app_info: {
+        Args: { p_client_id: string }
+        Returns: {
+          description: string
+          homepage_url: string
+          id: string
+          is_verified: boolean
+          logo_url: string
+          name: string
+        }[]
       }
       get_available_invites: {
         Args: { user_id: string }
@@ -1595,6 +1665,15 @@ export type Database = {
       resolve_username_to_id: {
         Args: { target_username: string }
         Returns: string
+      }
+      validate_invite_code: {
+        Args: { p_invite_code: string }
+        Returns: {
+          invite_id: string
+          is_new_country: boolean
+          is_valid: boolean
+          target_country: string
+        }[]
       }
     }
     Enums: {

@@ -64,10 +64,13 @@ Deno.serve(async (req) => {
     };
 
     // Get profile if any profile scope is granted
-    if (scopes.some(s => s.startsWith("profile:"))) {
+    // Only select fields that are explicitly needed based on scopes
+    if (scopes.some(s => s.startsWith("profile:") || s.startsWith("hometown:"))) {
+      // Select only the specific fields we need based on granted scopes
+      // Do NOT use select("*") to avoid accidentally exposing sensitive data
       const { data: profile } = await supabase
         .from("profiles")
-        .select("*")
+        .select("display_name, avatar_url, bio, username, link, email, contact_email, hometown_city, hometown_country, hometown_description, hometown_latitude, hometown_longitude")
         .eq("id", token.user_id)
         .single();
 

@@ -16,6 +16,22 @@ interface InviteEmailRequest {
   isNewCountry: boolean;
 }
 
+// HTML escape function to prevent XSS attacks in email templates
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// Validate email format
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email) && email.length <= 254;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -29,10 +45,44 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { inviteeEmail, inviterName, targetCountry, inviteCode, isNewCountry }: InviteEmailRequest = await req.json();
 
-    console.log(`Sending invite email to ${inviteeEmail} from ${inviterName}`);
+    // Input validation
+    if (!inviteeEmail || !isValidEmail(inviteeEmail)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid email address" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
-    const countryText = targetCountry 
-      ? `to represent ${targetCountry}` 
+    if (!inviterName || inviterName.length > 100) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid inviter name" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (targetCountry && targetCountry.length > 100) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid country name" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!inviteCode || inviteCode.length > 100) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid invite code" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    console.log(`Sending invite email to ${inviteeEmail}`);
+
+    // Sanitize all user inputs before embedding in HTML
+    const safeInviterName = escapeHtml(inviterName);
+    const safeTargetCountry = targetCountry ? escapeHtml(targetCountry) : null;
+    const safeInviteCode = escapeHtml(inviteCode);
+
+    const countryText = safeTargetCountry 
+      ? `to represent ${safeTargetCountry}` 
       : "to join the community";
 
     const specialMessage = isNewCountry 
@@ -48,7 +98,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: "Xcrol <noreply@invites.xcrol.com>",
         to: [inviteeEmail],
-        subject: `${inviterName} invited you to join Xcrol!`,
+        subject: `${safeInviterName} invited you to join Xcrol!`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -72,12 +122,12 @@ const handler = async (req: Request): Promise<Response> => {
             <div class="container">
               <div class="card">
                 <h1>You've Been Invited! 🌍</h1>
-                <p><span class="highlight">${inviterName}</span> has invited you ${countryText} on Xcrol.</p>
+                <p><span class="highlight">${safeInviterName}</span> has invited you ${countryText} on Xcrol.</p>
                 ${specialMessage ? `<div class="special"><p>✨ ${specialMessage}</p></div>` : ''}
                 <p>Use this invite code when you sign up:</p>
-                <div class="code">${inviteCode}</div>
+                <div class="code">${safeInviteCode}</div>
                 <p>Join us to explore layers, connect with people from around the world, and build your presence on Xcrol.</p>
-                <a href="https://xcrol.com/auth?invite=${inviteCode}" class="cta">Join Xcrol</a>
+                <a href="https://xcrol.com/auth?invite=${encodeURIComponent(inviteCode)}" class="cta">Join Xcrol</a>
                 <div class="footer">
                   <p>If you didn't expect this invitation, you can safely ignore this email.</p>
                 </div>
@@ -96,9 +146,9 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(data.message || "Failed to send email");
     }
 
-    console.log("Email sent successfully:", data);
+    console.log("Email sent successfully");
 
-    return new Response(JSON.stringify({ success: true, data }), {
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
@@ -108,7 +158,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error in send-country-invite function:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: "Failed to send invitation" }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
