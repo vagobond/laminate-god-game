@@ -68,6 +68,12 @@ export const UserReferences = ({ userId, isOwnProfile = false }: UserReferencesP
 
       if (error) throw error;
 
+      if (!data || data.length === 0) {
+        setReferences([]);
+        setLoading(false);
+        return;
+      }
+
       // Check for existing flags on own profile
       const { data: { user } } = await supabase.auth.getUser();
       let flaggedIds: string[] = [];
@@ -80,22 +86,22 @@ export const UserReferences = ({ userId, isOwnProfile = false }: UserReferencesP
         flaggedIds = (flags || []).map(f => f.reference_id);
       }
 
-      // Fetch user info for each reference
-      const referencesWithUsers = await Promise.all(
-        (data || []).map(async (ref) => {
-          const { data: userData } = await supabase
-            .from("profiles")
-            .select("display_name, avatar_url")
-            .eq("id", ref.from_user_id)
-            .maybeSingle();
+      // Batch fetch profiles using .in() instead of N+1 queries
+      const fromUserIds = [...new Set(data.map(ref => ref.from_user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url")
+        .in("id", fromUserIds);
 
-          return {
-            ...ref,
-            from_user: userData || { display_name: null, avatar_url: null },
-            flagged: flaggedIds.includes(ref.id),
-          };
-        })
+      const profilesMap = new Map(
+        (profiles || []).map(p => [p.id, { display_name: p.display_name, avatar_url: p.avatar_url }])
       );
+
+      const referencesWithUsers = data.map(ref => ({
+        ...ref,
+        from_user: profilesMap.get(ref.from_user_id) || { display_name: null, avatar_url: null },
+        flagged: flaggedIds.includes(ref.id),
+      }));
 
       setReferences(referencesWithUsers);
     } catch (error) {

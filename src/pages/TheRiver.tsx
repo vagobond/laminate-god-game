@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User } from "@supabase/supabase-js";
 import { Loader2, Filter, Waves, PenLine } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -90,7 +90,7 @@ const canViewPost = (
 
 export default function TheRiver() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, loading: authLoading } = useAuth();
   const [entries, setEntries] = useState<RiverEntry[]>([]);
   const [friendships, setFriendships] = useState<FriendshipMap>({});
   const [reactions, setReactions] = useState<ReactionsMap>({});
@@ -101,26 +101,14 @@ export default function TheRiver() {
   const PAGE_SIZE = 20;
 
   useEffect(() => {
-    // Set up auth state listener FIRST to avoid missing events
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
+    if (authLoading) return;
+    
     loadEntries();
     if (user) {
       loadFriendships();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, authLoading]);
 
   const loadFriendships = async () => {
     if (!user) return;

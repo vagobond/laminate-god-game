@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,7 +40,7 @@ interface PendingFriendship {
 
 const TheForest = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
@@ -49,25 +49,14 @@ const TheForest = () => {
   const [searching, setSearching] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadFriendRequests(session.user.id);
-        loadPendingFriendships(session.user.id);
-      }
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadFriendRequests(session.user.id);
-        loadPendingFriendships(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    if (authLoading) return;
+    
+    if (user) {
+      loadFriendRequests(user.id);
+      loadPendingFriendships(user.id);
+    }
+    setLoading(false);
+  }, [user, authLoading]);
 
   const loadFriendRequests = async (userId: string) => {
     const { data, error } = await supabase
@@ -80,17 +69,26 @@ const TheForest = () => {
       return;
     }
 
-    // Fetch profiles for each request
-    const requestsWithProfiles = await Promise.all(
-      (data || []).map(async (request) => {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("id, display_name, avatar_url")
-          .eq("id", request.from_user_id)
-          .single();
-        return { ...request, profiles: profile };
-      })
+    if (!data || data.length === 0) {
+      setFriendRequests([]);
+      return;
+    }
+
+    // Batch fetch profiles using .in() instead of N+1 queries
+    const fromUserIds = [...new Set(data.map(r => r.from_user_id))];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url")
+      .in("id", fromUserIds);
+
+    const profilesMap = new Map(
+      (profiles || []).map(p => [p.id, p])
     );
+
+    const requestsWithProfiles = data.map(request => ({
+      ...request,
+      profiles: profilesMap.get(request.from_user_id),
+    }));
 
     setFriendRequests(requestsWithProfiles);
   };
@@ -106,17 +104,26 @@ const TheForest = () => {
       return;
     }
 
-    // Fetch profiles for each pending request
-    const pendingWithProfiles = await Promise.all(
-      (data || []).map(async (request) => {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("id, display_name, avatar_url")
-          .eq("id", request.to_user_id)
-          .single();
-        return { ...request, profiles: profile };
-      })
+    if (!data || data.length === 0) {
+      setPendingFriendships([]);
+      return;
+    }
+
+    // Batch fetch profiles using .in() instead of N+1 queries
+    const toUserIds = [...new Set(data.map(r => r.to_user_id))];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url")
+      .in("id", toUserIds);
+
+    const profilesMap = new Map(
+      (profiles || []).map(p => [p.id, p])
     );
+
+    const pendingWithProfiles = data.map(request => ({
+      ...request,
+      profiles: profilesMap.get(request.to_user_id),
+    }));
 
     setPendingFriendships(pendingWithProfiles);
   };

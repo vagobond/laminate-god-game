@@ -221,18 +221,22 @@ export default function AdminDashboard() {
         `)
         .order("created_at", { ascending: false });
       
-      if (rolesData) {
-        // Fetch profile info for each role
-        const rolesWithProfiles = await Promise.all(
-          rolesData.map(async (role) => {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("display_name, email")
-              .eq("id", role.user_id)
-              .maybeSingle();
-            return { ...role, profile };
-          })
+      if (rolesData && rolesData.length > 0) {
+        // Batch fetch profiles using .in() instead of N+1 queries
+        const roleUserIds = [...new Set(rolesData.map(r => r.user_id))];
+        const { data: roleProfiles } = await supabase
+          .from("profiles")
+          .select("id, display_name, email")
+          .in("id", roleUserIds);
+
+        const roleProfilesMap = new Map(
+          (roleProfiles || []).map(p => [p.id, { display_name: p.display_name, email: p.email }])
         );
+
+        const rolesWithProfiles = rolesData.map(role => ({
+          ...role,
+          profile: roleProfilesMap.get(role.user_id),
+        }));
         setRoles(rolesWithProfiles);
       }
 
@@ -257,43 +261,46 @@ export default function AdminDashboard() {
         .eq("status", "pending")
         .order("created_at", { ascending: false });
 
-      if (flaggedData) {
-        const flaggedWithDetails = await Promise.all(
-          flaggedData.map(async (flag) => {
-            const { data: reference } = await supabase
-              .from("user_references")
-              .select("*")
-              .eq("id", flag.reference_id)
-              .maybeSingle();
+      if (flaggedData && flaggedData.length > 0) {
+        // Fetch all references for flagged items
+        const referenceIds = [...new Set(flaggedData.map(f => f.reference_id))];
+        const { data: references } = await supabase
+          .from("user_references")
+          .select("*")
+          .in("id", referenceIds);
 
-            const { data: flagger } = await supabase
-              .from("profiles")
-              .select("display_name")
-              .eq("id", flag.flagged_by)
-              .maybeSingle();
-
-            let from_user = null;
-            let to_user = null;
-
-            if (reference) {
-              const { data: fromData } = await supabase
-                .from("profiles")
-                .select("display_name")
-                .eq("id", reference.from_user_id)
-                .maybeSingle();
-              from_user = fromData;
-
-              const { data: toData } = await supabase
-                .from("profiles")
-                .select("display_name")
-                .eq("id", reference.to_user_id)
-                .maybeSingle();
-              to_user = toData;
-            }
-
-            return { ...flag, reference, flagger, from_user, to_user };
-          })
+        const referencesMap = new Map(
+          (references || []).map(r => [r.id, r])
         );
+
+        // Collect all user IDs we need profiles for
+        const allUserIds = new Set<string>();
+        flaggedData.forEach(f => allUserIds.add(f.flagged_by));
+        (references || []).forEach(r => {
+          allUserIds.add(r.from_user_id);
+          allUserIds.add(r.to_user_id);
+        });
+
+        // Batch fetch all profiles at once
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, display_name")
+          .in("id", [...allUserIds]);
+
+        const profilesMap = new Map(
+          (profiles || []).map(p => [p.id, { display_name: p.display_name }])
+        );
+
+        const flaggedWithDetails = flaggedData.map(flag => {
+          const reference = referencesMap.get(flag.reference_id);
+          return {
+            ...flag,
+            reference,
+            flagger: profilesMap.get(flag.flagged_by),
+            from_user: reference ? profilesMap.get(reference.from_user_id) : null,
+            to_user: reference ? profilesMap.get(reference.to_user_id) : null,
+          };
+        });
         setFlaggedReferences(flaggedWithDetails);
       }
 
@@ -304,24 +311,28 @@ export default function AdminDashboard() {
         .order("created_at", { ascending: false })
         .limit(100);
 
-      if (refsData) {
-        const refsWithUsers = await Promise.all(
-          refsData.map(async (ref) => {
-            const { data: fromUser } = await supabase
-              .from("profiles")
-              .select("display_name")
-              .eq("id", ref.from_user_id)
-              .maybeSingle();
+      if (refsData && refsData.length > 0) {
+        // Batch fetch all user profiles for references
+        const refUserIds = new Set<string>();
+        refsData.forEach(r => {
+          refUserIds.add(r.from_user_id);
+          refUserIds.add(r.to_user_id);
+        });
 
-            const { data: toUser } = await supabase
-              .from("profiles")
-              .select("display_name")
-              .eq("id", ref.to_user_id)
-              .maybeSingle();
+        const { data: refProfiles } = await supabase
+          .from("profiles")
+          .select("id, display_name")
+          .in("id", [...refUserIds]);
 
-            return { ...ref, from_user: fromUser, to_user: toUser };
-          })
+        const refProfilesMap = new Map(
+          (refProfiles || []).map(p => [p.id, { display_name: p.display_name }])
         );
+
+        const refsWithUsers = refsData.map(ref => ({
+          ...ref,
+          from_user: refProfilesMap.get(ref.from_user_id),
+          to_user: refProfilesMap.get(ref.to_user_id),
+        }));
         setAllReferences(refsWithUsers);
       }
 
@@ -332,17 +343,22 @@ export default function AdminDashboard() {
         .eq("status", "pending")
         .order("created_at", { ascending: false });
 
-      if (deletionData) {
-        const requestsWithProfiles = await Promise.all(
-          deletionData.map(async (req: any) => {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("display_name, email, username")
-              .eq("id", req.user_id)
-              .maybeSingle();
-            return { ...req, profile };
-          })
+      if (deletionData && deletionData.length > 0) {
+        // Batch fetch profiles for deletion requests
+        const deletionUserIds = [...new Set(deletionData.map((r: any) => r.user_id))];
+        const { data: deletionProfiles } = await supabase
+          .from("profiles")
+          .select("id, display_name, email, username")
+          .in("id", deletionUserIds);
+
+        const deletionProfilesMap = new Map(
+          (deletionProfiles || []).map(p => [p.id, { display_name: p.display_name, email: p.email, username: p.username }])
         );
+
+        const requestsWithProfiles = deletionData.map((req: any) => ({
+          ...req,
+          profile: deletionProfilesMap.get(req.user_id),
+        }));
         setDeletionRequests(requestsWithProfiles);
       }
     } catch (error) {

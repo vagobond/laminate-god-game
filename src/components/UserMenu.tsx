@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
+import { useAuth } from "@/hooks/use-auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +17,7 @@ import { useUnreadMessages } from "@/hooks/use-unread-messages";
 
 const UserMenu = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
+  const { user } = useAuth();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
@@ -25,27 +25,17 @@ const UserMenu = () => {
   const { unreadCount, refreshUnreadCount } = useUnreadMessages(user?.id || null);
 
   useEffect(() => {
-    const reset = () => {
+    if (!user?.id) {
       setAvatarUrl(null);
       setDisplayName(null);
       setIsAdmin(false);
-    };
-
-    // IMPORTANT: keep auth change handler synchronous to avoid auth deadlocks
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (!session?.user) reset();
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (!session?.user) reset();
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+      return;
+    }
+    // Defer data fetches outside onAuthStateChange to avoid deadlocks
+    loadProfile(user.id);
+    checkAdminStatus(user.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user?.id) return;

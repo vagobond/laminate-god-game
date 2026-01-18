@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Bell, Info, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,7 +65,7 @@ type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "sec
 
 const NotificationBell = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
+  const { user } = useAuth();
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [pendingFriendships, setPendingFriendships] = useState<PendingFriendship[]>([]);
   const [newReferences, setNewReferences] = useState<NewReference[]>([]);
@@ -75,18 +76,6 @@ const NotificationBell = () => {
   const [processing, setProcessing] = useState(false);
   const [hasShownMessageToast, setHasShownMessageToast] = useState(false);
   const [hasShownReferenceToast, setHasShownReferenceToast] = useState(false);
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   useEffect(() => {
     if (user) {
