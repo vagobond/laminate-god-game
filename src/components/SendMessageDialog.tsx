@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { MessageSquare, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { UserMentionInput } from "@/components/UserMentionInput";
@@ -39,27 +40,14 @@ const SendMessageDialog = ({
   open: controlledOpen,
   onOpenChange,
 }: SendMessageDialogProps) => {
+  const { user } = useAuth();
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = onOpenChange || setInternalOpen;
   const [message, setMessage] = useState("");
   const [platformSuggestion, setPlatformSuggestion] = useState<string>("");
   const [sending, setSending] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
-
-  // Track auth state to avoid stale session issues
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user?.id ?? null);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserId(session?.user?.id ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   // Build platforms list based on friendship level if availablePlatforms not provided
   const getPlatforms = (): Platform[] => {
@@ -124,8 +112,8 @@ const SendMessageDialog = ({
       return;
     }
 
-    // Use tracked userId instead of making a new auth call
-    if (!userId) {
+    // Use auth hook for user ID
+    if (!user?.id) {
       toast({
         title: "Not logged in",
         description: "Please log in to send messages.",
@@ -137,7 +125,7 @@ const SendMessageDialog = ({
     setSending(true);
     try {
       const { error } = await supabase.from("messages").insert({
-        from_user_id: userId,
+        from_user_id: user.id,
         to_user_id: recipientId,
         content: message.trim(),
         platform_suggestion: platformSuggestion || null,

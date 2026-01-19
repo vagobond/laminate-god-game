@@ -1661,6 +1661,10 @@ export type Database = {
         Args: { blocked_id: string; blocker_id: string }
         Returns: boolean
       }
+      is_within_three_degrees: {
+        Args: { target_id: string; viewer_id: string }
+        Returns: boolean
+      }
       refresh_layer_stats: { Args: never; Returns: undefined }
       resolve_username_to_id: {
         Args: { target_username: string }
