@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
+import { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import { escapeHtml } from "@/lib/sanitize";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { X, Globe, ChevronRight, Users, CalendarIcon } from "lucide-react";
@@ -49,11 +48,11 @@ interface Meetup {
 
 const IRLLayer = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const meetupMarkersRef = useRef<mapboxgl.Marker[]>([]);
   
+  const [user, setUser] = useState<User | null>(null);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const [showClaimForm, setShowClaimForm] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{ lng: number; lat: number; city: string; country: string } | null>(null);
@@ -67,12 +66,25 @@ const IRLLayer = () => {
   const [showCreateMeetup, setShowCreateMeetup] = useState(false);
   const [expandedHometown, setExpandedHometown] = useState<string | null>(null);
 
-  // Load user profile when auth state changes
   useEffect(() => {
-    if (user?.id) {
-      loadUserProfile(user.id);
-    }
-  }, [user?.id]);
+    // Set up auth state listener FIRST to avoid missing events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        setTimeout(() => loadUserProfile(session.user.id), 0);
+      }
+    });
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        loadUserProfile(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const loadUserProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -479,16 +491,11 @@ const IRLLayer = () => {
         el.style.justifyContent = "center";
         el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
 
-        // Sanitize user input to prevent XSS
-        const safeTitle = escapeHtml(meetup.title);
-        const safeLocationName = escapeHtml(meetup.location_name);
-        const safeDescription = meetup.description ? escapeHtml(meetup.description) : null;
-        
         const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
           <div style="padding: 8px; max-width: 200px;">
-            <h3 style="font-weight: bold; margin-bottom: 4px;">${safeTitle}</h3>
-            <p style="font-size: 12px; color: #666;">${safeLocationName}</p>
-            ${safeDescription ? `<p style="font-size: 12px; margin-top: 4px;">${safeDescription}</p>` : ""}
+            <h3 style="font-weight: bold; margin-bottom: 4px;">${meetup.title}</h3>
+            <p style="font-size: 12px; color: #666;">${meetup.location_name}</p>
+            ${meetup.description ? `<p style="font-size: 12px; margin-top: 4px;">${meetup.description}</p>` : ""}
           </div>
         `);
 

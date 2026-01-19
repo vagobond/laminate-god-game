@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
 import { UserPlus, Check, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,11 +17,23 @@ interface AddFriendButtonProps {
 type FriendStatus = "none" | "pending_sent" | "pending_received" | "friends" | "blocked";
 
 const AddFriendButton = ({ profileUserId }: AddFriendButtonProps) => {
-  const { user } = useAuth();
+  const [user, setUser] = useState<any>(null);
   const [status, setStatus] = useState<FriendStatus>("none");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (user && profileUserId) {

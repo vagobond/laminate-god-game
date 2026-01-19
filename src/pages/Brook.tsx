@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -61,7 +60,7 @@ interface BrookPost {
 const Brook = () => {
   const { brookId } = useParams<{ brookId: string }>();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const [user, setUser] = useState<any>(null);
   const [brook, setBrook] = useState<BrookData | null>(null);
   const [partner, setPartner] = useState<{ display_name: string | null; username: string | null } | null>(null);
   const [posts, setPosts] = useState<BrookPost[]>([]);
@@ -70,12 +69,25 @@ const Brook = () => {
   const [customName, setCustomName] = useState("");
   const [myUsername, setMyUsername] = useState<string | null>(null);
 
-  // Redirect to auth if not logged in
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, authLoading, navigate]);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user) {
+        navigate("/auth");
+        return;
+      }
+      setUser(session.user);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        navigate("/auth");
+        return;
+      }
+      setUser(session.user);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   useEffect(() => {
     if (user?.id && brookId) {
