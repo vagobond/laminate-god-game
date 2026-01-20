@@ -16,6 +16,7 @@ const TheRiver = lazy(() => import("./pages/TheRiver"));
 const TheForest = lazy(() => import("./pages/TheForest"));
 const MiniGamesHub = lazy(() => import("./pages/MiniGamesHub"));
 const IRLLayer = lazy(() => import("./pages/IRLLayer"));
+const HearthSurfing = lazy(() => import("./pages/HearthSurfing"));
 const Profile = lazy(() => import("./pages/Profile"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -59,6 +60,7 @@ const App = () => (
               <Route path="/the-forest" element={<TheForest />} />
               <Route path="/mini-games-hub" element={<MiniGamesHub />} />
               <Route path="/irl-layer" element={<IRLLayer />} />
+              <Route path="/hearth-surfing" element={<HearthSurfing />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="/u/:userId" element={<PublicProfile />} />

@@ -151,7 +151,7 @@ export const SocialLinksManager = ({ userId, profileData, onProfileChange }: Soc
   const [links, setLinks] = useState<SocialLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
-  const [openSections, setOpenSections] = useState<string[]>(["close_friend", "buddy", "friendly_acquaintance"]);
+  const [openSections, setOpenSections] = useState<string[]>([]);
 
   // Track which section's add form is open
   const [activeAddForm, setActiveAddForm] = useState<string | null>(null);

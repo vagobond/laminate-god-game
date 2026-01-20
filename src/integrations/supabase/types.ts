@@ -520,6 +520,7 @@ export type Database = {
       hosting_preferences: {
         Row: {
           accommodation_type: string | null
+          compensation_type_preferred: string | null
           created_at: string
           hosting_description: string | null
           id: string
@@ -531,6 +532,7 @@ export type Database = {
         }
         Insert: {
           accommodation_type?: string | null
+          compensation_type_preferred?: string | null
           created_at?: string
           hosting_description?: string | null
           id?: string
@@ -542,6 +544,7 @@ export type Database = {
         }
         Update: {
           accommodation_type?: string | null
+          compensation_type_preferred?: string | null
           created_at?: string
           hosting_description?: string | null
           id?: string
