@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -42,7 +43,7 @@ interface HostingPreferences {
   accommodation_type: string | null;
   max_guests: number;
   min_friendship_level: string;
-  compensation_type_preferred: string;
+  compensation_type_preferred: string[];
 }
 
 interface HostProfile {
@@ -109,7 +110,7 @@ const HearthSurfing = () => {
     accommodation_type: null,
     max_guests: 1,
     min_friendship_level: "buddy",
-    compensation_type_preferred: "none",
+    compensation_type_preferred: [],
   });
   const [prefsLoading, setPrefsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -145,6 +146,16 @@ const HearthSurfing = () => {
       if (error) throw error;
 
       if (data) {
+        // Parse compensation_type_preferred - handle both string and array formats
+        let compensationTypes: string[] = [];
+        const rawCompensation = (data as any).compensation_type_preferred;
+        if (Array.isArray(rawCompensation)) {
+          compensationTypes = rawCompensation;
+        } else if (typeof rawCompensation === "string" && rawCompensation) {
+          // Legacy single value - convert to array
+          compensationTypes = rawCompensation === "none" ? [] : [rawCompensation];
+        }
+        
         setPreferences({
           id: data.id,
           user_id: data.user_id,
@@ -153,7 +164,7 @@ const HearthSurfing = () => {
           accommodation_type: data.accommodation_type,
           max_guests: data.max_guests || 1,
           min_friendship_level: data.min_friendship_level,
-          compensation_type_preferred: (data as any).compensation_type_preferred || "none",
+          compensation_type_preferred: compensationTypes,
         });
       } else {
         setPreferences(prev => ({ ...prev, user_id: user.id }));
@@ -254,7 +265,9 @@ const HearthSurfing = () => {
             accommodation_type: d.accommodation_type,
             max_guests: d.max_guests,
             min_friendship_level: d.min_friendship_level,
-            compensation_type_preferred: d.compensation_type_preferred || "none",
+            compensation_type_preferred: Array.isArray(d.compensation_type_preferred) 
+              ? d.compensation_type_preferred 
+              : (d.compensation_type_preferred && d.compensation_type_preferred !== "none" ? [d.compensation_type_preferred] : []),
           },
         }));
 
@@ -286,7 +299,7 @@ const HearthSurfing = () => {
         accommodation_type: preferences.accommodation_type,
         max_guests: preferences.max_guests,
         min_friendship_level: preferences.min_friendship_level,
-        compensation_type_preferred: preferences.compensation_type_preferred,
+        compensation_type_preferred: JSON.stringify(preferences.compensation_type_preferred),
       };
 
       if (preferences.id) {
@@ -336,6 +349,22 @@ const HearthSurfing = () => {
 
   const getCompensationLabel = (value: string) => {
     return COMPENSATION_TYPES.find(c => c.value === value)?.label || value;
+  };
+
+  const getCompensationLabels = (values: string[]) => {
+    if (!values || values.length === 0) return null;
+    return values.map(v => getCompensationLabel(v)).join(", ");
+  };
+
+  const toggleCompensationType = (value: string) => {
+    setPreferences(prev => {
+      const current = prev.compensation_type_preferred;
+      if (current.includes(value)) {
+        return { ...prev, compensation_type_preferred: current.filter(v => v !== value) };
+      } else {
+        return { ...prev, compensation_type_preferred: [...current, value] };
+      }
+    });
   };
 
   const getAccommodationLabel = (value: string | null) => {
@@ -461,9 +490,9 @@ const HearthSurfing = () => {
                             <Badge variant="outline">
                               Max {host.hosting_preferences.max_guests} guest{host.hosting_preferences.max_guests !== 1 ? "s" : ""}
                             </Badge>
-                            {host.hosting_preferences.compensation_type_preferred !== "none" && (
+                            {host.hosting_preferences.compensation_type_preferred.length > 0 && (
                               <Badge variant="outline" className="text-primary border-primary">
-                                {getCompensationLabel(host.hosting_preferences.compensation_type_preferred)}
+                                {getCompensationLabels(host.hosting_preferences.compensation_type_preferred)}
                               </Badge>
                             )}
                           </div>
@@ -692,28 +721,28 @@ const HearthSurfing = () => {
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>Compensation Type Preferred</Label>
-                      <Select
-                        value={preferences.compensation_type_preferred}
-                        onValueChange={(value) =>
-                          setPreferences({ ...preferences, compensation_type_preferred: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {COMPENSATION_TYPES.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="space-y-3">
+                      <Label>Compensation Types Preferred</Label>
                       <p className="text-xs text-muted-foreground">
-                        Let guests know what form of appreciation you prefer
+                        Select all forms of appreciation you're open to (leave all unchecked for no preference)
                       </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {COMPENSATION_TYPES.filter(t => t.value !== "none").map((type) => (
+                          <div key={type.value} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`comp-${type.value}`}
+                              checked={preferences.compensation_type_preferred.includes(type.value)}
+                              onCheckedChange={() => toggleCompensationType(type.value)}
+                            />
+                            <label
+                              htmlFor={`comp-${type.value}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            >
+                              {type.label}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="space-y-2">
