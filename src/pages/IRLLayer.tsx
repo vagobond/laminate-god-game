@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { escapeHtml } from "@/lib/sanitize";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { X, Globe, ChevronRight, Users, CalendarIcon } from "lucide-react";
+import { X, Globe, ChevronRight, Users, CalendarIcon, Heart } from "lucide-react";
 import { CreateMeetupDialog } from "@/components/CreateMeetupDialog";
 import { MeetupsListModal } from "@/components/MeetupsListModal";
 
@@ -622,7 +622,7 @@ const IRLLayer = () => {
           <p className="text-foreground/80 mt-2">Claim your hometown on the Laminate map</p>
         </div>
         <div className="flex flex-col gap-2">
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <Button onClick={() => setShowExploreModal(true)} className="gap-2 bg-purple-600 hover:bg-purple-700 text-white">
               <Globe className="w-4 h-4" />
               Explore Hometowns
@@ -630,6 +630,10 @@ const IRLLayer = () => {
             <Button onClick={() => setShowMeetupsModal(true)} className="gap-2 bg-yellow-500 hover:bg-yellow-600 text-black">
               <CalendarIcon className="w-4 h-4" />
               Meetups/Events
+            </Button>
+            <Button onClick={() => navigate("/hearth-surfing")} className="gap-2 bg-pink-500 hover:bg-pink-600 text-white">
+              <Heart className="w-4 h-4" />
+              Hearth Surfing
             </Button>
             <Button onClick={() => navigate("/powers")} variant="outline">
               Back to Powers

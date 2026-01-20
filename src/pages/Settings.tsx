@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Bell, Shield, Eye, ArrowLeft, Trash2, AlertTriangle, Loader2, Link2, Code, Key, Database, Lock, Info } from "lucide-react";
+import { Bell, Shield, Eye, ArrowLeft, Trash2, AlertTriangle, Loader2, Link2, Code, Key, Database, Lock, Info, ExternalLink, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import BlockedUsersManager from "@/components/BlockedUsersManager";
 import ConnectedAppsManager from "@/components/ConnectedAppsManager";
@@ -298,6 +298,95 @@ const Settings = () => {
               <h1 className="text-3xl font-bold">Settings</h1>
               <p className="text-muted-foreground">Manage your account preferences and data controls</p>
             </div>
+
+            {/* Xcrol Integrations */}
+            <Card className="border-primary/50 bg-gradient-to-br from-primary/5 to-purple-500/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  Xcrol Integrations
+                </CardTitle>
+                <CardDescription>
+                  Expand the Power of Your Xcrol
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  <a 
+                    href="https://MicroVictoryArmy.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors group"
+                  >
+                    <span className="text-sm font-medium group-hover:text-primary transition-colors">MicroVictoryArmy</span>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </a>
+                  <a 
+                    href="https://VoiceMarkr.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors group"
+                  >
+                    <span className="text-sm font-medium group-hover:text-primary transition-colors">VoiceMarkr</span>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </a>
+                  <a 
+                    href="https://Baoism.org" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors group"
+                  >
+                    <span className="text-sm font-medium group-hover:text-primary transition-colors">Baoism</span>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </a>
+                  <a 
+                    href="https://xmap.lovable.app" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors group"
+                  >
+                    <span className="text-sm font-medium group-hover:text-primary transition-colors">XMap</span>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </a>
+                  <a 
+                    href="https://ZguideZ.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors group"
+                  >
+                    <span className="text-sm font-medium group-hover:text-primary transition-colors">ZguideZ</span>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </a>
+                  <a 
+                    href="https://Litether.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors group"
+                  >
+                    <span className="text-sm font-medium group-hover:text-primary transition-colors">Litether</span>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </a>
+                  <a 
+                    href="https://AVeryGoodNovel.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors group"
+                  >
+                    <span className="text-sm font-medium group-hover:text-primary transition-colors">A Very Good Novel</span>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </a>
+                  <a 
+                    href="https://la.mster.quest" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors group"
+                  >
+                    <span className="text-sm font-medium group-hover:text-primary transition-colors">Lamster Quest</span>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Data & Privacy Controls - Most Important Section */}
             <Card className="border-primary/30">
