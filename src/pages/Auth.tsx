@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Mail, KeyRound } from "lucide-react";
+import { Mail, KeyRound, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { WelcomeModal } from "@/components/WelcomeModal";
+import { WaitlistForm } from "@/components/WaitlistForm";
 
 // Validation schemas
 const signInSchema = z.object({
@@ -40,7 +41,7 @@ const resetPasswordSchema = z.object({
   path: ["confirmPassword"],
 });
 
-type AuthView = "default" | "forgot-password" | "reset-password-sent" | "update-password" | "email-not-confirmed";
+type AuthView = "default" | "forgot-password" | "reset-password-sent" | "update-password" | "email-not-confirmed" | "waitlist";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -57,6 +58,7 @@ const Auth = () => {
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const [authView, setAuthView] = useState<AuthView>("default");
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [validatingInvite, setValidatingInvite] = useState(false);
 
   useEffect(() => {
     let didRedirect = false;
@@ -159,33 +161,22 @@ const Auth = () => {
       return;
     }
 
+    // Invite code is now REQUIRED
+    if (!result.data.inviteCode) {
+      setErrors({ inviteCode: "An invite code is required to sign up" });
+      return;
+    }
+
     setLoading(true);
     try {
-      // If invite code provided, validate it first
-      if (result.data.inviteCode) {
-        const { data: inviteData, error: inviteError } = await supabase
-          .from('country_invites')
-          .select('id, invitee_email, status')
-          .eq('invite_code', result.data.inviteCode)
-          .single();
+      // Validate invite code using our new system
+      const { data: isValid, error: checkError } = await supabase
+        .rpc('check_invite_code', { p_invite_code: result.data.inviteCode });
 
-        if (inviteError || !inviteData) {
-          setErrors({ inviteCode: "Invalid invite code" });
-          setLoading(false);
-          return;
-        }
-
-        if (inviteData.status !== 'pending') {
-          setErrors({ inviteCode: "This invite code has already been used" });
-          setLoading(false);
-          return;
-        }
-
-        if (inviteData.invitee_email.toLowerCase() !== result.data.email.toLowerCase()) {
-          setErrors({ inviteCode: "This invite code was sent to a different email address" });
-          setLoading(false);
-          return;
-        }
+      if (checkError || !isValid) {
+        setErrors({ inviteCode: "Invalid or already used invite code" });
+        setLoading(false);
+        return;
       }
 
       const { data: signUpData, error } = await supabase.auth.signUp({
@@ -202,15 +193,13 @@ const Auth = () => {
 
       if (error) throw error;
 
-      // If invite code was used and user was created, update the invite status
-      if (result.data.inviteCode && signUpData.user) {
-        await supabase
-          .from('country_invites')
-          .update({ 
-            status: 'accepted', 
-            invitee_id: signUpData.user.id 
-          })
-          .eq('invite_code', result.data.inviteCode);
+      // Mark the invite code as used
+      if (signUpData.user) {
+        await supabase.rpc('use_invite_code', { 
+          p_invite_code: result.data.inviteCode,
+          p_user_id: signUpData.user.id,
+          p_email: result.data.email
+        });
       }
 
       // Send welcome email to new user
@@ -543,6 +532,10 @@ const Auth = () => {
       return renderEmailNotConfirmed();
     }
 
+    if (authView === "waitlist") {
+      return <WaitlistForm onBack={() => setAuthView("default")} />;
+    }
+
     return (
       <Tabs defaultValue="signin" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -692,19 +685,28 @@ const Auth = () => {
                 <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="signup-invite-code">Invite Code (optional)</Label>
+                <Label htmlFor="signup-invite-code">
+                  Invite Code <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="signup-invite-code"
                   type="text"
-                  placeholder="Enter invite code if you have one"
+                  placeholder="Enter your invite code"
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value)}
                   className="bg-muted/20 border-primary/30"
+                  required
                 />
                 {errors.inviteCode && (
                   <p className="text-sm text-destructive">{errors.inviteCode}</p>
                 )}
-                <p className="text-xs text-muted-foreground">If someone invited you, enter their code here</p>
+                <button
+                  type="button"
+                  onClick={() => setAuthView("waitlist")}
+                  className="text-xs text-primary hover:text-primary/80 underline cursor-pointer"
+                >
+                  No invite code? Get on the waitlist
+                </button>
               </div>
               <div className="space-y-2">
                 <div className="flex items-start space-x-2">

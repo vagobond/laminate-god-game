@@ -634,6 +634,24 @@ export type Database = {
         }
         Relationships: []
       }
+      invite_notification_seen: {
+        Row: {
+          id: string
+          seen_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          seen_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          seen_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       layer_relationships: {
         Row: {
           child_layer_id: string
@@ -1309,6 +1327,42 @@ export type Database = {
           },
         ]
       }
+      user_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          id: string
+          invite_code: string
+          invitee_email: string | null
+          invitee_id: string | null
+          inviter_id: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invite_code?: string
+          invitee_email?: string | null
+          invitee_id?: string | null
+          inviter_id: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invite_code?: string
+          invitee_email?: string | null
+          invitee_id?: string | null
+          inviter_id?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       user_references: {
         Row: {
           content: string
@@ -1405,6 +1459,30 @@ export type Database = {
           show_online_status?: boolean
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      waitlist: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          invited_at: string | null
+          notes: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          invited_at?: string | null
+          notes?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          invited_at?: string | null
+          notes?: string | null
         }
         Relationships: []
       }
@@ -1569,6 +1647,7 @@ export type Database = {
         Args: { p_brook_id: string; p_user_id: string }
         Returns: boolean
       }
+      check_invite_code: { Args: { p_invite_code: string }; Returns: boolean }
       get_authorized_app_info: {
         Args: { p_client_id: string }
         Returns: {
@@ -1611,6 +1690,7 @@ export type Database = {
           id: string
         }[]
       }
+      get_user_invite_stats: { Args: { p_user_id: string }; Returns: Json }
       get_visible_friends: {
         Args: { profile_id: string; viewer_id: string }
         Returns: {
@@ -1672,6 +1752,10 @@ export type Database = {
       resolve_username_to_id: {
         Args: { target_username: string }
         Returns: string
+      }
+      use_invite_code: {
+        Args: { p_email: string; p_invite_code: string; p_user_id: string }
+        Returns: boolean
       }
       validate_invite_code: {
         Args: { p_invite_code: string }

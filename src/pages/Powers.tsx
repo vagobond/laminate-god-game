@@ -8,10 +8,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
+import { useInviteNotification } from "@/hooks/use-invite-notification";
+import { InviteNotificationModal } from "@/components/InviteNotificationModal";
 
 const Powers = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { showNotification, dismissNotification } = useInviteNotification();
 
   const handleProfileClick = () => {
     if (user) {
@@ -214,6 +217,14 @@ const Powers = () => {
           Getting Started / FAQ
         </button>
       </div>
+
+      {user && (
+        <InviteNotificationModal
+          open={showNotification}
+          onOpenChange={() => {}}
+          onDismiss={dismissNotification}
+        />
+      )}
     </div>
   );
 };
