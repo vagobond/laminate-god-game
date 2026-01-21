@@ -60,7 +60,7 @@ const App = () => (
               <Route path="/the-forest" element={<TheForest />} />
               <Route path="/mini-games-hub" element={<MiniGamesHub />} />
               <Route path="/irl-layer" element={<IRLLayer />} />
-              <Route path="/hearth-surfing" element={<HearthSurfing />} />
+              <Route path="/hearthsurf" element={<HearthSurfing />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="/u/:userId" element={<PublicProfile />} />
