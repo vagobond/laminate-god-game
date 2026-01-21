@@ -633,7 +633,7 @@ const IRLLayer = () => {
             </Button>
             <Button onClick={() => navigate("/hearth-surfing")} className="gap-2 bg-pink-500 hover:bg-pink-600 text-white">
               <Heart className="w-4 h-4" />
-              Hearth Surfing
+              Hearth Surf
             </Button>
             <Button onClick={() => navigate("/powers")} variant="outline">
               Back to Powers
