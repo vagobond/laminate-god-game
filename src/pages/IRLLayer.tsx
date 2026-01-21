@@ -631,7 +631,7 @@ const IRLLayer = () => {
               <CalendarIcon className="w-4 h-4" />
               Meetups/Events
             </Button>
-            <Button onClick={() => navigate("/hearth-surfing")} className="gap-2 bg-pink-500 hover:bg-pink-600 text-white">
+            <Button onClick={() => navigate("/hearthsurf")} className="gap-2 bg-pink-500 hover:bg-pink-600 text-white">
               <Heart className="w-4 h-4" />
               Hearth Surf
             </Button>
