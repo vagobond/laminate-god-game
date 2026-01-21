@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Users, Shield, RefreshCw, Send, MessageSquare, Flag, Star, Trash2, Check, X, UserX, Copy } from "lucide-react";
+import { ArrowLeft, Users, Shield, RefreshCw, Send, MessageSquare, Flag, Star, Trash2, Check, X, UserX, Copy, Clock } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -97,6 +97,14 @@ interface DeletionRequest {
   };
 }
 
+interface WaitlistEntry {
+  id: string;
+  email: string;
+  created_at: string;
+  invited_at: string | null;
+  notes: string | null;
+}
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -117,6 +125,7 @@ export default function AdminDashboard() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletionRequests, setDeletionRequests] = useState<DeletionRequest[]>([]);
   const [processingDeletion, setProcessingDeletion] = useState<string | null>(null);
+  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
 
   useEffect(() => {
     checkAdminAccess();
@@ -253,6 +262,14 @@ export default function AdminDashboard() {
         totalUsers: userCount || 0,
         totalFriendships: friendshipCount || 0,
       });
+
+      // Load waitlist
+      const { data: waitlistData } = await supabase
+        .from("waitlist")
+        .select("*")
+        .order("created_at", { ascending: false });
+      
+      if (waitlistData) setWaitlist(waitlistData);
 
       // Load flagged references
       const { data: flaggedData } = await supabase
@@ -524,6 +541,10 @@ export default function AdminDashboard() {
             </TabsTrigger>
             <TabsTrigger value="references">All References</TabsTrigger>
             <TabsTrigger value="broadcast">Broadcast</TabsTrigger>
+            <TabsTrigger value="waitlist" className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              Waitlist ({waitlist.length})
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -893,6 +914,55 @@ export default function AdminDashboard() {
                     {sendingBroadcast ? "Sending..." : "Send Broadcast"}
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="waitlist">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Waitlist ({waitlist.length})
+                </CardTitle>
+                <CardDescription>
+                  Users waiting for an invite code
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {waitlist.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No users on the waitlist</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Joined</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {waitlist.map((entry) => (
+                        <TableRow key={entry.id}>
+                          <TableCell className="font-medium">{entry.email}</TableCell>
+                          <TableCell>{new Date(entry.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                navigator.clipboard.writeText(entry.email);
+                                toast.success("Email copied!");
+                              }}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
