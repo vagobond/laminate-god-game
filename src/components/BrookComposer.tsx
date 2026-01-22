@@ -53,6 +53,16 @@ export const BrookComposer = ({ brookId, userId, onPostCreated }: BrookComposerP
 
     setSubmitting(true);
     try {
+      // First, get the brook details to find the other participant
+      const { data: brookData, error: brookError } = await supabase
+        .from("brooks")
+        .select("user1_id, user2_id")
+        .eq("id", brookId)
+        .single();
+
+      if (brookError) throw brookError;
+
+      // Insert the post
       const { error } = await supabase
         .from("brook_posts")
         .insert({
@@ -63,6 +73,28 @@ export const BrookComposer = ({ brookId, userId, onPostCreated }: BrookComposerP
         });
 
       if (error) throw error;
+
+      // Send a notification message to the other participant
+      const otherUserId = brookData.user1_id === userId ? brookData.user2_id : brookData.user1_id;
+      
+      // Get the current user's display name
+      const { data: myProfile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", userId)
+        .single();
+
+      const senderName = myProfile?.display_name?.split(' ')[0] || 'Someone';
+
+      // Insert a system message to notify the other user
+      await supabase
+        .from("messages")
+        .insert({
+          from_user_id: userId,
+          to_user_id: otherUserId,
+          content: `${senderName} posted in your Brook! Check it out.`,
+          platform_suggestion: "brook_notification"
+        });
 
       toast.success("Posted to your Brook!");
       setContent("");

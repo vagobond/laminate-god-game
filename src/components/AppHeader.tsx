@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import UserMenu from "./UserMenu";
 import NotificationBell from "./NotificationBell";
 import AudioMuteButton from "./AudioMuteButton";
+import { ThemeToggle } from "./ThemeToggle";
 
 const AppHeader = () => {
   const navigate = useNavigate();
@@ -38,6 +39,7 @@ const AppHeader = () => {
         <Waves className="h-5 w-5" />
       </Button>
       <AudioMuteButton />
+      <ThemeToggle />
       <NotificationBell />
       <UserMenu />
     </header>
