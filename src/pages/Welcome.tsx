@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import scrollOpenGif from "@/assets/scroll-paper-open-up.gif";
+import xcrolLogo from "@/assets/xcrol-logo.png";
 
 const Welcome = () => {
   const navigate = useNavigate();
@@ -81,15 +82,18 @@ const Welcome = () => {
           }`}
         >
           <div className="space-y-6 animate-fade-in">
-            <h1 className="text-7xl md:text-9xl font-bold text-glow tracking-wider animate-pulse-slow">
-              XCROL
-            </h1>
-            <div className="space-y-4 max-w-2xl mx-auto">
-              <p className="text-2xl md:text-3xl text-foreground/90 font-light leading-relaxed">
-                Take control of your own networks.
+            {/* Logo Image */}
+            <img 
+              src={xcrolLogo}
+              alt="XCROL"
+              className="w-[400px] md:w-[500px] lg:w-[600px] mx-auto drop-shadow-[0_0_40px_rgba(139,92,246,0.4)] animate-pulse-slow"
+            />
+            <div className="space-y-3 max-w-2xl mx-auto">
+              <p className="text-xl md:text-2xl text-foreground/90 font-bold italic">
+                Pronounced Scroll.
               </p>
-              <p className="text-3xl md:text-4xl text-primary font-semibold">
-                Build your world.
+              <p className="text-2xl md:text-3xl text-primary font-semibold">
+                Keep up with the people who matter to you.
               </p>
             </div>
           </div>

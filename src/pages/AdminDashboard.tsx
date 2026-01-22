@@ -126,6 +126,9 @@ export default function AdminDashboard() {
   const [deletionRequests, setDeletionRequests] = useState<DeletionRequest[]>([]);
   const [processingDeletion, setProcessingDeletion] = useState<string | null>(null);
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [showDeleteUserDialog, setShowDeleteUserDialog] = useState(false);
+  const [deletingUser, setDeletingUser] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -458,6 +461,46 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    setDeletingUser(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("Not authenticated");
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-delete-user`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ userId }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to delete user");
+      }
+
+      toast.success("User deleted successfully");
+      setUsers(prev => prev.filter(u => u.id !== userId));
+      setShowDeleteUserDialog(false);
+      setDeleteUserId(null);
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      toast.error(error.message || "Failed to delete user");
+    } finally {
+      setDeletingUser(false);
+    }
+  };
+
   const renderStars = (rating: number | null) => {
     if (!rating) return null;
     return (
@@ -605,7 +648,7 @@ export default function AdminDashboard() {
                         <TableCell>
                           {new Date(user.created_at).toLocaleDateString()}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="space-x-2">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -613,6 +656,19 @@ export default function AdminDashboard() {
                           >
                             View Profile
                           </Button>
+                          {user.id !== currentUserId && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setDeleteUserId(user.id);
+                                setShowDeleteUserDialog(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -968,7 +1024,7 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
 
-        {/* Delete Confirmation Dialog */}
+        {/* Delete Reference Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -984,6 +1040,28 @@ export default function AdminDashboard() {
                 onClick={() => deleteRefId && handleDeleteReference(deleteRefId)}
               >
                 Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete User Confirmation Dialog */}
+        <AlertDialog open={showDeleteUserDialog} onOpenChange={setShowDeleteUserDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete User Account</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to permanently delete this user account? This will remove all their data including profile, friendships, posts, and messages. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setDeleteUserId(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={deletingUser}
+                onClick={() => deleteUserId && handleDeleteUser(deleteUserId)}
+              >
+                {deletingUser ? "Deleting..." : "Delete User"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

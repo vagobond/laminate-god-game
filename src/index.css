@@ -8,6 +8,51 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    --background: 45 30% 95%;
+    --foreground: 220 40% 15%;
+
+    --card: 45 25% 92%;
+    --card-foreground: 220 40% 15%;
+
+    --popover: 45 25% 94%;
+    --popover-foreground: 220 40% 15%;
+
+    --primary: 45 80% 45%;
+    --primary-foreground: 220 40% 10%;
+
+    --secondary: 195 50% 40%;
+    --secondary-foreground: 45 100% 95%;
+
+    --muted: 45 20% 88%;
+    --muted-foreground: 220 20% 40%;
+
+    --accent: 15 70% 50%;
+    --accent-foreground: 45 100% 95%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 45 20% 80%;
+    --input: 45 20% 80%;
+    --ring: 45 80% 45%;
+
+    --radius: 0.75rem;
+
+    /* Mystical gradient colors - light mode */
+    --cosmic-start: 45 35% 90%;
+    --cosmic-mid: 40 30% 85%;
+    --cosmic-end: 35 25% 88%;
+    
+    --glow-gold: 45 80% 45%;
+    --glow-teal: 180 50% 45%;
+    --glow-coral: 15 70% 50%;
+
+    /* Animations */
+    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .dark {
     --background: 220 40% 8%;
     --foreground: 45 100% 95%;
 
@@ -36,9 +81,7 @@ All colors MUST be HSL.
     --input: 220 30% 25%;
     --ring: 45 95% 55%;
 
-    --radius: 0.75rem;
-
-    /* Mystical gradient colors */
+    /* Mystical gradient colors - dark mode */
     --cosmic-start: 220 60% 15%;
     --cosmic-mid: 200 50% 20%;
     --cosmic-end: 180 45% 12%;
@@ -46,10 +89,6 @@ All colors MUST be HSL.
     --glow-gold: 45 95% 55%;
     --glow-teal: 180 60% 50%;
     --glow-coral: 15 80% 55%;
-
-    /* Animations */
-    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 }
 
