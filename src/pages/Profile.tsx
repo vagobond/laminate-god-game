@@ -361,33 +361,40 @@ const Profile = () => {
 
     setSaving(true);
     try {
+      // Only include username in update if it hasn't been set yet
+      const updateData: Record<string, unknown> = {
+        display_name: displayName.trim().slice(0, MAX_DISPLAY_NAME_LENGTH),
+        avatar_url: avatarUrl,
+        bio: bio.trim().slice(0, MAX_BIO_LENGTH),
+        link: link.trim().slice(0, MAX_LINK_LENGTH) || null,
+        whatsapp: contactData.whatsapp.trim().slice(0, MAX_PHONE_LENGTH) || null,
+        phone_number: contactData.phone_number.trim().slice(0, MAX_PHONE_LENGTH) || null,
+        private_email: contactData.private_email.trim().slice(0, MAX_EMAIL_LENGTH) || null,
+        instagram_url: contactData.instagram_url.trim().slice(0, MAX_URL_LENGTH) || null,
+        linkedin_url: contactData.linkedin_url.trim().slice(0, MAX_URL_LENGTH) || null,
+        contact_email: contactData.contact_email.trim().slice(0, MAX_EMAIL_LENGTH) || null,
+        // Personal info fields
+        birthday_day: personalInfo.birthday_day,
+        birthday_month: personalInfo.birthday_month,
+        birthday_year: personalInfo.birthday_year,
+        home_address: personalInfo.home_address?.trim().slice(0, MAX_ADDRESS_LENGTH) || null,
+        mailing_address: personalInfo.mailing_address?.trim().slice(0, MAX_ADDRESS_LENGTH) || null,
+        nicknames: personalInfo.nicknames?.trim().slice(0, MAX_NICKNAMES_LENGTH) || null,
+        birthday_no_year_visibility: personalInfo.birthday_no_year_visibility,
+        birthday_year_visibility: personalInfo.birthday_year_visibility,
+        home_address_visibility: personalInfo.home_address_visibility,
+        mailing_address_visibility: personalInfo.mailing_address_visibility,
+        nicknames_visibility: personalInfo.nicknames_visibility,
+      };
+
+      // Only allow username to be set if not already set
+      if (!profile?.username && username.trim()) {
+        updateData.username = username.trim();
+      }
+
       const { error } = await supabase
         .from("profiles")
-        .update({
-          display_name: displayName.trim().slice(0, MAX_DISPLAY_NAME_LENGTH),
-          username: username.trim() || null,
-          avatar_url: avatarUrl,
-          bio: bio.trim().slice(0, MAX_BIO_LENGTH),
-          link: link.trim().slice(0, MAX_LINK_LENGTH) || null,
-          whatsapp: contactData.whatsapp.trim().slice(0, MAX_PHONE_LENGTH) || null,
-          phone_number: contactData.phone_number.trim().slice(0, MAX_PHONE_LENGTH) || null,
-          private_email: contactData.private_email.trim().slice(0, MAX_EMAIL_LENGTH) || null,
-          instagram_url: contactData.instagram_url.trim().slice(0, MAX_URL_LENGTH) || null,
-          linkedin_url: contactData.linkedin_url.trim().slice(0, MAX_URL_LENGTH) || null,
-          contact_email: contactData.contact_email.trim().slice(0, MAX_EMAIL_LENGTH) || null,
-          // Personal info fields
-          birthday_day: personalInfo.birthday_day,
-          birthday_month: personalInfo.birthday_month,
-          birthday_year: personalInfo.birthday_year,
-          home_address: personalInfo.home_address?.trim().slice(0, MAX_ADDRESS_LENGTH) || null,
-          mailing_address: personalInfo.mailing_address?.trim().slice(0, MAX_ADDRESS_LENGTH) || null,
-          nicknames: personalInfo.nicknames?.trim().slice(0, MAX_NICKNAMES_LENGTH) || null,
-          birthday_no_year_visibility: personalInfo.birthday_no_year_visibility,
-          birthday_year_visibility: personalInfo.birthday_year_visibility,
-          home_address_visibility: personalInfo.home_address_visibility,
-          mailing_address_visibility: personalInfo.mailing_address_visibility,
-          nicknames_visibility: personalInfo.nicknames_visibility,
-        })
+        .update(updateData)
         .eq("id", user.id);
 
       if (error) {
@@ -562,15 +569,24 @@ const Profile = () => {
                   onChange={(e) => handleUsernameChange(e.target.value)}
                   placeholder="your_username"
                   className={usernameError ? "border-destructive" : ""}
+                  disabled={!!profile?.username}
                 />
               </div>
-              {usernameError && (
-                <p className="text-sm text-destructive mt-1">{usernameError}</p>
-              )}
-              {username && !usernameError && (
+              {profile?.username ? (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Your profile will be available at xcrol.com/@{username}
+                  Usernames cannot be changed once set. Your profile is at xcrol.com/@{username}
                 </p>
+              ) : (
+                <>
+                  {usernameError && (
+                    <p className="text-sm text-destructive mt-1">{usernameError}</p>
+                  )}
+                  {username && !usernameError && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Your profile will be available at xcrol.com/@{username}
+                    </p>
+                  )}
+                </>
               )}
             </div>
             <div>
