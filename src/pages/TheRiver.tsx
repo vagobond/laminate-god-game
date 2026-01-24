@@ -184,15 +184,35 @@ export default function TheRiver() {
       profileMap[p.id] = p;
     });
 
-    // Group reactions by entry_id
+    // Collect all unique user IDs from reactions to fetch their profiles
+    const reactionUserIds = [...new Set((reactionsResult.data || []).map(r => r.user_id))];
+    const missingUserIds = reactionUserIds.filter(id => !profileMap[id]);
+    
+    // Fetch missing reaction user profiles
+    if (missingUserIds.length > 0) {
+      const { data: reactionProfiles } = await supabase
+        .from("profiles")
+        .select("id, display_name, username")
+        .in("id", missingUserIds);
+      
+      reactionProfiles?.forEach((p) => {
+        profileMap[p.id] = { ...profileMap[p.id], ...p };
+      });
+    }
+
+    // Group reactions by entry_id with user info
     const newReactionsMap: ReactionsMap = {};
     reactionsResult.data?.forEach((r) => {
       if (!newReactionsMap[r.entry_id]) {
         newReactionsMap[r.entry_id] = [];
       }
       const existing = newReactionsMap[r.entry_id].find(x => x.emoji === r.emoji);
+      const userName = profileMap[r.user_id]?.display_name || profileMap[r.user_id]?.username || "Anonymous";
+      
       if (existing) {
         existing.count++;
+        existing.users = existing.users || [];
+        existing.users.push({ id: r.user_id, name: userName });
         if (user && r.user_id === user.id) {
           existing.hasReacted = true;
         }
@@ -200,7 +220,8 @@ export default function TheRiver() {
         newReactionsMap[r.entry_id].push({
           emoji: r.emoji,
           count: 1,
-          hasReacted: user ? r.user_id === user.id : false
+          hasReacted: user ? r.user_id === user.id : false,
+          users: [{ id: r.user_id, name: userName }]
         });
       }
     });
