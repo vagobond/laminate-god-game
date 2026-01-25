@@ -857,6 +857,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          entry_id: string | null
           from_user_id: string
           id: string
           platform_suggestion: string | null
@@ -866,6 +867,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          entry_id?: string | null
           from_user_id: string
           id?: string
           platform_suggestion?: string | null
@@ -875,13 +877,22 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          entry_id?: string | null
           from_user_id?: string
           id?: string
           platform_suggestion?: string | null
           read_at?: string | null
           to_user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "messages_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "xcrol_entries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       oauth_authorization_codes: {
         Row: {
