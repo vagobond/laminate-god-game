@@ -51,6 +51,8 @@ interface ConversationThread {
   hasFriendRequest: boolean;
   /** If set, this thread is a response to a River post */
   entryId?: string | null;
+  /** Preview of the River post content (first sentence) */
+  entryPreview?: string | null;
 }
 
 const platformLabels: Record<string, string> = {
@@ -69,6 +71,18 @@ const getPlatformUrl = (platform: string, sender?: SenderProfile): string | null
   return sender.link || null;
 };
 
+// Extract the first sentence from text (up to first sentence-ending punctuation or newline)
+const getFirstSentence = (text: string, maxLength = 60): string => {
+  // Match first sentence ending with . ! ? or first line
+  const match = text.match(/^[^.!?\n]+[.!?]?/);
+  let sentence = match ? match[0].trim() : text.split('\n')[0].trim();
+  
+  if (sentence.length > maxLength) {
+    sentence = sentence.slice(0, maxLength).trim() + "...";
+  }
+  return sentence;
+};
+
 const MessagesInbox = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [threads, setThreads] = useState<ConversationThread[]>([]);
@@ -78,6 +92,7 @@ const MessagesInbox = () => {
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [viewingMessage, setViewingMessage] = useState<Message | null>(null);
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
+  const [entryPreviews, setEntryPreviews] = useState<Map<string, string>>(new Map());
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -99,8 +114,7 @@ const MessagesInbox = () => {
     loadMessages();
   }, []);
 
-  // Group messages into threads whenever messages change
-  // Threads are keyed by: "direct:{userId}" for DMs, "entry:{entryId}:{userId}" for post responses
+  // Group messages into threads and fetch entry previews
   useEffect(() => {
     if (!currentUserId) return;
 
@@ -121,6 +135,35 @@ const MessagesInbox = () => {
       }
       threadMap.get(threadKey)!.push(message);
     });
+
+    // Collect entry IDs that need previews
+    const entryIds = new Set<string>();
+    threadMap.forEach((msgs) => {
+      const entryId = msgs[0]?.entry_id;
+      if (entryId && !entryPreviews.has(entryId)) {
+        entryIds.add(entryId);
+      }
+    });
+
+    // Fetch entry previews if needed
+    const fetchEntryPreviews = async () => {
+      if (entryIds.size === 0) return;
+      
+      const { data } = await supabase
+        .from("xcrol_entries")
+        .select("id, content")
+        .in("id", Array.from(entryIds));
+      
+      if (data) {
+        const newPreviews = new Map(entryPreviews);
+        data.forEach(entry => {
+          newPreviews.set(entry.id, getFirstSentence(entry.content));
+        });
+        setEntryPreviews(newPreviews);
+      }
+    };
+
+    fetchEntryPreviews();
 
     const groupedThreads: ConversationThread[] = Array.from(threadMap.entries()).map(([threadKey, msgs]) => {
       // Sort messages by date ascending (oldest first) for the thread view
@@ -167,6 +210,7 @@ const MessagesInbox = () => {
         latestMessage,
         hasFriendRequest,
         entryId,
+        entryPreview: entryId ? entryPreviews.get(entryId) : null,
       };
     });
 
@@ -184,7 +228,7 @@ const MessagesInbox = () => {
         setSelectedThread(updatedThread);
       }
     }
-  }, [messages, currentUserId]);
+  }, [messages, currentUserId, entryPreviews]);
 
   const loadMessages = async () => {
     try {
@@ -358,9 +402,11 @@ const MessagesInbox = () => {
               {selectedThread.otherUser?.display_name || "Unknown"}
             </span>
             {selectedThread.entryId && (
-              <Badge variant="outline" className="text-blue-600 border-blue-500/50 text-xs ml-auto">
-                <Waves className="w-3 h-3 mr-1" />
-                Response to River Post
+              <Badge variant="outline" className="text-blue-600 border-blue-500/50 text-xs ml-auto max-w-[200px] truncate">
+                <Waves className="w-3 h-3 mr-1 shrink-0" />
+                <span className="truncate">
+                  Re: "{selectedThread.entryPreview || 'River Post'}"
+                </span>
               </Badge>
             )}
           </CardTitle>
@@ -569,9 +615,11 @@ const MessagesInbox = () => {
                         {thread.otherUser?.display_name || "Unknown"}
                       </span>
                       {thread.entryId && (
-                        <Badge variant="outline" className="text-blue-600 border-blue-500/50 text-xs">
-                          <Waves className="w-3 h-3 mr-1" />
-                          River Post
+                        <Badge variant="outline" className="text-blue-600 border-blue-500/50 text-xs max-w-[180px]">
+                          <Waves className="w-3 h-3 mr-1 shrink-0" />
+                          <span className="truncate">
+                            Re: "{thread.entryPreview || 'River Post'}"
+                          </span>
                         </Badge>
                       )}
                       {thread.unreadCount > 0 && (

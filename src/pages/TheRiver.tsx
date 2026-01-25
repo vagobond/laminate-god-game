@@ -297,7 +297,7 @@ export default function TheRiver() {
             <Waves className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-bold">The River</h1>
           </div>
-          <Button variant="ghost" onClick={() => navigate("/powers")}>
+          <Button variant="ghost" onClick={() => navigate(-1)}>
             Back
           </Button>
         </div>
