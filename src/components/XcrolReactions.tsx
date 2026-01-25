@@ -292,6 +292,7 @@ export const XcrolReactions = ({ entryId, compact = false, authorId, authorName,
               friendshipLevel={friendshipLevel}
               open={messageDialogOpen}
               onOpenChange={setMessageDialogOpen}
+              entryId={entryId}
             />
           </>
         )}

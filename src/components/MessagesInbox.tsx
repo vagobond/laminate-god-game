@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Inbox, Mail, MailOpen, Trash2, ExternalLink, Reply, UserPlus, ChevronDown, ChevronUp, ArrowLeft, MessageCircle } from "lucide-react";
+import { Inbox, Mail, MailOpen, Trash2, ExternalLink, Reply, UserPlus, ChevronDown, ChevronUp, ArrowLeft, MessageCircle, Waves } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -37,15 +37,20 @@ interface Message {
   sender?: SenderProfile;
   recipient?: SenderProfile;
   type: "message" | "friend_request";
+  entry_id?: string | null;
 }
 
 interface ConversationThread {
+  /** Unique key for this thread - includes entry_id for post responses */
+  threadKey: string;
   otherUserId: string;
   otherUser: SenderProfile | undefined;
   messages: Message[];
   unreadCount: number;
   latestMessage: Message;
   hasFriendRequest: boolean;
+  /** If set, this thread is a response to a River post */
+  entryId?: string | null;
 }
 
 const platformLabels: Record<string, string> = {
@@ -95,6 +100,7 @@ const MessagesInbox = () => {
   }, []);
 
   // Group messages into threads whenever messages change
+  // Threads are keyed by: "direct:{userId}" for DMs, "entry:{entryId}:{userId}" for post responses
   useEffect(() => {
     if (!currentUserId) return;
 
@@ -105,13 +111,18 @@ const MessagesInbox = () => {
         ? message.to_user_id 
         : message.from_user_id;
       
-      if (!threadMap.has(otherUserId)) {
-        threadMap.set(otherUserId, []);
+      // Create thread key - separate threads for post responses vs direct messages
+      const threadKey = message.entry_id 
+        ? `entry:${message.entry_id}:${otherUserId}`
+        : `direct:${otherUserId}`;
+      
+      if (!threadMap.has(threadKey)) {
+        threadMap.set(threadKey, []);
       }
-      threadMap.get(otherUserId)!.push(message);
+      threadMap.get(threadKey)!.push(message);
     });
 
-    const groupedThreads: ConversationThread[] = Array.from(threadMap.entries()).map(([otherUserId, msgs]) => {
+    const groupedThreads: ConversationThread[] = Array.from(threadMap.entries()).map(([threadKey, msgs]) => {
       // Sort messages by date ascending (oldest first) for the thread view
       const sortedMessages = [...msgs].sort(
         (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -127,6 +138,13 @@ const MessagesInbox = () => {
 
       const hasFriendRequest = msgs.some(m => m.type === "friend_request");
 
+      // Extract entry_id and otherUserId from thread key
+      const isEntryThread = threadKey.startsWith("entry:");
+      const entryId = isEntryThread ? msgs[0]?.entry_id : null;
+      const otherUserId = isEntryThread 
+        ? threadKey.split(":")[2] 
+        : threadKey.replace("direct:", "");
+
       // Get the other user's profile - look through all messages to find it
       let otherUser: SenderProfile | undefined;
       for (const msg of msgs) {
@@ -141,12 +159,14 @@ const MessagesInbox = () => {
       }
 
       return {
+        threadKey,
         otherUserId,
         otherUser,
         messages: sortedMessages,
         unreadCount,
         latestMessage,
         hasFriendRequest,
+        entryId,
       };
     });
 
@@ -159,7 +179,7 @@ const MessagesInbox = () => {
     
     // If there's a selected thread, update it with fresh data
     if (selectedThread) {
-      const updatedThread = groupedThreads.find(t => t.otherUserId === selectedThread.otherUserId);
+      const updatedThread = groupedThreads.find(t => t.threadKey === selectedThread.threadKey);
       if (updatedThread) {
         setSelectedThread(updatedThread);
       }
@@ -314,7 +334,7 @@ const MessagesInbox = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 flex-wrap">
             <Button
               variant="ghost"
               size="icon"
@@ -337,6 +357,12 @@ const MessagesInbox = () => {
             >
               {selectedThread.otherUser?.display_name || "Unknown"}
             </span>
+            {selectedThread.entryId && (
+              <Badge variant="outline" className="text-blue-600 border-blue-500/50 text-xs ml-auto">
+                <Waves className="w-3 h-3 mr-1" />
+                Response to River Post
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -477,6 +503,7 @@ const MessagesInbox = () => {
                 loadMessages();
               }
             }}
+            entryId={selectedThread.entryId || undefined}
           />
         )}
       </Card>
@@ -511,13 +538,15 @@ const MessagesInbox = () => {
           <div className="space-y-2">
             {threads.map((thread) => (
               <div
-                key={thread.otherUserId}
+                key={thread.threadKey}
                 className={`p-4 rounded-lg border cursor-pointer transition-colors hover:bg-secondary/50 ${
                   thread.hasFriendRequest 
                     ? "bg-amber-500/10 border-amber-500/30" 
-                    : thread.unreadCount > 0
-                      ? "bg-primary/5 border-primary/20" 
-                      : "bg-secondary/30"
+                    : thread.entryId
+                      ? "bg-blue-500/5 border-blue-500/20"
+                      : thread.unreadCount > 0
+                        ? "bg-primary/5 border-primary/20" 
+                        : "bg-secondary/30"
                 }`}
                 onClick={() => setSelectedThread(thread)}
               >
@@ -535,10 +564,16 @@ const MessagesInbox = () => {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium">
                         {thread.otherUser?.display_name || "Unknown"}
                       </span>
+                      {thread.entryId && (
+                        <Badge variant="outline" className="text-blue-600 border-blue-500/50 text-xs">
+                          <Waves className="w-3 h-3 mr-1" />
+                          River Post
+                        </Badge>
+                      )}
                       {thread.unreadCount > 0 && (
                         <Badge variant="destructive" className="text-xs">
                           {thread.unreadCount}

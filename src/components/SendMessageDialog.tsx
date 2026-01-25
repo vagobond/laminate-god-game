@@ -30,6 +30,8 @@ interface SendMessageDialogProps {
   };
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Optional: links this message to a River entry (creates separate thread) */
+  entryId?: string;
 }
 
 const SendMessageDialog = ({ 
@@ -39,6 +41,7 @@ const SendMessageDialog = ({
   availablePlatforms,
   open: controlledOpen,
   onOpenChange,
+  entryId,
 }: SendMessageDialogProps) => {
   const { user } = useAuth();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -129,6 +132,7 @@ const SendMessageDialog = ({
         to_user_id: recipientId,
         content: message.trim(),
         platform_suggestion: platformSuggestion || null,
+        entry_id: entryId || null,
       });
 
       if (error) throw error;
