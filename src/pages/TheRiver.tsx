@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2, Filter, Waves, PenLine } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -90,6 +90,8 @@ const canViewPost = (
 
 export default function TheRiver() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const highlightedPostId = searchParams.get("post");
   const { user, loading: authLoading } = useAuth();
   const [entries, setEntries] = useState<RiverEntry[]>([]);
   const [friendships, setFriendships] = useState<FriendshipMap>({});
@@ -98,6 +100,8 @@ export default function TheRiver() {
   const [filter, setFilter] = useState("all");
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [hasScrolledToPost, setHasScrolledToPost] = useState(false);
+  const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const PAGE_SIZE = 20;
 
   useEffect(() => {
@@ -109,6 +113,17 @@ export default function TheRiver() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading]);
+
+  // Scroll to highlighted post when it becomes available
+  useEffect(() => {
+    if (!highlightedPostId || hasScrolledToPost || loading) return;
+    
+    const postElement = postRefs.current.get(highlightedPostId);
+    if (postElement) {
+      postElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHasScrolledToPost(true);
+    }
+  }, [highlightedPostId, hasScrolledToPost, loading, entries]);
 
   const loadFriendships = async () => {
     if (!user) return;
@@ -361,14 +376,21 @@ export default function TheRiver() {
         {!loading && filteredEntries.length > 0 && (
           <div className="space-y-4">
             {filteredEntries.map((entry) => (
-              <RiverEntryCard 
-                key={entry.id} 
-                entry={entry} 
-                initialReactions={reactions[entry.id] || []}
-                onReactionsChange={(newReactions) => {
-                  setReactions(prev => ({ ...prev, [entry.id]: newReactions }));
+              <div
+                key={entry.id}
+                ref={(el) => {
+                  if (el) postRefs.current.set(entry.id, el);
                 }}
-              />
+                className={highlightedPostId === entry.id ? "ring-2 ring-primary rounded-lg" : ""}
+              >
+                <RiverEntryCard 
+                  entry={entry} 
+                  initialReactions={reactions[entry.id] || []}
+                  onReactionsChange={(newReactions) => {
+                    setReactions(prev => ({ ...prev, [entry.id]: newReactions }));
+                  }}
+                />
+              </div>
             ))}
 
             {/* Load more */}

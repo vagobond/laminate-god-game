@@ -402,12 +402,23 @@ const MessagesInbox = () => {
               {selectedThread.otherUser?.display_name || "Unknown"}
             </span>
             {selectedThread.entryId && (
-              <Badge variant="outline" className="text-blue-600 border-blue-500/50 text-xs ml-auto max-w-[200px] truncate">
-                <Waves className="w-3 h-3 mr-1 shrink-0" />
-                <span className="truncate">
-                  Re: "{selectedThread.entryPreview || 'River Post'}"
-                </span>
-              </Badge>
+              <div className="flex items-center gap-2 ml-auto">
+                <Badge variant="outline" className="text-blue-600 border-blue-500/50 text-xs max-w-[200px] truncate">
+                  <Waves className="w-3 h-3 mr-1 shrink-0" />
+                  <span className="truncate">
+                    Re: "{selectedThread.entryPreview || 'River Post'}"
+                  </span>
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-primary"
+                  onClick={() => navigate(`/the-river?post=${selectedThread.entryId}`)}
+                >
+                  <ExternalLink className="w-3 h-3 mr-1" />
+                  View Post
+                </Button>
+              </div>
             )}
           </CardTitle>
         </CardHeader>
