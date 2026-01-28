@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/use-auth";
+import { TutorialProvider } from "@/components/onboarding";
 import { Loader2 } from "lucide-react";
 import AppHeader from "./components/AppHeader";
 
@@ -50,40 +51,42 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AppHeader />
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<Welcome />} />
-              <Route path="/powers" element={<Powers />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/the-river" element={<TheRiver />} />
-              <Route path="/the-forest" element={<TheForest />} />
-              <Route path="/mini-games-hub" element={<MiniGamesHub />} />
-              <Route path="/irl-layer" element={<IRLLayer />} />
-              <Route path="/hearthsurf" element={<HearthSurfing />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/messages" element={<Messages />} />
-              <Route path="/u/:userId" element={<PublicProfile />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/getting-started" element={<GettingStarted />} />
-              <Route path="/invite-friends" element={<InviteFriends />} />
-              <Route path="/my-xcrol" element={<MyXcrol />} />
-              <Route path="/my-xcrol/edit" element={<MyXcrol />} />
-              <Route path="/myxcrol" element={<MyXcrol />} />
-              <Route path="/myxcrol/edit" element={<MyXcrol />} />
-              <Route path="/xcrol/:username" element={<UserXcrol />} />
-              <Route path="/brook/:brookId" element={<Brook />} />
-              <Route path="/every-country" element={<EveryCountry />} />
-              <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/developers" element={<Developers />} />
-              <Route path="/:username" element={<PublicProfile />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+          <TutorialProvider>
+            <AppHeader />
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<Welcome />} />
+                <Route path="/powers" element={<Powers />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/the-river" element={<TheRiver />} />
+                <Route path="/the-forest" element={<TheForest />} />
+                <Route path="/mini-games-hub" element={<MiniGamesHub />} />
+                <Route path="/irl-layer" element={<IRLLayer />} />
+                <Route path="/hearthsurf" element={<HearthSurfing />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/messages" element={<Messages />} />
+                <Route path="/u/:userId" element={<PublicProfile />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/getting-started" element={<GettingStarted />} />
+                <Route path="/invite-friends" element={<InviteFriends />} />
+                <Route path="/my-xcrol" element={<MyXcrol />} />
+                <Route path="/my-xcrol/edit" element={<MyXcrol />} />
+                <Route path="/myxcrol" element={<MyXcrol />} />
+                <Route path="/myxcrol/edit" element={<MyXcrol />} />
+                <Route path="/xcrol/:username" element={<UserXcrol />} />
+                <Route path="/brook/:brookId" element={<Brook />} />
+                <Route path="/every-country" element={<EveryCountry />} />
+                <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/developers" element={<Developers />} />
+                <Route path="/:username" element={<PublicProfile />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </TutorialProvider>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

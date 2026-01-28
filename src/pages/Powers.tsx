@@ -109,6 +109,7 @@ const Powers = () => {
                     size="xl"
                     onClick={handleProfileClick}
                     className="w-full sm:w-auto min-w-[250px]"
+                    data-tutorial="you"
                   >
                     <TreeOfLife className="mr-2 h-5 w-5" />
                     YOU
@@ -126,6 +127,7 @@ const Powers = () => {
                     size="xl"
                     onClick={() => navigate("/the-river")}
                     className="w-full sm:w-auto min-w-[250px]"
+                    data-tutorial="river"
                   >
                     <Waves className="mr-2 h-5 w-5" />
                     THE RIVER
@@ -143,6 +145,7 @@ const Powers = () => {
                     size="xl"
                     onClick={() => navigate("/irl-layer")}
                     className="w-full sm:w-auto min-w-[250px]"
+                    data-tutorial="world"
                   >
                     <Globe className="mr-2 h-5 w-5" />
                     THE WORLD
@@ -163,6 +166,7 @@ const Powers = () => {
                     size="xl"
                     onClick={() => navigate("/the-forest")}
                     className="w-full sm:w-auto min-w-[250px]"
+                    data-tutorial="forest"
                   >
                     <TwoTrees className="mr-2" />
                     THE FOREST
@@ -180,6 +184,7 @@ const Powers = () => {
                     size="xl"
                     onClick={() => navigate("/my-xcrol")}
                     className="w-full sm:w-auto min-w-[250px]"
+                    data-tutorial="brook"
                   >
                     <TwoWaves className="mr-2 h-5 w-5" />
                     THE BROOK
@@ -197,6 +202,7 @@ const Powers = () => {
                     size="xl"
                     onClick={() => navigate("/settings")}
                     className="w-full sm:w-auto min-w-[250px]"
+                    data-tutorial="strata"
                   >
                     <Layers className="mr-2 h-5 w-5" />
                     THE STRATA
