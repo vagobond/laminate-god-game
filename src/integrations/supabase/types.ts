@@ -1302,6 +1302,27 @@ export type Database = {
         }
         Relationships: []
       }
+      tutorial_completion: {
+        Row: {
+          completed_at: string
+          id: string
+          skipped: boolean
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          skipped?: boolean
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          skipped?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_blocks: {
         Row: {
           blocked_id: string

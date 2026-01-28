@@ -8,11 +8,12 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Bell, Shield, Eye, ArrowLeft, Trash2, AlertTriangle, Loader2, Link2, Code, Key, Database, Lock, Info, ExternalLink, Sparkles } from "lucide-react";
+import { Bell, Shield, Eye, ArrowLeft, Trash2, AlertTriangle, Loader2, Link2, Code, Key, Database, Lock, Info, ExternalLink, Sparkles, Scroll } from "lucide-react";
 import { toast } from "sonner";
 import BlockedUsersManager from "@/components/BlockedUsersManager";
 import ConnectedAppsManager from "@/components/ConnectedAppsManager";
 import DeveloperAppsManager from "@/components/DeveloperAppsManager";
+import { useTutorial } from "@/components/onboarding";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,6 +63,7 @@ const DEFAULT_SETTINGS: UserSettings = {
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { reopenTutorial } = useTutorial();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -684,7 +686,32 @@ const Settings = () => {
               </CardContent>
             </Card>
 
-            {/* Account Deletion Section */}
+            {/* Help & Tutorial */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Scroll className="w-5 h-5" />
+                  Help & Tutorial
+                </CardTitle>
+                <CardDescription>
+                  Revisit the guided introduction to XCROL
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    reopenTutorial();
+                    navigate("/powers");
+                  }}
+                  className="w-full"
+                >
+                  <Scroll className="w-4 h-4 mr-2" />
+                  Reopen the Scroll
+                </Button>
+              </CardContent>
+            </Card>
+
             <Card className="border-destructive/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-destructive">
