@@ -8,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Search, UserPlus, Users, Clock, Inbox, ArrowLeft } from "lucide-react";
+import { Search, UserPlus, Users, Clock, Inbox, ArrowLeft, Waves } from "lucide-react";
 import { toast } from "sonner";
 import FriendsList from "@/components/FriendsList";
 import IntroductionRequestsManager from "@/components/IntroductionRequestsManager";
+import { BrookList } from "@/components/BrookList";
 
 interface FriendRequest {
   id: string;
@@ -47,6 +48,7 @@ const TheForest = () => {
   const [pendingFriendships, setPendingFriendships] = useState<PendingFriendship[]>([]);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -54,9 +56,19 @@ const TheForest = () => {
     if (user) {
       loadFriendRequests(user.id);
       loadPendingFriendships(user.id);
+      loadUsername(user.id);
     }
     setLoading(false);
   }, [user, authLoading]);
+
+  const loadUsername = async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", userId)
+      .single();
+    setUsername(data?.username ?? null);
+  };
 
   const loadFriendRequests = async (userId: string) => {
     const { data, error } = await supabase
@@ -301,10 +313,14 @@ const TheForest = () => {
 
         {/* Tabs for different sections */}
         <Tabs defaultValue="friends" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="friends" className="flex items-center gap-1">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Friends</span>
+            </TabsTrigger>
+            <TabsTrigger value="brooks" className="flex items-center gap-1">
+              <Waves className="h-4 w-4" />
+              <span className="hidden sm:inline">Brooks</span>
             </TabsTrigger>
             <TabsTrigger value="requests" className="flex items-center gap-1">
               <Inbox className="h-4 w-4" />
@@ -339,6 +355,10 @@ const TheForest = () => {
                 <FriendsList userId={user.id} viewerId={user.id} showLevels={true} />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="brooks" className="mt-4">
+            <BrookList userId={user.id} currentUsername={username} />
           </TabsContent>
 
           <TabsContent value="requests" className="mt-4">
