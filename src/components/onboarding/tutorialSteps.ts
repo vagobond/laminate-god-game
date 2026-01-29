@@ -41,7 +41,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: "brook",
-    anchor: "[data-tutorial='forest']",
+    anchor: "[data-tutorial='brook']",
     anchorLabel: "The Brook",
     text: "A Brook is a River for two.\nPrivate. Ongoing. Quiet.\nIt exists without pressure.",
     subtext: "Brooks are found within The Forest. They may rest or fade without explanation.",
