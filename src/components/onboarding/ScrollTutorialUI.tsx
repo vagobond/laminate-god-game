@@ -37,7 +37,7 @@ export function ScrollTutorialUI({
 }: ScrollTutorialUIProps) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
-  // Calculate card position based on anchor
+  // Calculate card position based on anchor - position card away from the element
   useEffect(() => {
     const calculatePosition = () => {
       if (currentStep.anchor === "center") {
@@ -51,11 +51,35 @@ export function ScrollTutorialUI({
       const element = document.querySelector(currentStep.anchor);
       if (element) {
         const rect = element.getBoundingClientRect();
-        // Position card below and slightly to the right of the element
-        setPosition({
-          x: Math.min(rect.left + rect.width / 2, window.innerWidth - 200),
-          y: Math.min(rect.bottom + 20, window.innerHeight - 300),
-        });
+        const cardWidth = 400;
+        const cardHeight = 280;
+        const margin = 24;
+        
+        // Try to position card to the side or below, avoiding overlap
+        let x = rect.right + margin + cardWidth / 2;
+        let y = rect.top + rect.height / 2;
+        
+        // If card would go off right edge, position to the left
+        if (x + cardWidth / 2 > window.innerWidth - margin) {
+          x = rect.left - margin - cardWidth / 2;
+        }
+        
+        // If still off-screen (left), position below the element
+        if (x - cardWidth / 2 < margin) {
+          x = window.innerWidth / 2;
+          y = rect.bottom + margin + cardHeight / 2;
+        }
+        
+        // If below would go off bottom, position above
+        if (y + cardHeight / 2 > window.innerHeight - margin) {
+          y = Math.max(cardHeight / 2 + margin, rect.top - margin - cardHeight / 2);
+        }
+        
+        // Clamp to viewport
+        x = Math.max(cardWidth / 2 + margin, Math.min(x, window.innerWidth - cardWidth / 2 - margin));
+        y = Math.max(cardHeight / 2 + margin, Math.min(y, window.innerHeight - cardHeight / 2 - margin));
+        
+        setPosition({ x, y });
       } else {
         // Fallback to center
         setPosition({
@@ -74,8 +98,8 @@ export function ScrollTutorialUI({
 
   return (
     <>
-      {/* Backdrop overlay */}
-      <div className="fixed inset-0 bg-background/60 backdrop-blur-sm z-[9997] pointer-events-none" />
+      {/* Backdrop overlay - subtle dimming without heavy blur */}
+      <div className="fixed inset-0 bg-background/30 z-[9997] pointer-events-none" />
 
       {/* Highlight for anchored element */}
       {!isCentered && <TutorialHighlight selector={currentStep.anchor} />}
@@ -86,9 +110,7 @@ export function ScrollTutorialUI({
         style={{
           left: isCentered ? "50%" : position.x,
           top: isCentered ? "50%" : position.y,
-          transform: isCentered
-            ? "translate(-50%, -50%)"
-            : "translate(-50%, 0)",
+          transform: "translate(-50%, -50%)",
         }}
       >
         <Card className="w-[340px] md:w-[400px] bg-card/95 backdrop-blur-md border-primary/20 shadow-2xl">
