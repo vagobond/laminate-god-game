@@ -4,8 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Link2, Send, ExternalLink } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Link2, Send, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import { useHometownDate } from "@/hooks/use-hometown-date";
+import { useNavigate } from "react-router-dom";
 
 interface BrookComposerProps {
   brookId: string;
@@ -14,29 +18,34 @@ interface BrookComposerProps {
 }
 
 export const BrookComposer = ({ brookId, userId, onPostCreated }: BrookComposerProps) => {
+  const navigate = useNavigate();
+  const { todayDate, loading: dateLoading, timezone, hasHometown } = useHometownDate(userId);
   const [content, setContent] = useState("");
   const [link, setLink] = useState("");
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [canPost, setCanPost] = useState(true);
   const [checking, setChecking] = useState(true);
+  const [showHometownPrompt, setShowHometownPrompt] = useState(false);
+  const [proceedWithUTC, setProceedWithUTC] = useState(false);
 
   useEffect(() => {
-    checkCanPost();
-  }, [brookId, userId]);
+    if (!dateLoading) {
+      checkCanPost();
+    }
+  }, [brookId, userId, dateLoading, todayDate]);
 
   const checkCanPost = async () => {
     setChecking(true);
     try {
-      // Check if user already posted today in this brook
-      const today = new Date().toISOString().split("T")[0];
+      // Check if user already posted today in this brook (using hometown date)
       const { data, error } = await supabase
         .from("brook_posts")
         .select("id")
         .eq("brook_id", brookId)
         .eq("user_id", userId)
-        .gte("created_at", `${today}T00:00:00`)
-        .lt("created_at", `${today}T23:59:59`)
+        .gte("created_at", `${todayDate}T00:00:00`)
+        .lt("created_at", `${todayDate}T23:59:59`)
         .limit(1);
 
       if (error) throw error;
@@ -48,7 +57,13 @@ export const BrookComposer = ({ brookId, userId, onPostCreated }: BrookComposerP
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (bypassHometownCheck = false) => {
+    // Show hometown prompt if not set (unless user chose to proceed with UTC)
+    if (!hasHometown && !bypassHometownCheck && !proceedWithUTC) {
+      setShowHometownPrompt(true);
+      return;
+    }
+
     if (!content.trim()) return;
 
     setSubmitting(true);
@@ -114,7 +129,7 @@ export const BrookComposer = ({ brookId, userId, onPostCreated }: BrookComposerP
     }
   };
 
-  if (checking) {
+  if (checking || dateLoading) {
     return (
       <Card>
         <CardContent className="p-4">
@@ -131,15 +146,36 @@ export const BrookComposer = ({ brookId, userId, onPostCreated }: BrookComposerP
           <p className="text-muted-foreground text-sm">
             You've already posted in this Brook today. Come back tomorrow!
           </p>
+          {timezone && (
+            <p className="text-xs text-muted-foreground mt-1">
+              (Based on {hasHometown ? `your hometown time: ${timezone}` : "UTC"})
+            </p>
+          )}
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardContent className="p-4 space-y-3">
-        <Textarea
+    <>
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          {!hasHometown && (
+            <Alert className="border-amber-500/50 bg-amber-500/10">
+              <MapPin className="h-4 w-4 text-amber-500" />
+              <AlertDescription className="text-amber-600 dark:text-amber-400">
+                Set your hometown for local time posts.{" "}
+                <Button 
+                  variant="link" 
+                  className="h-auto p-0 text-amber-600 dark:text-amber-400 underline"
+                  onClick={() => navigate("/settings")}
+                >
+                  Go to settings
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+          <Textarea
           placeholder="What's on your mind? (240 characters max)"
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -164,7 +200,7 @@ export const BrookComposer = ({ brookId, userId, onPostCreated }: BrookComposerP
           </div>
 
           <Button 
-            onClick={handleSubmit} 
+            onClick={() => handleSubmit()} 
             disabled={!content.trim() || submitting}
             size="sm"
             className="gap-2"
@@ -184,5 +220,34 @@ export const BrookComposer = ({ brookId, userId, onPostCreated }: BrookComposerP
         )}
       </CardContent>
     </Card>
+
+    <AlertDialog open={showHometownPrompt} onOpenChange={setShowHometownPrompt}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-primary" />
+            Set Your Hometown
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            To ensure your posts are timestamped with your local time, please set your hometown in settings first. This helps your friend see when you posted in your timezone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel 
+            onClick={() => {
+              setProceedWithUTC(true);
+              setShowHometownPrompt(false);
+              setTimeout(() => handleSubmit(true), 0);
+            }}
+          >
+            Post with UTC time
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={() => navigate("/settings")}>
+            Go to Settings
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </>
   );
 };
