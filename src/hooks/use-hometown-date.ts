@@ -67,38 +67,33 @@ export const getHometownDate = (
     }
   }
   
-  // Fallback to browser's local date using Intl
-  const localDate = new Intl.DateTimeFormat('en-CA', {
-    year: 'numeric',
-    month: '2-digit', 
-    day: '2-digit'
-  }).format(now);
-  return localDate;
+  // Fallback to UTC (GST) when no hometown is set
+  return formatInTimeZone(now, "UTC", "yyyy-MM-dd");
 };
 
 interface UseHometownDateResult {
   todayDate: string;
   loading: boolean;
   timezone: string | null;
+  hasHometown: boolean;
 }
 
-const getLocalDate = (): string => {
-  return new Intl.DateTimeFormat('en-CA', {
-    year: 'numeric',
-    month: '2-digit', 
-    day: '2-digit'
-  }).format(new Date());
+const getUTCDate = (): string => {
+  return formatInTimeZone(new Date(), "UTC", "yyyy-MM-dd");
 };
 
 export const useHometownDate = (userId: string | null): UseHometownDateResult => {
-  const [todayDate, setTodayDate] = useState<string>(getLocalDate());
+  const [todayDate, setTodayDate] = useState<string>(getUTCDate());
   const [loading, setLoading] = useState(true);
-  const [timezone, setTimezone] = useState<string | null>(null);
+  const [timezone, setTimezone] = useState<string | null>("UTC");
+  const [hasHometown, setHasHometown] = useState(false);
 
   useEffect(() => {
     const loadHometownAndCalculateDate = async () => {
       if (!userId) {
-        setTodayDate(getLocalDate());
+        setTodayDate(getUTCDate());
+        setTimezone("UTC");
+        setHasHometown(false);
         setLoading(false);
         return;
       }
@@ -115,14 +110,19 @@ export const useHometownDate = (userId: string | null): UseHometownDateResult =>
         if (data?.hometown_latitude != null && data?.hometown_longitude != null) {
           const tz = getTimezoneFromCoords(data.hometown_latitude, data.hometown_longitude);
           setTimezone(tz);
+          setHasHometown(true);
           setTodayDate(getHometownDate(data.hometown_latitude, data.hometown_longitude));
         } else {
-          // No hometown set, use browser's local date
-          setTodayDate(getLocalDate());
+          // No hometown set, use UTC (GST)
+          setTodayDate(getUTCDate());
+          setTimezone("UTC");
+          setHasHometown(false);
         }
       } catch (error) {
         console.error("Error loading hometown:", error);
-        setTodayDate(getLocalDate());
+        setTodayDate(getUTCDate());
+        setTimezone("UTC");
+        setHasHometown(false);
       } finally {
         setLoading(false);
       }
@@ -131,5 +131,5 @@ export const useHometownDate = (userId: string | null): UseHometownDateResult =>
     loadHometownAndCalculateDate();
   }, [userId]);
 
-  return { todayDate, loading, timezone };
+  return { todayDate, loading, timezone, hasHometown };
 };

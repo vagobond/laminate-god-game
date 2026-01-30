@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { Scroll, Link as LinkIcon, Save, Loader2, AlertTriangle } from "lucide-react";
+import { Scroll, Link as LinkIcon, Save, Loader2, AlertTriangle, MapPin } from "lucide-react";
 import { useHometownDate } from "@/hooks/use-hometown-date";
 import { UserMentionInput } from "@/components/UserMentionInput";
+import { useNavigate } from "react-router-dom";
 
 interface XcrolEntryFormProps {
   userId: string;
@@ -27,7 +29,8 @@ const PRIVACY_LEVELS = [
 ];
 
 export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillLink = "" }: XcrolEntryFormProps) => {
-  const { todayDate, loading: dateLoading } = useHometownDate(userId);
+  const navigate = useNavigate();
+  const { todayDate, loading: dateLoading, timezone, hasHometown } = useHometownDate(userId);
   const [content, setContent] = useState("");
   const [link, setLink] = useState("");
   const [privacyLevel, setPrivacyLevel] = useState("private");
@@ -36,6 +39,8 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
   const [todayEntry, setTodayEntry] = useState<{ id: string; content: string; link: string | null; privacy_level: string } | null>(null);
   const [showPublicWarning, setShowPublicWarning] = useState(false);
   const [pendingPrivacyLevel, setPendingPrivacyLevel] = useState<string | null>(null);
+  const [showHometownPrompt, setShowHometownPrompt] = useState(false);
+  const [proceedWithUTC, setProceedWithUTC] = useState(false);
 
   useEffect(() => {
     if (!dateLoading) {
@@ -75,14 +80,15 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
     }
   };
 
-  const handleSave = async () => {
-    if (!content.trim()) {
-      toast.error("Please write something for your daily update");
+  const handleSave = async (bypassHometownCheck = false) => {
+    // Show hometown prompt if not set (unless user chose to proceed with UTC)
+    if (!hasHometown && !bypassHometownCheck && !proceedWithUTC) {
+      setShowHometownPrompt(true);
       return;
     }
 
-    if (content.length > 240) {
-      toast.error("Your update must be 240 characters or less");
+    if (!content.trim()) {
+      toast.error("Please write something for your daily update");
       return;
     }
 
@@ -153,8 +159,28 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
           <Scroll className="w-5 h-5 text-primary" />
           {todayEntry ? "Edit Today's Xcrol" : "Write Today's Xcrol"}
         </CardTitle>
+        {timezone && (
+          <p className="text-xs text-muted-foreground">
+            Date based on {hasHometown ? `your hometown (${timezone})` : "UTC (set your hometown for local time)"}
+          </p>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
+        {!hasHometown && (
+          <Alert className="border-amber-500/50 bg-amber-500/10">
+            <MapPin className="h-4 w-4 text-amber-500" />
+            <AlertDescription className="text-amber-600 dark:text-amber-400">
+              Set your hometown in settings to use your local time for posts.{" "}
+              <Button 
+                variant="link" 
+                className="h-auto p-0 text-amber-600 dark:text-amber-400 underline"
+                onClick={() => navigate("/settings")}
+              >
+                Go to settings
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         <div>
           <UserMentionInput
             value={content}
@@ -203,7 +229,7 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
             </SelectContent>
           </Select>
 
-          <Button onClick={handleSave} disabled={saving || !content.trim()}>
+          <Button onClick={() => handleSave()} disabled={saving || !content.trim()}>
             <Save className="w-4 h-4 mr-2" />
             {saving ? "Saving..." : todayEntry ? "Update" : "Post"}
           </Button>
@@ -234,6 +260,35 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
               }}
             >
               Yes, make it public
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showHometownPrompt} onOpenChange={setShowHometownPrompt}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-primary" />
+              Set Your Hometown
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              To ensure your posts are timestamped with your local time, please set your hometown in settings first. This helps your friends see when you posted in your timezone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              onClick={() => {
+                setProceedWithUTC(true);
+                setShowHometownPrompt(false);
+                // Trigger save after a brief delay to ensure state is updated
+                setTimeout(() => handleSave(true), 0);
+              }}
+            >
+              Post with UTC time
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate("/settings")}>
+              Go to Settings
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
