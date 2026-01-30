@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -41,9 +41,11 @@ interface PendingFriendship {
 
 const TheForest = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const initialTab = searchParams.get("tab") || "friends";
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [pendingFriendships, setPendingFriendships] = useState<PendingFriendship[]>([]);
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -312,7 +314,7 @@ const TheForest = () => {
         </Card>
 
         {/* Tabs for different sections */}
-        <Tabs defaultValue="friends" className="w-full">
+        <Tabs defaultValue={initialTab} className="w-full">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="friends" className="flex items-center gap-1">
               <Users className="h-4 w-4" />

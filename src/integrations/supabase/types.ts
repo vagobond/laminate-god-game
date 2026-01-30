@@ -1132,6 +1132,7 @@ export type Database = {
           hometown_longitude: number | null
           id: string
           instagram_url: string | null
+          invite_verified: boolean
           last_hometown_change: string | null
           link: string | null
           linkedin_url: string | null
@@ -1166,6 +1167,7 @@ export type Database = {
           hometown_longitude?: number | null
           id: string
           instagram_url?: string | null
+          invite_verified?: boolean
           last_hometown_change?: string | null
           link?: string | null
           linkedin_url?: string | null
@@ -1200,6 +1202,7 @@ export type Database = {
           hometown_longitude?: number | null
           id?: string
           instagram_url?: string | null
+          invite_verified?: boolean
           last_hometown_change?: string | null
           link?: string | null
           linkedin_url?: string | null

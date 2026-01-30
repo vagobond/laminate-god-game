@@ -182,7 +182,7 @@ const Powers = () => {
                   <Button 
                     variant="mystical" 
                     size="xl"
-                    onClick={() => navigate("/my-xcrol")}
+                    onClick={() => navigate("/the-forest?tab=brooks")}
                     className="w-full sm:w-auto min-w-[250px]"
                     data-tutorial="brook"
                   >
