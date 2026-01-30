@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useTutorial } from "@/components/onboarding";
 
 export const useInviteNotification = () => {
   const { user } = useAuth();
+  const { isVisible: tutorialVisible } = useTutorial();
   const [showNotification, setShowNotification] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [hasSeenNotification, setHasSeenNotification] = useState(false);
 
   useEffect(() => {
     const checkNotificationStatus = async () => {
@@ -24,11 +27,13 @@ export const useInviteNotification = () => {
 
         if (!seenData) {
           // User hasn't seen the notification yet
-          setShowNotification(true);
+          setHasSeenNotification(false);
+        } else {
+          setHasSeenNotification(true);
         }
       } catch (err) {
-        // If no record found, show the notification
-        setShowNotification(true);
+        // If no record found, user hasn't seen it
+        setHasSeenNotification(false);
       } finally {
         setLoading(false);
       }
@@ -36,6 +41,13 @@ export const useInviteNotification = () => {
 
     checkNotificationStatus();
   }, [user]);
+
+  // Only show notification if user hasn't seen it AND tutorial is not visible
+  useEffect(() => {
+    if (!loading) {
+      setShowNotification(!hasSeenNotification && !tutorialVisible);
+    }
+  }, [hasSeenNotification, tutorialVisible, loading]);
 
   const dismissNotification = async () => {
     if (!user) return;
