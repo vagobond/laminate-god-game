@@ -102,13 +102,14 @@ export const BrookComposer = ({ brookId, userId, onPostCreated }: BrookComposerP
       const senderName = myProfile?.display_name?.split(' ')[0] || 'Someone';
 
       // Insert a system message to notify the other user
+      // Include brookId in platform_suggestion so the notification can link to the brook
       await supabase
         .from("messages")
         .insert({
           from_user_id: userId,
           to_user_id: otherUserId,
           content: `${senderName} posted in your Brook! Check it out.`,
-          platform_suggestion: "brook_notification"
+          platform_suggestion: `brook_notification:${brookId}`
         });
 
       toast.success("Posted to your Brook!");

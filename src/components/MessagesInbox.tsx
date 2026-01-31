@@ -53,6 +53,8 @@ interface ConversationThread {
   entryId?: string | null;
   /** Preview of the River post content (first sentence) */
   entryPreview?: string | null;
+  /** If set, this thread contains a brook notification */
+  brookId?: string | null;
 }
 
 const platformLabels: Record<string, string> = {
@@ -188,6 +190,15 @@ const MessagesInbox = () => {
         ? threadKey.split(":")[2] 
         : threadKey.replace("direct:", "");
 
+      // Check for brook notifications and extract brookId
+      let brookId: string | null = null;
+      for (const msg of msgs) {
+        if (msg.platform_suggestion?.startsWith("brook_notification:")) {
+          brookId = msg.platform_suggestion.replace("brook_notification:", "");
+          break;
+        }
+      }
+
       // Get the other user's profile - look through all messages to find it
       let otherUser: SenderProfile | undefined;
       for (const msg of msgs) {
@@ -211,6 +222,7 @@ const MessagesInbox = () => {
         hasFriendRequest,
         entryId,
         entryPreview: entryId ? entryPreviews.get(entryId) : null,
+        brookId,
       };
     });
 
@@ -420,6 +432,23 @@ const MessagesInbox = () => {
                 </Button>
               </div>
             )}
+            {selectedThread.brookId && !selectedThread.entryId && (
+              <div className="flex items-center gap-2 ml-auto">
+                <Badge variant="outline" className="text-cyan-600 border-cyan-500/50 text-xs">
+                  <Waves className="w-3 h-3 mr-1 shrink-0" />
+                  Brook Post
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-primary"
+                  onClick={() => navigate(`/brook/${selectedThread.brookId}`)}
+                >
+                  <ExternalLink className="w-3 h-3 mr-1" />
+                  View Brook
+                </Button>
+              </div>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -503,6 +532,35 @@ const MessagesInbox = () => {
                         </div>
                       )}
                       {message.platform_suggestion && message.platform_suggestion !== "none" && (() => {
+                        // Check if this is a brook notification
+                        if (message.platform_suggestion.startsWith("brook_notification:")) {
+                          const brookId = message.platform_suggestion.replace("brook_notification:", "");
+                          return (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-2 text-blue-600 border-blue-500/50 hover:bg-blue-500/10"
+                              onClick={() => navigate(`/brook/${brookId}`)}
+                            >
+                              <Waves className="w-3 h-3 mr-1" />
+                              View Brook
+                            </Button>
+                          );
+                        }
+                        // Legacy brook notifications without brookId
+                        if (message.platform_suggestion === "brook_notification") {
+                          return (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-2 text-blue-600 border-blue-500/50 hover:bg-blue-500/10"
+                              onClick={() => navigate("/the-forest?tab=brooks")}
+                            >
+                              <Waves className="w-3 h-3 mr-1" />
+                              View Brooks
+                            </Button>
+                          );
+                        }
                         const platformUrl = getPlatformUrl(message.platform_suggestion, message.sender);
                         return platformUrl ? (
                           <a
@@ -601,9 +659,11 @@ const MessagesInbox = () => {
                     ? "bg-amber-500/10 border-amber-500/30" 
                     : thread.entryId
                       ? "bg-blue-500/5 border-blue-500/20"
-                      : thread.unreadCount > 0
-                        ? "bg-primary/5 border-primary/20" 
-                        : "bg-secondary/30"
+                      : thread.brookId
+                        ? "bg-cyan-500/5 border-cyan-500/20"
+                        : thread.unreadCount > 0
+                          ? "bg-primary/5 border-primary/20" 
+                          : "bg-secondary/30"
                 }`}
                 onClick={() => setSelectedThread(thread)}
               >
@@ -642,6 +702,12 @@ const MessagesInbox = () => {
                         <Badge variant="outline" className="text-amber-600 border-amber-500/50 text-xs">
                           <UserPlus className="w-3 h-3 mr-1" />
                           Request
+                        </Badge>
+                      )}
+                      {thread.brookId && (
+                        <Badge variant="outline" className="text-blue-600 border-blue-500/50 text-xs">
+                          <Waves className="w-3 h-3 mr-1" />
+                          Brook Post
                         </Badge>
                       )}
                     </div>
