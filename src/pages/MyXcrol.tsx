@@ -38,9 +38,10 @@ const PRIVACY_ICONS: Record<string, React.ReactNode> = {
 
 const PRIVACY_LABELS: Record<string, string> = {
   private: "Private",
-  close_friend: "Close Friends",
-  buddy: "Buddies & above",
-  friendly_acquaintance: "Acquaintances & above",
+  close_friend: "Oath Bound",
+  family: "Blood Bound",
+  buddy: "Companions & above",
+  friendly_acquaintance: "Wayfarers & above",
 };
 
 const MyXcrol = () => {

@@ -32,6 +32,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import SendMessageDialog from "@/components/SendMessageDialog";
+import { getFriendshipLabel, friendshipLevelLabels } from "@/lib/friendship-labels";
 
 interface Friend {
   id: string;
@@ -69,15 +70,6 @@ interface CustomFriendshipType {
   id: string;
   name: string;
 }
-
-const levelLabels: Record<string, string> = {
-  close_friend: "Close Friend",
-  family: "Family",
-  buddy: "Buddy",
-  friendly_acquaintance: "Acquaintance",
-  secret_friend: "Secret Friend",
-  secret_enemy: "Friend", // Display as normal friend to the secret enemy
-};
 
 const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps) => {
   const navigate = useNavigate();
@@ -472,7 +464,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
         >
           {friend.uses_custom_type && customFriendshipType 
             ? customFriendshipType.name 
-            : (levelLabels[friend.level] || friend.level)}
+            : getFriendshipLabel(friend.level)}
         </Badge>
       )}
       {isOwnProfile && (
@@ -627,7 +619,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
           {/* Owner-only: Secret Friends */}
           {isOwnProfile && secretFriends.length > 0 && (
             <div className="mt-6 pt-4 border-t border-border">
-              <h4 className="text-sm font-medium text-purple-500 mb-3">Secret Friends ({secretFriends.length})</h4>
+              <h4 className="text-sm font-medium text-purple-500 mb-3">Shadow Allies (Secret Friends) ({secretFriends.length})</h4>
               <div className="space-y-2">
                 {secretFriends.map((friend) => renderFriendItem(friend, false))}
               </div>
@@ -637,7 +629,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
           {/* Owner-only: Secret Enemies */}
           {isOwnProfile && secretEnemies.length > 0 && (
             <div className="mt-6 pt-4 border-t border-border">
-              <h4 className="text-sm font-medium text-red-500 mb-3">Secret Enemies ({secretEnemies.length})</h4>
+              <h4 className="text-sm font-medium text-red-500 mb-3">Shadow Friends (Secret Enemies) ({secretEnemies.length})</h4>
               <p className="text-xs text-muted-foreground mb-2">They think they're your friend, but get no real access or see decoy info.</p>
               <div className="space-y-2">
                 {secretEnemies.map((friend) => renderFriendItem(friend, false))}
@@ -721,32 +713,32 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
             <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
               <RadioGroupItem value="close_friend" id="edit_close_friend" className="mt-1" />
               <Label htmlFor="edit_close_friend" className="flex-1 cursor-pointer">
-                <span className="font-medium">Close Friend</span>
-                <p className="text-sm text-muted-foreground">Can see your WhatsApp, phone number, or private email.</p>
+                <span className="font-medium">{friendshipLevelLabels.close_friend.label}</span>
+                <p className="text-sm text-muted-foreground">{friendshipLevelLabels.close_friend.description}</p>
               </Label>
             </div>
 
             <div className="flex items-start space-x-3 p-3 rounded-lg border border-orange-500/50 hover:bg-orange-500/10">
               <RadioGroupItem value="family" id="edit_family" className="mt-1" />
               <Label htmlFor="edit_family" className="flex-1 cursor-pointer">
-                <span className="font-medium text-orange-500">Family</span>
-                <p className="text-sm text-muted-foreground">Independent category: phone, private email, and full birthday only. No social links.</p>
+                <span className="font-medium text-orange-500">{friendshipLevelLabels.family.label}</span>
+                <p className="text-sm text-muted-foreground">{friendshipLevelLabels.family.description}</p>
               </Label>
             </div>
             
             <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
               <RadioGroupItem value="buddy" id="edit_buddy" className="mt-1" />
               <Label htmlFor="edit_buddy" className="flex-1 cursor-pointer">
-                <span className="font-medium">Buddy</span>
-                <p className="text-sm text-muted-foreground">Can see your Instagram or other social profile.</p>
+                <span className="font-medium">{friendshipLevelLabels.buddy.label}</span>
+                <p className="text-sm text-muted-foreground">{friendshipLevelLabels.buddy.description}</p>
               </Label>
             </div>
             
             <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
               <RadioGroupItem value="friendly_acquaintance" id="edit_friendly_acquaintance" className="mt-1" />
               <Label htmlFor="edit_friendly_acquaintance" className="flex-1 cursor-pointer">
-                <span className="font-medium">Friendly Acquaintance</span>
-                <p className="text-sm text-muted-foreground">Can see your LinkedIn or general contact email.</p>
+                <span className="font-medium">{friendshipLevelLabels.friendly_acquaintance.label}</span>
+                <p className="text-sm text-muted-foreground">{friendshipLevelLabels.friendly_acquaintance.description}</p>
               </Label>
             </div>
 
@@ -764,16 +756,16 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
             <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
               <RadioGroupItem value="secret_friend" id="edit_secret_friend" className="mt-1" />
               <Label htmlFor="edit_secret_friend" className="flex-1 cursor-pointer">
-                <span className="font-medium">Secret Friend</span>
-                <p className="text-sm text-muted-foreground">All privileges of close friend, but hidden from friends lists.</p>
+                <span className="font-medium">{friendshipLevelLabels.secret_friend.label}</span>
+                <p className="text-sm text-muted-foreground">{friendshipLevelLabels.secret_friend.description}</p>
               </Label>
             </div>
 
             <div className="flex items-start space-x-3 p-3 rounded-lg border border-red-500/50 hover:bg-red-500/10">
               <RadioGroupItem value="secret_enemy" id="edit_secret_enemy" className="mt-1" />
               <Label htmlFor="edit_secret_enemy" className="flex-1 cursor-pointer">
-                <span className="font-medium text-red-600">Secret Enemy</span>
-                <p className="text-sm text-muted-foreground">They'll think you're friends, but get no access or see decoy info.</p>
+                <span className="font-medium text-red-600">{friendshipLevelLabels.secret_enemy.label}</span>
+                <p className="text-sm text-muted-foreground">{friendshipLevelLabels.secret_enemy.description}</p>
               </Label>
             </div>
             </RadioGroup>
@@ -841,32 +833,32 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
               <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
                 <RadioGroupItem value="close_friend" id="accept_close_friend" className="mt-1" />
                 <Label htmlFor="accept_close_friend" className="flex-1 cursor-pointer">
-                  <span className="font-medium">Close Friend</span>
-                  <p className="text-sm text-muted-foreground">Can see your WhatsApp, phone, or private email.</p>
+                  <span className="font-medium">{friendshipLevelLabels.close_friend.label}</span>
+                  <p className="text-sm text-muted-foreground">{friendshipLevelLabels.close_friend.description}</p>
                 </Label>
               </div>
 
               <div className="flex items-start space-x-3 p-3 rounded-lg border border-orange-500/50 hover:bg-orange-500/10">
                 <RadioGroupItem value="family" id="accept_family" className="mt-1" />
                 <Label htmlFor="accept_family" className="flex-1 cursor-pointer">
-                  <span className="font-medium text-orange-500">Family</span>
-                  <p className="text-sm text-muted-foreground">Independent category: phone, private email, and full birthday only. No social links.</p>
+                  <span className="font-medium text-orange-500">{friendshipLevelLabels.family.label}</span>
+                  <p className="text-sm text-muted-foreground">{friendshipLevelLabels.family.description}</p>
                 </Label>
               </div>
               
               <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
                 <RadioGroupItem value="buddy" id="accept_buddy" className="mt-1" />
                 <Label htmlFor="accept_buddy" className="flex-1 cursor-pointer">
-                  <span className="font-medium">Buddy</span>
-                  <p className="text-sm text-muted-foreground">Can see your Instagram or social profile.</p>
+                  <span className="font-medium">{friendshipLevelLabels.buddy.label}</span>
+                  <p className="text-sm text-muted-foreground">{friendshipLevelLabels.buddy.description}</p>
                 </Label>
               </div>
               
               <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
                 <RadioGroupItem value="friendly_acquaintance" id="accept_friendly_acquaintance" className="mt-1" />
                 <Label htmlFor="accept_friendly_acquaintance" className="flex-1 cursor-pointer">
-                  <span className="font-medium">Friendly Acquaintance</span>
-                  <p className="text-sm text-muted-foreground">Can see your LinkedIn or contact email.</p>
+                  <span className="font-medium">{friendshipLevelLabels.friendly_acquaintance.label}</span>
+                  <p className="text-sm text-muted-foreground">{friendshipLevelLabels.friendly_acquaintance.description}</p>
                 </Label>
               </div>
 
@@ -883,16 +875,16 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
               <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
                 <RadioGroupItem value="secret_friend" id="accept_secret_friend" className="mt-1" />
                 <Label htmlFor="accept_secret_friend" className="flex-1 cursor-pointer">
-                  <span className="font-medium">Secret Friend</span>
-                  <p className="text-sm text-muted-foreground">Close friend privileges, but hidden from lists.</p>
+                  <span className="font-medium">{friendshipLevelLabels.secret_friend.label}</span>
+                  <p className="text-sm text-muted-foreground">{friendshipLevelLabels.secret_friend.description}</p>
                 </Label>
               </div>
 
               <div className="flex items-start space-x-3 p-3 rounded-lg border border-red-500/50 hover:bg-red-500/10">
                 <RadioGroupItem value="secret_enemy" id="accept_secret_enemy" className="mt-1" />
                 <Label htmlFor="accept_secret_enemy" className="flex-1 cursor-pointer">
-                  <span className="font-medium text-red-600">Secret Enemy</span>
-                  <p className="text-sm text-muted-foreground">They'll think you're friends, but get no access or see decoy info.</p>
+                  <span className="font-medium text-red-600">{friendshipLevelLabels.secret_enemy.label}</span>
+                  <p className="text-sm text-muted-foreground">{friendshipLevelLabels.secret_enemy.description}</p>
                 </Label>
               </div>
             </RadioGroup>

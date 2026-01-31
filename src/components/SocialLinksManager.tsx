@@ -98,40 +98,40 @@ const SECTION_BUILTIN_FIELDS: Record<string, { key: keyof ProfileData; label: st
 const FRIENDSHIP_SECTIONS = [
   {
     value: "close_friend",
-    label: "Close Friends",
+    label: "Oath Bound (Close Friends)",
     description: "Only your closest friends can see these links",
     color: "text-green-500",
   },
   {
     value: "family",
-    label: "Family",
+    label: "Blood Bound (Family)",
     description: "Independent category - phone, private email, and full birthday only (no social links by default)",
     color: "text-orange-500",
   },
   {
     value: "buddy",
-    label: "Buddies",
-    description: "Buddies and above can see these links",
+    label: "Companions (Buddies)",
+    description: "Companions and above can see these links",
     color: "text-blue-500",
   },
   {
     value: "friendly_acquaintance",
-    label: "Friendly Acquaintances",
-    description: "All friends at acquaintance level or higher can see these links",
+    label: "Wayfarers (Acquaintances)",
+    description: "All friends at Wayfarer level or higher can see these links",
     color: "text-yellow-500",
   },
   {
     value: "secret_friend",
-    label: "Secret Friends",
-    description: "Secret friends see the same as close friends - your hidden inner circle",
+    label: "Shadow Allies (Secret Friends)",
+    description: "Shadow Allies see the same as Oath Bound - your hidden inner circle",
     color: "text-purple-500",
   },
   {
     value: "secret_enemy",
-    label: "Secret Enemies",
+    label: "Shadow Friends (Secret Enemies)",
     description: "People you've accepted as friends but don't fully trust. They get no real access, or you can give them decoy info.",
     color: "text-red-500",
-    warning: "⚠️ Don't give secret enemies your real contact information! Enter fake/decoy info here if desired.",
+    warning: "⚠️ Don't give Shadow Friends your real contact information! Enter fake/decoy info here if desired.",
   },
 ];
 

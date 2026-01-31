@@ -21,10 +21,10 @@ interface XcrolEntryFormProps {
 
 const PRIVACY_LEVELS = [
   { value: "private", label: "Private - me only" },
-  { value: "close_friend", label: "Close Friends" },
-  { value: "family", label: "Family" },
-  { value: "buddy", label: "Buddies & above" },
-  { value: "friendly_acquaintance", label: "Friendly Acquaintances & above" },
+  { value: "close_friend", label: "Oath Bound (Close Friends)" },
+  { value: "family", label: "Blood Bound (Family)" },
+  { value: "buddy", label: "Companions & above" },
+  { value: "friendly_acquaintance", label: "Wayfarers (Acquaintances) & above" },
   { value: "public", label: "Public - everyone on the internet" },
 ];
 

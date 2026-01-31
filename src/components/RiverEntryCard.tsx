@@ -28,9 +28,10 @@ interface RiverEntryCardProps {
 
 const PRIVACY_CONFIG: Record<string, { icon: React.ElementType; label: string; color: string }> = {
   public: { icon: Globe, label: "Public", color: "text-green-500" },
-  friendly_acquaintance: { icon: Users, label: "Acquaintances", color: "text-blue-500" },
-  buddy: { icon: UserCheck, label: "Buddies", color: "text-purple-500" },
-  close_friend: { icon: Heart, label: "Close Friends", color: "text-pink-500" },
+  friendly_acquaintance: { icon: Users, label: "Wayfarers", color: "text-blue-500" },
+  buddy: { icon: UserCheck, label: "Companions", color: "text-purple-500" },
+  close_friend: { icon: Heart, label: "Oath Bound", color: "text-pink-500" },
+  family: { icon: Heart, label: "Blood Bound", color: "text-orange-500" },
   private: { icon: Lock, label: "Private", color: "text-muted-foreground" },
 };
 

@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Info } from "lucide-react";
+import { friendshipLevelLabels } from "@/lib/friendship-labels";
 
 export type FriendshipLevel = 
   | "close_friend" 
@@ -27,40 +28,40 @@ interface FriendshipLevelOption {
 const friendshipLevelOptions: FriendshipLevelOption[] = [
   {
     value: "close_friend",
-    label: "Close Friend",
-    description: "Can see your WhatsApp, phone number, or private email. Can see friendship levels in mutual close friends' lists.",
+    label: friendshipLevelLabels.close_friend.label,
+    description: friendshipLevelLabels.close_friend.description,
   },
   {
     value: "family",
-    label: "Family",
-    description: "Independent category: phone, private email, and full birthday only. No social links.",
+    label: friendshipLevelLabels.family.label,
+    description: friendshipLevelLabels.family.description,
     variant: "warning",
   },
   {
     value: "buddy",
-    label: "Buddy",
-    description: "Can see your Instagram or other social profile. Can see your friends list without levels.",
+    label: friendshipLevelLabels.buddy.label,
+    description: friendshipLevelLabels.buddy.description,
   },
   {
     value: "friendly_acquaintance",
-    label: "Friendly Acquaintance",
-    description: "Can see your LinkedIn or general contact email. Can see your friends list without levels.",
+    label: friendshipLevelLabels.friendly_acquaintance.label,
+    description: friendshipLevelLabels.friendly_acquaintance.description,
   },
   {
     value: "secret_friend",
-    label: "Secret Friend",
-    description: "All privileges of close friend, but neither of you appears in each other's friends lists.",
+    label: friendshipLevelLabels.secret_friend.label,
+    description: friendshipLevelLabels.secret_friend.description,
   },
   {
     value: "secret_enemy",
-    label: "Secret Enemy",
-    description: "They'll think you're friends, but get no access or see decoy info. Perfect for people you don't trust.",
+    label: friendshipLevelLabels.secret_enemy.label,
+    description: friendshipLevelLabels.secret_enemy.description,
     variant: "danger",
   },
   {
     value: "not_friend",
-    label: "Not Friend",
-    description: "Decline the request without any friendship.",
+    label: friendshipLevelLabels.not_friend.label,
+    description: friendshipLevelLabels.not_friend.description,
     variant: "destructive",
   },
 ];
