@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { Bell, Info, Star } from "lucide-react";
+import { Bell, Star, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,14 +18,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { useUnreadMessages } from "@/hooks/use-unread-messages";
+import { FriendshipLevelSelector, type FriendshipLevel } from "@/components/FriendshipLevelSelector";
 
 interface FriendRequest {
   id: string;
@@ -61,7 +55,7 @@ interface NewReference {
   hasLeftReturn?: boolean;
 }
 
-type FriendshipLevel = "close_friend" | "buddy" | "friendly_acquaintance" | "secret_friend" | "secret_enemy" | "not_friend";
+// FriendshipLevel type is imported from FriendshipLevelSelector
 
 const NotificationBell = () => {
   const navigate = useNavigate();
@@ -591,109 +585,14 @@ const NotificationBell = () => {
           </DialogHeader>
           
           <div className="flex-1 overflow-y-auto pr-2">
-          <RadioGroup value={selectedLevel} onValueChange={(v) => setSelectedLevel(v as FriendshipLevel)} className="space-y-2">
-            <div className="flex items-center justify-between p-2 rounded-lg border border-border hover:bg-secondary/50">
-              <div className="flex items-center gap-3">
-                <RadioGroupItem value="close_friend" id="close_friend" />
-                <Label htmlFor="close_friend" className="cursor-pointer font-medium">Close Friend</Label>
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent side="left" className="w-64 text-sm">
-                  Can see your WhatsApp, phone number, or private email. Can see friendship levels in mutual close friends' lists.
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="flex items-center justify-between p-2 rounded-lg border border-border hover:bg-secondary/50">
-              <div className="flex items-center gap-3">
-                <RadioGroupItem value="buddy" id="buddy" />
-                <Label htmlFor="buddy" className="cursor-pointer font-medium">Buddy</Label>
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent side="left" className="w-64 text-sm">
-                  Can see your Instagram or other social profile. Can see your friends list without levels.
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="flex items-center justify-between p-2 rounded-lg border border-border hover:bg-secondary/50">
-              <div className="flex items-center gap-3">
-                <RadioGroupItem value="friendly_acquaintance" id="friendly_acquaintance" />
-                <Label htmlFor="friendly_acquaintance" className="cursor-pointer font-medium">Friendly Acquaintance</Label>
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent side="left" className="w-64 text-sm">
-                  Can see your LinkedIn or general contact email. Can see your friends list without levels.
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="flex items-center justify-between p-2 rounded-lg border border-border hover:bg-secondary/50">
-              <div className="flex items-center gap-3">
-                <RadioGroupItem value="secret_friend" id="secret_friend" />
-                <Label htmlFor="secret_friend" className="cursor-pointer font-medium">Secret Friend</Label>
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent side="left" className="w-64 text-sm">
-                  All privileges of close friend, but neither of you appears in each other's friends lists.
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="flex items-center justify-between p-2 rounded-lg border border-red-500/50 hover:bg-red-500/10">
-              <div className="flex items-center gap-3">
-                <RadioGroupItem value="secret_enemy" id="secret_enemy" />
-                <Label htmlFor="secret_enemy" className="cursor-pointer font-medium text-red-600">Secret Enemy</Label>
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent side="left" className="w-64 text-sm">
-                  They'll think you're friends, but get no access or see decoy info. Perfect for people you don't trust.
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="flex items-center justify-between p-2 rounded-lg border border-destructive/50 hover:bg-destructive/10">
-              <div className="flex items-center gap-3">
-                <RadioGroupItem value="not_friend" id="not_friend" />
-                <Label htmlFor="not_friend" className="cursor-pointer font-medium text-destructive">Not Friend</Label>
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent side="left" className="w-64 text-sm">
-                  Decline the request without any friendship.
-                </PopoverContent>
-              </Popover>
-            </div>
-          </RadioGroup>
+            <FriendshipLevelSelector
+              value={selectedLevel}
+              onChange={setSelectedLevel}
+              idPrefix="accept_"
+              showNotFriend={true}
+              showFamily={true}
+              compact={true}
+            />
           </div>
 
           <div className="flex gap-2 pt-4 border-t border-border">
@@ -718,75 +617,14 @@ const NotificationBell = () => {
           </DialogHeader>
           
           <div className="flex-1 overflow-y-auto pr-2">
-          <RadioGroup value={selectedLevel} onValueChange={(v) => setSelectedLevel(v as FriendshipLevel)} className="space-y-2">
-            <div className="flex items-center justify-between p-2 rounded-lg border border-border hover:bg-secondary/50">
-              <div className="flex items-center gap-3">
-                <RadioGroupItem value="close_friend" id="pending_close_friend" />
-                <Label htmlFor="pending_close_friend" className="cursor-pointer font-medium">Close Friend</Label>
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent side="left" className="w-64 text-sm">
-                  Can see your WhatsApp, phone number, or private email.
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="flex items-center justify-between p-2 rounded-lg border border-border hover:bg-secondary/50">
-              <div className="flex items-center gap-3">
-                <RadioGroupItem value="buddy" id="pending_buddy" />
-                <Label htmlFor="pending_buddy" className="cursor-pointer font-medium">Buddy</Label>
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent side="left" className="w-64 text-sm">
-                  Can see your Instagram or other social profile.
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="flex items-center justify-between p-2 rounded-lg border border-border hover:bg-secondary/50">
-              <div className="flex items-center gap-3">
-                <RadioGroupItem value="friendly_acquaintance" id="pending_friendly_acquaintance" />
-                <Label htmlFor="pending_friendly_acquaintance" className="cursor-pointer font-medium">Friendly Acquaintance</Label>
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent side="left" className="w-64 text-sm">
-                  Can see your LinkedIn or general contact email.
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="flex items-center justify-between p-2 rounded-lg border border-border hover:bg-secondary/50">
-              <div className="flex items-center gap-3">
-                <RadioGroupItem value="secret_friend" id="pending_secret_friend" />
-                <Label htmlFor="pending_secret_friend" className="cursor-pointer font-medium">Secret Friend</Label>
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent side="left" className="w-64 text-sm">
-                  All privileges of close friend, but hidden from friends lists.
-                </PopoverContent>
-              </Popover>
-            </div>
-          </RadioGroup>
+            <FriendshipLevelSelector
+              value={selectedLevel}
+              onChange={setSelectedLevel}
+              idPrefix="pending_"
+              showNotFriend={false}
+              showFamily={true}
+              compact={true}
+            />
           </div>
 
           <div className="flex gap-2 pt-4 border-t border-border">
