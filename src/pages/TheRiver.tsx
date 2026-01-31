@@ -42,10 +42,10 @@ export interface ReactionsMap {
 
 const FILTER_OPTIONS = [
   { value: "all", label: "All Posts" },
-  { value: "close_friend", label: "Close Friends" },
-  { value: "family", label: "Family" },
-  { value: "buddy", label: "Buddies & Above" },
-  { value: "friendly_acquaintance", label: "Acquaintances & Above" },
+  { value: "close_friend", label: "Oath Bound (Close Friends)" },
+  { value: "family", label: "Blood Bound (Family)" },
+  { value: "buddy", label: "Companions & Above" },
+  { value: "friendly_acquaintance", label: "Wayfarers & Above" },
   { value: "public", label: "Public Only" },
 ];
 

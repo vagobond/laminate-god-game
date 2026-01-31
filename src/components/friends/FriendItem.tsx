@@ -8,6 +8,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Edit2, MessageSquare, UserMinus } from "lucide-react";
+import { getFriendshipLabel } from "@/lib/friendship-labels";
 
 interface Friend {
   id: string;
@@ -29,15 +30,6 @@ interface FriendItemProps {
   onMessage?: (friend: Friend) => void;
   onUnfriend?: (friend: Friend) => void;
 }
-
-const levelLabels: Record<string, string> = {
-  close_friend: "Close Friend",
-  family: "Family",
-  buddy: "Buddy",
-  friendly_acquaintance: "Acquaintance",
-  secret_friend: "Secret Friend",
-  secret_enemy: "Friend",
-};
 
 export function FriendItem({
   friend,
@@ -78,7 +70,7 @@ export function FriendItem({
           >
             {friend.uses_custom_type && customTypeName
               ? customTypeName
-              : levelLabels[friend.level] || friend.level}
+              : getFriendshipLabel(friend.level)}
           </Badge>
         )}
       {isOwnProfile && (

@@ -766,7 +766,7 @@ const PublicProfile = () => {
             <AlertDialogTitle>Friendship Level Required</AlertDialogTitle>
             <AlertDialogDescription>
               You don't have the required friendship trust level to send a {showInsufficientLevelModal} request to {profile?.display_name || "this user"}. 
-              Build your connection first by becoming friends at the "friendly acquaintance" level or higher.
+              Build your connection first by becoming friends at the "Wayfarer (Acquaintance)" level or higher.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

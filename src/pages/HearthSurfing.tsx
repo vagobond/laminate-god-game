@@ -677,9 +677,9 @@ const HearthSurfing = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="friendly_acquaintance">Friendly Acquaintances & Above</SelectItem>
-                          <SelectItem value="buddy">Buddies & Above</SelectItem>
-                          <SelectItem value="close_friend">Close Friends Only</SelectItem>
+                          <SelectItem value="friendly_acquaintance">Wayfarers (Acquaintances) & Above</SelectItem>
+                          <SelectItem value="buddy">Companions (Buddies) & Above</SelectItem>
+                          <SelectItem value="close_friend">Oath Bound (Close Friends) Only</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

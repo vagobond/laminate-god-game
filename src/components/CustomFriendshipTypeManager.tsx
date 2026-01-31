@@ -296,7 +296,7 @@ export function CustomFriendshipTypeManager({ userId }: Props) {
           <Label htmlFor="custom-type-name">Name</Label>
           <Input
             id="custom-type-name"
-            placeholder="e.g., Work Friends, Family, Bowling Buddies..."
+            placeholder="e.g., Work Friends, Relatives, Bowling Companions..."
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={50}

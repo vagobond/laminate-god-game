@@ -46,9 +46,9 @@ const MONTHS = [
 
 const VISIBILITY_OPTIONS = [
   { value: "nobody", label: "Nobody", description: "Hidden from all friends" },
-  { value: "close_friend", label: "Close Friends", description: "Only close friends can see" },
-  { value: "buddy", label: "Buddies+", description: "Buddies and above can see" },
-  { value: "friendly_acquaintance", label: "Acquaintances+", description: "All friends can see" },
+  { value: "close_friend", label: "Oath Bound (Close Friends)", description: "Only Oath Bound friends can see" },
+  { value: "buddy", label: "Companion+ (Buddies+)", description: "Companions and above can see" },
+  { value: "friendly_acquaintance", label: "Wayfarer+ (Acquaintances+)", description: "All friends can see" },
 ];
 
 const VisibilitySelect = ({
