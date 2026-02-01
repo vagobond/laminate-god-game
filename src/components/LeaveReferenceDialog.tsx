@@ -56,13 +56,24 @@ export const LeaveReferenceDialog = ({ recipientId, recipientName }: LeaveRefere
         return;
       }
 
-      // Check friendship level from recipient's perspective
-      const { data: friendship } = await supabase
-        .from("friendships")
-        .select("level, uses_custom_type")
-        .eq("user_id", recipientId)
-        .eq("friend_id", user.id)
-        .maybeSingle();
+      // Check friendship level from BOTH directions
+      // (the relationship could be stored either way)
+      const [recipientToUser, userToRecipient] = await Promise.all([
+        supabase
+          .from("friendships")
+          .select("level, uses_custom_type")
+          .eq("user_id", recipientId)
+          .eq("friend_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("friendships")
+          .select("level, uses_custom_type")
+          .eq("user_id", user.id)
+          .eq("friend_id", recipientId)
+          .maybeSingle()
+      ]);
+
+      const friendship = recipientToUser.data || userToRecipient.data;
 
       // Check if buddy or above (including family)
       const buddyOrAbove = friendship?.level && 
