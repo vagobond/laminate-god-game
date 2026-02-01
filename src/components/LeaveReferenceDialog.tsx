@@ -64,9 +64,9 @@ export const LeaveReferenceDialog = ({ recipientId, recipientName }: LeaveRefere
         .eq("friend_id", user.id)
         .maybeSingle();
 
-      // Check if buddy or above
+      // Check if buddy or above (including family)
       const buddyOrAbove = friendship?.level && 
-        ['close_friend', 'buddy', 'secret_friend'].includes(friendship.level);
+        ['family', 'close_friend', 'buddy', 'secret_friend'].includes(friendship.level);
 
       if (buddyOrAbove) {
         setCanLeaveReference(true);
