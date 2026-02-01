@@ -43,8 +43,8 @@ export const friendshipLevelLabels: Record<FriendshipLevelKey, FriendshipLevelIn
     description: "Can see your LinkedIn or general contact email. Can see your friends list without levels.",
   },
   secret_friend: {
-    label: "Shadow Ally (Secret Friend)",
-    shortLabel: "Shadow Ally",
+    label: "Invisible Ally (Secret Friend)",
+    shortLabel: "Invisible Ally",
     description: "All privileges of close friend, but neither of you appears in each other's friends lists.",
   },
   secret_enemy: {
