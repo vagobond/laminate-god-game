@@ -1624,6 +1624,13 @@ export type Database = {
       }
     }
     Views: {
+      friendship_pairs: {
+        Row: {
+          user_a: string | null
+          user_b: string | null
+        }
+        Relationships: []
+      }
       oauth_clients_public: {
         Row: {
           client_id: string | null
@@ -1682,6 +1689,14 @@ export type Database = {
         Args: { p_brook_id: string; p_user_id: string }
         Returns: boolean
       }
+      can_view_xcrol_entry: {
+        Args: {
+          p_entry_user_id: string
+          p_privacy_level: string
+          p_viewer_id: string
+        }
+        Returns: boolean
+      }
       check_invite_code: { Args: { p_invite_code: string }; Returns: boolean }
       get_authorized_app_info: {
         Args: { p_client_id: string }
@@ -1702,6 +1717,13 @@ export type Database = {
         }[]
       }
       get_connection_degree: {
+        Args: { from_user_id: string; max_depth?: number; to_user_id: string }
+        Returns: {
+          degree: number
+          path: string[]
+        }[]
+      }
+      get_connection_degree_fast: {
         Args: { from_user_id: string; max_depth?: number; to_user_id: string }
         Returns: {
           degree: number
