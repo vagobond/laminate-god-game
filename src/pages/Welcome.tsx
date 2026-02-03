@@ -1,16 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import scrollOpenGif from "@/assets/scroll-paper-open-up.gif";
 import xcrolLogo from "@/assets/xcrol-logo.png";
+import AudioMuteButton from "@/components/AudioMuteButton";
 
 const Welcome = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [animationPhase, setAnimationPhase] = useState<"gif" | "dissolve" | "complete">("gif");
   const [isGifLoading, setIsGifLoading] = useState(true);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Check if user is already logged in - redirect to powers
   useEffect(() => {
@@ -18,6 +20,49 @@ const Welcome = () => {
       navigate("/powers", { replace: true });
     }
   }, [user, authLoading, navigate]);
+
+  // Initialize and play background music
+  useEffect(() => {
+    const audio = new Audio("/audio/Skyforge_Citadel.mp3");
+    audio.loop = true;
+    audio.volume = 0.5;
+    audioRef.current = audio;
+
+    // Check initial mute state
+    const isMuted = localStorage.getItem("audio-muted") === "true";
+    audio.muted = isMuted;
+
+    // Try to play (may be blocked by browser autoplay policy)
+    const playAudio = () => {
+      audio.play().catch(() => {
+        // Autoplay blocked - will play on first user interaction
+        const handleInteraction = () => {
+          audio.play().catch(console.error);
+          document.removeEventListener("click", handleInteraction);
+          document.removeEventListener("keydown", handleInteraction);
+        };
+        document.addEventListener("click", handleInteraction);
+        document.addEventListener("keydown", handleInteraction);
+      });
+    };
+
+    playAudio();
+
+    // Listen for mute state changes
+    const handleMuteChange = (e: CustomEvent<boolean>) => {
+      if (audioRef.current) {
+        audioRef.current.muted = e.detail;
+      }
+    };
+
+    window.addEventListener("audio-mute-changed", handleMuteChange as EventListener);
+
+    return () => {
+      audio.pause();
+      audio.src = "";
+      window.removeEventListener("audio-mute-changed", handleMuteChange as EventListener);
+    };
+  }, []);
 
   // Transition to content after GIF plays (approximately 3 seconds)
   useEffect(() => {
