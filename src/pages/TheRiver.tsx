@@ -179,45 +179,34 @@ export default function TheRiver() {
       return;
     }
 
-    // Fetch author profiles and reactions in parallel
+    // Fetch reactions first to get all user IDs, then batch fetch ALL profiles in one query
     const entryIds = data.map((e) => e.id);
-    const userIds = [...new Set(data.map((e) => e.user_id))];
+    const authorUserIds = new Set(data.map((e) => e.user_id));
     
-    const [profilesResult, reactionsResult] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url, username")
-        .in("id", userIds),
-      supabase
-        .from("xcrol_reactions")
-        .select("entry_id, emoji, user_id")
-        .in("entry_id", entryIds)
-    ]);
+    // Fetch reactions to collect reaction user IDs
+    const { data: reactionsData } = await supabase
+      .from("xcrol_reactions")
+      .select("entry_id, emoji, user_id")
+      .in("entry_id", entryIds);
 
-    const profileMap: Record<string, typeof profilesResult.data extends (infer T)[] | null ? T : never> = {};
-    profilesResult.data?.forEach((p) => {
+    // Collect ALL user IDs (authors + reactors) for a single batch profile fetch
+    const allUserIds = new Set(authorUserIds);
+    (reactionsData || []).forEach(r => allUserIds.add(r.user_id));
+    
+    // Single batch fetch for all profiles (eliminates secondary profile fetch)
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url, username")
+      .in("id", [...allUserIds]);
+
+    const profileMap: Record<string, { id: string; display_name: string | null; avatar_url: string | null; username: string | null }> = {};
+    profilesData?.forEach((p) => {
       profileMap[p.id] = p;
     });
 
-    // Collect all unique user IDs from reactions to fetch their profiles
-    const reactionUserIds = [...new Set((reactionsResult.data || []).map(r => r.user_id))];
-    const missingUserIds = reactionUserIds.filter(id => !profileMap[id]);
-    
-    // Fetch missing reaction user profiles
-    if (missingUserIds.length > 0) {
-      const { data: reactionProfiles } = await supabase
-        .from("profiles")
-        .select("id, display_name, username")
-        .in("id", missingUserIds);
-      
-      reactionProfiles?.forEach((p) => {
-        profileMap[p.id] = { ...profileMap[p.id], ...p };
-      });
-    }
-
     // Group reactions by entry_id with user info
     const newReactionsMap: ReactionsMap = {};
-    reactionsResult.data?.forEach((r) => {
+    (reactionsData || []).forEach((r) => {
       if (!newReactionsMap[r.entry_id]) {
         newReactionsMap[r.entry_id] = [];
       }

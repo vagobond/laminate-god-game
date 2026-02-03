@@ -213,105 +213,145 @@ export default function AdminDashboard() {
     setLoading(true);
     
     try {
-      // Load users
-      const { data: usersData } = await supabase
-        .from("profiles")
-        .select("id, display_name, username, email, created_at")
-        .order("created_at", { ascending: false });
-      
-      if (usersData) setUsers(usersData);
-
-
-      // Load roles with profile info
-      const { data: rolesData } = await supabase
-        .from("user_roles")
-        .select(`
-          id,
-          user_id,
-          role,
-          created_at
-        `)
-        .order("created_at", { ascending: false });
-      
-      if (rolesData && rolesData.length > 0) {
-        // Batch fetch profiles using .in() instead of N+1 queries
-        const roleUserIds = [...new Set(rolesData.map(r => r.user_id))];
-        const { data: roleProfiles } = await supabase
+      // Parallelize all initial data fetches using Promise.all
+      const [
+        usersResult,
+        rolesResult,
+        userCountResult,
+        friendshipCountResult,
+        waitlistResult,
+        flaggedResult,
+        refsResult,
+        deletionResult
+      ] = await Promise.all([
+        // Load users
+        supabase
           .from("profiles")
-          .select("id, display_name, email")
-          .in("id", roleUserIds);
+          .select("id, display_name, username, email, created_at")
+          .order("created_at", { ascending: false }),
+        
+        // Load roles
+        supabase
+          .from("user_roles")
+          .select("id, user_id, role, created_at")
+          .order("created_at", { ascending: false }),
+        
+        // Load user count
+        supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true }),
+        
+        // Load friendship count
+        supabase
+          .from("friendships")
+          .select("*", { count: "exact", head: true }),
+        
+        // Load waitlist
+        supabase
+          .from("waitlist")
+          .select("*")
+          .order("created_at", { ascending: false }),
+        
+        // Load flagged references
+        supabase
+          .from("flagged_references")
+          .select("*")
+          .eq("status", "pending")
+          .order("created_at", { ascending: false }),
+        
+        // Load all references
+        supabase
+          .from("user_references")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(100),
+        
+        // Load deletion requests
+        supabase
+          .from("account_deletion_requests")
+          .select("*")
+          .eq("status", "pending")
+          .order("created_at", { ascending: false })
+      ]);
 
-        const roleProfilesMap = new Map(
-          (roleProfiles || []).map(p => [p.id, { display_name: p.display_name, email: p.email }])
-        );
+      // Process users
+      if (usersResult.data) setUsers(usersResult.data);
 
-        const rolesWithProfiles = rolesData.map(role => ({
+      // Set stats
+      setStats({
+        totalUsers: userCountResult.count || 0,
+        totalFriendships: friendshipCountResult.count || 0,
+      });
+
+      // Set waitlist
+      if (waitlistResult.data) setWaitlist(waitlistResult.data);
+
+      // Collect all user IDs we need to fetch profiles for (batch all profile fetches)
+      const allUserIds = new Set<string>();
+      
+      // From roles
+      rolesResult.data?.forEach(r => allUserIds.add(r.user_id));
+      
+      // From flagged references
+      flaggedResult.data?.forEach(f => allUserIds.add(f.flagged_by));
+      
+      // From references (need to fetch reference details first for user IDs)
+      const flaggedReferenceIds = [...new Set((flaggedResult.data || []).map(f => f.reference_id))];
+      
+      // Fetch references for flagged items if needed
+      let referencesForFlagged: any[] = [];
+      if (flaggedReferenceIds.length > 0) {
+        const { data: refs } = await supabase
+          .from("user_references")
+          .select("*")
+          .in("id", flaggedReferenceIds);
+        referencesForFlagged = refs || [];
+        referencesForFlagged.forEach(r => {
+          allUserIds.add(r.from_user_id);
+          allUserIds.add(r.to_user_id);
+        });
+      }
+      
+      // From all references
+      refsResult.data?.forEach(r => {
+        allUserIds.add(r.from_user_id);
+        allUserIds.add(r.to_user_id);
+      });
+      
+      // From deletion requests
+      deletionResult.data?.forEach((r: any) => allUserIds.add(r.user_id));
+
+      // Single batch fetch for all profiles needed
+      let profilesMap = new Map<string, { display_name: string | null; email: string | null; username?: string | null }>();
+      if (allUserIds.size > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, display_name, email, username")
+          .in("id", [...allUserIds]);
+        
+        (profiles || []).forEach(p => {
+          profilesMap.set(p.id, { 
+            display_name: p.display_name, 
+            email: p.email,
+            username: p.username
+          });
+        });
+      }
+
+      // Process roles with profiles
+      if (rolesResult.data && rolesResult.data.length > 0) {
+        const rolesWithProfiles = rolesResult.data.map(role => ({
           ...role,
-          profile: roleProfilesMap.get(role.user_id),
+          profile: profilesMap.get(role.user_id),
         }));
         setRoles(rolesWithProfiles);
       }
 
-      // Load stats
-      const { count: userCount } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true });
-      
-      const { count: friendshipCount } = await supabase
-        .from("friendships")
-        .select("*", { count: "exact", head: true });
-
-      setStats({
-        totalUsers: userCount || 0,
-        totalFriendships: friendshipCount || 0,
-      });
-
-      // Load waitlist
-      const { data: waitlistData } = await supabase
-        .from("waitlist")
-        .select("*")
-        .order("created_at", { ascending: false });
-      
-      if (waitlistData) setWaitlist(waitlistData);
-
-      // Load flagged references
-      const { data: flaggedData } = await supabase
-        .from("flagged_references")
-        .select("*")
-        .eq("status", "pending")
-        .order("created_at", { ascending: false });
-
-      if (flaggedData && flaggedData.length > 0) {
-        // Fetch all references for flagged items
-        const referenceIds = [...new Set(flaggedData.map(f => f.reference_id))];
-        const { data: references } = await supabase
-          .from("user_references")
-          .select("*")
-          .in("id", referenceIds);
-
-        const referencesMap = new Map(
-          (references || []).map(r => [r.id, r])
-        );
-
-        // Collect all user IDs we need profiles for
-        const allUserIds = new Set<string>();
-        flaggedData.forEach(f => allUserIds.add(f.flagged_by));
-        (references || []).forEach(r => {
-          allUserIds.add(r.from_user_id);
-          allUserIds.add(r.to_user_id);
-        });
-
-        // Batch fetch all profiles at once
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, display_name")
-          .in("id", [...allUserIds]);
-
-        const profilesMap = new Map(
-          (profiles || []).map(p => [p.id, { display_name: p.display_name }])
-        );
-
-        const flaggedWithDetails = flaggedData.map(flag => {
+      // Process flagged references with details
+      if (flaggedResult.data && flaggedResult.data.length > 0) {
+        const referencesMap = new Map(referencesForFlagged.map(r => [r.id, r]));
+        
+        const flaggedWithDetails = flaggedResult.data.map(flag => {
           const reference = referencesMap.get(flag.reference_id);
           return {
             ...flag,
@@ -324,60 +364,21 @@ export default function AdminDashboard() {
         setFlaggedReferences(flaggedWithDetails);
       }
 
-      // Load all references
-      const { data: refsData } = await supabase
-        .from("user_references")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(100);
-
-      if (refsData && refsData.length > 0) {
-        // Batch fetch all user profiles for references
-        const refUserIds = new Set<string>();
-        refsData.forEach(r => {
-          refUserIds.add(r.from_user_id);
-          refUserIds.add(r.to_user_id);
-        });
-
-        const { data: refProfiles } = await supabase
-          .from("profiles")
-          .select("id, display_name")
-          .in("id", [...refUserIds]);
-
-        const refProfilesMap = new Map(
-          (refProfiles || []).map(p => [p.id, { display_name: p.display_name }])
-        );
-
-        const refsWithUsers = refsData.map(ref => ({
+      // Process all references
+      if (refsResult.data && refsResult.data.length > 0) {
+        const refsWithUsers = refsResult.data.map(ref => ({
           ...ref,
-          from_user: refProfilesMap.get(ref.from_user_id),
-          to_user: refProfilesMap.get(ref.to_user_id),
+          from_user: profilesMap.get(ref.from_user_id),
+          to_user: profilesMap.get(ref.to_user_id),
         }));
         setAllReferences(refsWithUsers);
       }
 
-      // Load deletion requests
-      const { data: deletionData } = await supabase
-        .from("account_deletion_requests")
-        .select("*")
-        .eq("status", "pending")
-        .order("created_at", { ascending: false });
-
-      if (deletionData && deletionData.length > 0) {
-        // Batch fetch profiles for deletion requests
-        const deletionUserIds = [...new Set(deletionData.map((r: any) => r.user_id))];
-        const { data: deletionProfiles } = await supabase
-          .from("profiles")
-          .select("id, display_name, email, username")
-          .in("id", deletionUserIds);
-
-        const deletionProfilesMap = new Map(
-          (deletionProfiles || []).map(p => [p.id, { display_name: p.display_name, email: p.email, username: p.username }])
-        );
-
-        const requestsWithProfiles = deletionData.map((req: any) => ({
+      // Process deletion requests
+      if (deletionResult.data && deletionResult.data.length > 0) {
+        const requestsWithProfiles = deletionResult.data.map((req: any) => ({
           ...req,
-          profile: deletionProfilesMap.get(req.user_id),
+          profile: profilesMap.get(req.user_id),
         }));
         setDeletionRequests(requestsWithProfiles);
       }
