@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Droplets, Plus, Archive, Moon, Bell } from "lucide-react";
+import { Droplets, Plus, Archive, Moon, Bell, Trash2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { CreateBrookDialog } from "./CreateBrookDialog";
 import {
@@ -17,6 +17,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Brook {
   id: string;
@@ -28,6 +33,8 @@ interface Brook {
   last_post_at: string | null;
   created_at: string;
   invite_email: string | null;
+  nudge_sent_at: string | null;
+  canDelete?: boolean;
   partner?: {
     display_name: string | null;
     username: string | null;
@@ -46,7 +53,7 @@ export const BrookList = ({ userId, currentUsername }: BrookListProps) => {
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [inactivityBrook, setInactivityBrook] = useState<Brook | null>(null);
-  const [inactivityAction, setInactivityAction] = useState<string | null>(null);
+  const [deletingBrook, setDeletingBrook] = useState<Brook | null>(null);
 
   useEffect(() => {
     loadBrooks();
@@ -63,22 +70,46 @@ export const BrookList = ({ userId, currentUsername }: BrookListProps) => {
 
       if (error) throw error;
 
-      // Get partner profiles
+      // Get partner profiles and check post counts in parallel
       const partnerIds = (brookData || []).map(b => 
         b.user1_id === userId ? b.user2_id : b.user1_id
       );
 
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, display_name, username")
-        .in("id", partnerIds);
+      const [profilesResult, postsResult] = await Promise.all([
+        supabase.from("profiles").select("id, display_name, username").in("id", partnerIds),
+        supabase.from("brook_posts").select("brook_id, user_id").in("brook_id", (brookData || []).map(b => b.id))
+      ]);
 
-      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      const profileMap = new Map(profilesResult.data?.map(p => [p.id, p]) || []);
+      
+      // Calculate which brooks can be deleted
+      const postsByBrook = new Map<string, Set<string>>();
+      (postsResult.data || []).forEach(post => {
+        if (!postsByBrook.has(post.brook_id)) {
+          postsByBrook.set(post.brook_id, new Set());
+        }
+        postsByBrook.get(post.brook_id)!.add(post.user_id);
+      });
 
-      const enrichedBrooks = (brookData || []).map(brook => ({
-        ...brook,
-        partner: profileMap.get(brook.user1_id === userId ? brook.user2_id : brook.user1_id)
-      }));
+      const enrichedBrooks = (brookData || []).map(brook => {
+        const posters = postsByBrook.get(brook.id) || new Set();
+        const bothPosted = posters.has(brook.user1_id) && posters.has(brook.user2_id);
+        
+        // Determine if user can delete this brook
+        let canDelete = false;
+        if (brook.status === "pending" && brook.user1_id === userId) {
+          canDelete = true; // Creator can delete pending
+        } else if (!bothPosted) {
+          // If both haven't posted, either can delete if they're a participant
+          canDelete = true;
+        }
+        
+        return {
+          ...brook,
+          partner: profileMap.get(brook.user1_id === userId ? brook.user2_id : brook.user1_id),
+          canDelete
+        };
+      });
 
       // Separate active/rested from pending invites to current user
       const active = enrichedBrooks.filter(b => 
@@ -180,7 +211,11 @@ export const BrookList = ({ userId, currentUsername }: BrookListProps) => {
           .eq("id", inactivityBrook.id);
         toast.success("Brook archived");
       } else if (action === "nudge") {
-        // Just show a message - no actual notification to the other user
+        // Update nudge_sent_at timestamp
+        await supabase
+          .from("brooks")
+          .update({ nudge_sent_at: new Date().toISOString() })
+          .eq("id", inactivityBrook.id);
         toast.success("Gentle nudge sent", { description: "Your partner will see a friendly reminder next time they visit" });
       }
       setInactivityBrook(null);
@@ -188,6 +223,50 @@ export const BrookList = ({ userId, currentUsername }: BrookListProps) => {
     } catch (error) {
       console.error("Error handling inactivity:", error);
       toast.error("Failed to update brook");
+    }
+  };
+
+  const handleNudgeBrook = async (e: React.MouseEvent, brook: Brook) => {
+    e.stopPropagation();
+    if (brook.nudge_sent_at) {
+      toast.error("You've already sent a nudge for this brook");
+      return;
+    }
+    try {
+      await supabase
+        .from("brooks")
+        .update({ nudge_sent_at: new Date().toISOString() })
+        .eq("id", brook.id);
+      toast.success("Nudge sent!", { description: "Your partner will be notified" });
+      loadBrooks();
+    } catch (error) {
+      console.error("Error nudging:", error);
+      toast.error("Failed to send nudge");
+    }
+  };
+
+  const handleDeleteBrook = async () => {
+    if (!deletingBrook) return;
+    try {
+      // First delete any posts
+      await supabase
+        .from("brook_posts")
+        .delete()
+        .eq("brook_id", deletingBrook.id);
+      
+      // Then delete the brook
+      const { error } = await supabase
+        .from("brooks")
+        .delete()
+        .eq("id", deletingBrook.id);
+
+      if (error) throw error;
+      toast.success("Brook deleted");
+      setDeletingBrook(null);
+      loadBrooks();
+    } catch (error) {
+      console.error("Error deleting brook:", error);
+      toast.error("Failed to delete brook");
     }
   };
 
@@ -306,7 +385,45 @@ export const BrookList = ({ userId, currentUsername }: BrookListProps) => {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  {/* Nudge button for pending brooks (creator only) */}
+                  {brook.status === "pending" && brook.user1_id === userId && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={`h-8 w-8 p-0 ${brook.nudge_sent_at ? "text-muted-foreground" : "text-primary"}`}
+                          onClick={(e) => handleNudgeBrook(e, brook)}
+                          disabled={!!brook.nudge_sent_at}
+                        >
+                          <Send className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {brook.nudge_sent_at ? "Nudge already sent" : "Send nudge"}
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  {/* Delete button for deletable brooks */}
+                  {brook.canDelete && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingBrook(brook);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Delete brook</TooltipContent>
+                    </Tooltip>
+                  )}
                   {brook.status === "rested" && <Moon className="w-4 h-4 text-muted-foreground" />}
                   {brook.status === "archived" && <Archive className="w-4 h-4 text-muted-foreground" />}
                 </div>
@@ -345,6 +462,27 @@ export const BrookList = ({ userId, currentUsername }: BrookListProps) => {
               <Bell className="w-4 h-4" />
               Send gentle nudge
             </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deletingBrook} onOpenChange={(open) => !open && setDeletingBrook(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this brook?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete "{deletingBrook ? getBrookName(deletingBrook) : "this brook"}" and all its posts. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteBrook}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

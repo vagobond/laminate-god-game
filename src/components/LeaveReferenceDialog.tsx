@@ -75,11 +75,11 @@ export const LeaveReferenceDialog = ({ recipientId, recipientName }: LeaveRefere
 
       const friendship = recipientToUser.data || userToRecipient.data;
 
-      // Check if buddy or above (including family)
-      const buddyOrAbove = friendship?.level && 
-        ['family', 'close_friend', 'buddy', 'secret_friend'].includes(friendship.level);
+      // Check if any friend level (including acquaintance) - any friendship allows references
+      const isFriend = friendship?.level && 
+        ['family', 'close_friend', 'buddy', 'friendly_acquaintance', 'secret_friend'].includes(friendship.level);
 
-      if (buddyOrAbove) {
+      if (isFriend) {
         setCanLeaveReference(true);
         setCheckingEligibility(false);
         return;

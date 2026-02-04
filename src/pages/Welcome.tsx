@@ -12,6 +12,7 @@ const Welcome = () => {
   const { user, loading: authLoading } = useAuth();
   const [animationPhase, setAnimationPhase] = useState<"gif" | "dissolve" | "complete">("gif");
   const [isGifLoading, setIsGifLoading] = useState(true);
+  const [audioReady, setAudioReady] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Check if user is already logged in - redirect to powers
@@ -23,43 +24,66 @@ const Welcome = () => {
 
   // Initialize and play background music
   useEffect(() => {
-    const audio = new Audio("/audio/Skyforge_Citadel.mp3");
+    // Create audio element and attach to DOM for better browser support
+    const audio = document.createElement("audio");
+    audio.src = "/audio/Skyforge_Citadel.mp3";
     audio.loop = true;
     audio.volume = 0.5;
+    audio.preload = "auto";
     audioRef.current = audio;
 
     // Check initial mute state
     const isMuted = localStorage.getItem("audio-muted") === "true";
     audio.muted = isMuted;
 
+    // Handle when audio is ready to play
+    const handleCanPlay = () => {
+      setAudioReady(true);
+    };
+    audio.addEventListener("canplaythrough", handleCanPlay);
+
     // Try to play (may be blocked by browser autoplay policy)
-    const playAudio = () => {
-      audio.play().catch(() => {
-        // Autoplay blocked - will play on first user interaction
-        const handleInteraction = () => {
-          audio.play().catch(console.error);
-          document.removeEventListener("click", handleInteraction);
-          document.removeEventListener("keydown", handleInteraction);
-        };
-        document.addEventListener("click", handleInteraction);
-        document.addEventListener("keydown", handleInteraction);
-      });
+    const attemptPlay = () => {
+      if (audioRef.current) {
+        audioRef.current.play().catch(() => {
+          // Autoplay blocked - attach to user interaction
+          console.log("Autoplay blocked, waiting for user interaction");
+        });
+      }
     };
 
-    playAudio();
+    // Attempt autoplay after a short delay
+    const playTimeout = setTimeout(attemptPlay, 100);
+
+    // Also try to play on any user interaction
+    const handleInteraction = () => {
+      if (audioRef.current && audioRef.current.paused) {
+        audioRef.current.play().catch(console.error);
+      }
+    };
+    document.addEventListener("click", handleInteraction, { once: false });
+    document.addEventListener("keydown", handleInteraction, { once: false });
 
     // Listen for mute state changes
     const handleMuteChange = (e: CustomEvent<boolean>) => {
       if (audioRef.current) {
         audioRef.current.muted = e.detail;
+        // If unmuting, try to play
+        if (!e.detail && audioRef.current.paused) {
+          audioRef.current.play().catch(console.error);
+        }
       }
     };
 
     window.addEventListener("audio-mute-changed", handleMuteChange as EventListener);
 
     return () => {
+      clearTimeout(playTimeout);
       audio.pause();
+      audio.removeEventListener("canplaythrough", handleCanPlay);
       audio.src = "";
+      document.removeEventListener("click", handleInteraction);
+      document.removeEventListener("keydown", handleInteraction);
       window.removeEventListener("audio-mute-changed", handleMuteChange as EventListener);
     };
   }, []);
@@ -88,7 +112,12 @@ const Welcome = () => {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 overflow-hidden">
+    <div className="flex min-h-screen items-center justify-center p-4 overflow-hidden relative">
+      {/* Audio mute button in top-right corner */}
+      <div className="fixed top-4 right-4 z-50">
+        <AudioMuteButton />
+      </div>
+      
       <div className="text-center space-y-12 relative w-full h-full">
         {/* GIF Animation - Full Page */}
         <div 
