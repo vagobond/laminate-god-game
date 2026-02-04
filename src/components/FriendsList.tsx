@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, UserMinus, Edit2, MessageSquare, UserPlus, Clock, X, Check } from "lucide-react";
+import { Users, UserMinus, Edit2, MessageSquare, UserPlus, Clock, X, Check, Send } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -51,6 +51,7 @@ interface FriendRequest {
   to_user_id: string;
   message: string | null;
   created_at: string;
+  nudge_sent_at: string | null;
   profile?: {
     display_name: string | null;
     avatar_url: string | null;
@@ -124,7 +125,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
       // Load sent requests
       const { data: sentData, error: sentError } = await supabase
         .from("friend_requests")
-        .select("id, from_user_id, to_user_id, message, created_at")
+        .select("id, from_user_id, to_user_id, message, created_at, nudge_sent_at")
         .eq("from_user_id", viewerId);
       
       if (sentError) throw sentError;
@@ -132,7 +133,7 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
       // Load received requests
       const { data: receivedData, error: receivedError } = await supabase
         .from("friend_requests")
-        .select("id, from_user_id, to_user_id, message, created_at")
+        .select("id, from_user_id, to_user_id, message, created_at, nudge_sent_at")
         .eq("to_user_id", viewerId);
       
       if (receivedError) throw receivedError;
@@ -157,15 +158,36 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
       
       setSentRequests((sentData || []).map(r => ({
         ...r,
+        nudge_sent_at: r.nudge_sent_at || null,
         profile: profilesMap.get(r.to_user_id)
       })));
       
       setReceivedRequests((receivedData || []).map(r => ({
         ...r,
+        nudge_sent_at: r.nudge_sent_at || null,
         profile: profilesMap.get(r.from_user_id)
       })));
     } catch (error) {
       console.error("Error loading friend requests:", error);
+    }
+  };
+
+  const nudgeFriendRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from("friend_requests")
+        .update({ nudge_sent_at: new Date().toISOString() })
+        .eq("id", requestId);
+      
+      if (error) throw error;
+      
+      setSentRequests(prev => prev.map(r => 
+        r.id === requestId ? { ...r, nudge_sent_at: new Date().toISOString() } : r
+      ));
+      toast.success("Nudge sent!");
+    } catch (error) {
+      console.error("Error nudging request:", error);
+      toast.error("Failed to send nudge");
     }
   };
 
@@ -667,19 +689,39 @@ const FriendsList = ({ userId, viewerId, showLevels = false }: FriendsListProps)
                         </p>
                       </div>
                     </div>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => cancelSentRequest(request.id)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Cancel request</TooltipContent>
-                    </Tooltip>
+                    <div className="flex items-center gap-1">
+                      {/* Nudge button */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-8 w-8 p-0 ${request.nudge_sent_at ? "text-muted-foreground" : "text-blue-500 hover:text-blue-600 hover:bg-blue-500/20"}`}
+                            onClick={() => nudgeFriendRequest(request.id)}
+                            disabled={!!request.nudge_sent_at}
+                          >
+                            <Send className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {request.nudge_sent_at ? "Nudge already sent" : "Send nudge"}
+                        </TooltipContent>
+                      </Tooltip>
+                      {/* Cancel button */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => cancelSentRequest(request.id)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Cancel request</TooltipContent>
+                      </Tooltip>
+                    </div>
                   </div>
                 ))}
               </div>

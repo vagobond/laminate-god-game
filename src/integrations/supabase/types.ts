@@ -181,6 +181,7 @@ export type Database = {
           inactivity_days: number
           invite_email: string | null
           last_post_at: string | null
+          nudge_sent_at: string | null
           status: string
           updated_at: string
           user1_id: string
@@ -193,6 +194,7 @@ export type Database = {
           inactivity_days?: number
           invite_email?: string | null
           last_post_at?: string | null
+          nudge_sent_at?: string | null
           status?: string
           updated_at?: string
           user1_id: string
@@ -205,6 +207,7 @@ export type Database = {
           inactivity_days?: number
           invite_email?: string | null
           last_post_at?: string | null
+          nudge_sent_at?: string | null
           status?: string
           updated_at?: string
           user1_id?: string
@@ -385,6 +388,7 @@ export type Database = {
           from_user_id: string
           id: string
           message: string | null
+          nudge_sent_at: string | null
           to_user_id: string
         }
         Insert: {
@@ -392,6 +396,7 @@ export type Database = {
           from_user_id: string
           id?: string
           message?: string | null
+          nudge_sent_at?: string | null
           to_user_id: string
         }
         Update: {
@@ -399,6 +404,7 @@ export type Database = {
           from_user_id?: string
           id?: string
           message?: string | null
+          nudge_sent_at?: string | null
           to_user_id?: string
         }
         Relationships: [
@@ -1685,6 +1691,10 @@ export type Database = {
       }
       calculate_layer_points: { Args: { layer_id: string }; Returns: number }
       can_create_brook: { Args: { p_user_id: string }; Returns: boolean }
+      can_delete_brook: {
+        Args: { p_brook_id: string; p_user_id: string }
+        Returns: boolean
+      }
       can_post_in_brook: {
         Args: { p_brook_id: string; p_user_id: string }
         Returns: boolean
