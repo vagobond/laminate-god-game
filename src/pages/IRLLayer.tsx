@@ -10,6 +10,8 @@ import { escapeHtml } from "@/lib/sanitize";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { X, Globe, ChevronRight, Users, CalendarIcon, Heart } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import { CreateMeetupDialog } from "@/components/CreateMeetupDialog";
 import { MeetupsListModal } from "@/components/MeetupsListModal";
 
@@ -66,6 +68,10 @@ const IRLLayer = () => {
   const [showMeetupsModal, setShowMeetupsModal] = useState(false);
   const [showCreateMeetup, setShowCreateMeetup] = useState(false);
   const [expandedHometown, setExpandedHometown] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Load user profile when auth state changes
   useEffect(() => {
@@ -104,6 +110,47 @@ const IRLLayer = () => {
     }
 
     setAllHometowns((data || []) as ProfileData[]);
+  };
+
+  // Search for locations using Mapbox geocoding
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    
+    if (!query.trim() || !mapboxToken) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxToken}&types=place,locality,region,country&limit=5`
+      );
+      const data = await response.json();
+      
+      if (data.features) {
+        setSearchResults(data.features);
+        setShowSearchResults(true);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSelectSearchResult = (result: any) => {
+    if (map.current && result.center) {
+      map.current.flyTo({
+        center: result.center,
+        zoom: result.place_type?.includes("country") ? 4 : 10,
+        duration: 1500,
+      });
+    }
+    setSearchQuery(result.place_name || "");
+    setShowSearchResults(false);
+    setSearchResults([]);
   };
 
   const loadMeetups = async () => {
@@ -642,8 +689,47 @@ const IRLLayer = () => {
       <div className="max-w-7xl mx-auto relative">
         <div ref={mapContainer} className="w-full h-[600px] rounded-lg shadow-lg" />
         
+        {/* Search input overlay */}
+        <div className="absolute top-4 right-4 z-10 w-72">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search locations..."
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              onFocus={() => searchResults.length > 0 && setShowSearchResults(true)}
+              onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
+              className="pl-9 bg-card/95 backdrop-blur border-primary/20"
+            />
+            {isSearching && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </div>
+          
+          {/* Search results dropdown */}
+          {showSearchResults && searchResults.length > 0 && (
+            <div className="absolute top-full mt-1 w-full bg-card border border-primary/20 rounded-lg shadow-lg overflow-hidden z-50">
+              {searchResults.map((result, index) => (
+                <button
+                  key={result.id || index}
+                  onClick={() => handleSelectSearchResult(result)}
+                  className="w-full text-left px-4 py-3 hover:bg-secondary/50 transition-colors border-b border-border/50 last:border-b-0"
+                >
+                  <p className="font-medium text-sm truncate">{result.text}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {result.place_name}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {!userHometown && (
-          <div className="absolute top-4 left-4 bg-card/95 p-4 rounded-lg border border-primary/20 max-w-xs">
+          <div className="absolute top-4 left-4 z-10 bg-card/95 p-4 rounded-lg border border-primary/20 max-w-xs">
             <p className="text-sm">Click anywhere on the map to claim your hometown!</p>
           </div>
         )}
