@@ -641,7 +641,7 @@ const IRLLayer = () => {
   };
 
   return (
-    <div className="min-h-screen p-4 space-y-6">
+    <div className="min-h-screen p-4 pt-20 space-y-6">
       <div className="flex justify-between items-center max-w-7xl mx-auto flex-wrap gap-4">
         <div>
           <h1 className="text-4xl md:text-5xl font-bold text-glow">The World</h1>
