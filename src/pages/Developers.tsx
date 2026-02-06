@@ -5,13 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 
-const SUPABASE_URL = "https://ceuaibqpikcvcnmuesos.supabase.co";
+const XCROL_API_BASE_URL = import.meta.env.VITE_SUPABASE_URL;
+// Public API key required to access Xcrol backend endpoints (safe to embed client-side).
+// This is NOT your Client Secret.
 const XCROL_PUBLIC_API_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 const endpoints = {
   authorization: "https://xcrol.com/oauth/authorize",
-  token: `${SUPABASE_URL}/functions/v1/oauth-token`,
-  userinfo: `${SUPABASE_URL}/functions/v1/oauth-userinfo`,
+  token: `${XCROL_API_BASE_URL}/functions/v1/oauth-token`,
+  userinfo: `${XCROL_API_BASE_URL}/functions/v1/oauth-userinfo`,
 };
 
 const CodeBlock = ({ code, language = "bash" }: { code: string; language?: string }) => {
@@ -25,7 +27,7 @@ const CodeBlock = ({ code, language = "bash" }: { code: string; language?: strin
 
   return (
     <div className="relative group">
-      <pre className="bg-zinc-900 text-zinc-100 p-4 rounded-lg overflow-x-auto text-sm font-mono">
+      <pre className="bg-muted/70 text-foreground border border-border p-4 rounded-lg overflow-x-auto text-sm font-mono">
         <code>{code}</code>
       </pre>
       <Button
@@ -34,7 +36,11 @@ const CodeBlock = ({ code, language = "bash" }: { code: string; language?: strin
         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
         onClick={handleCopy}
       >
-        {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+        {copied ? (
+          <Check className="h-4 w-4 text-primary" />
+        ) : (
+          <Copy className="h-4 w-4 text-muted-foreground" />
+        )}
       </Button>
     </div>
   );
@@ -61,7 +67,11 @@ const EndpointCard = ({ title, url, method = "GET" }: { title: string; url: stri
         </div>
       </div>
       <Button variant="ghost" size="icon" onClick={handleCopy} className="shrink-0">
-        {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+        {copied ? (
+          <Check className="h-4 w-4 text-primary" />
+        ) : (
+          <Copy className="h-4 w-4 text-muted-foreground" />
+        )}
       </Button>
     </div>
   );
@@ -169,7 +179,7 @@ export default function Developers() {
             <h2 className="text-2xl font-bold mb-6">Quick Start</h2>
             
             <div className="space-y-6">
-<Card>
+              <Card>
                 <CardHeader>
                   <CardTitle>Step 1: Register Your Application</CardTitle>
                 </CardHeader>
@@ -185,6 +195,39 @@ export default function Developers() {
                   <p className="text-muted-foreground">
                     After creating the app, you'll receive a <strong>Client ID</strong> and <strong>Client Secret</strong>.
                   </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Step 1.5: Copy/Paste Checklist (don’t mix these up)</CardTitle>
+                  <CardDescription>
+                    Most <strong>"Authentication Failed"</strong> / <strong>non-2xx</strong> errors come from a missing header or swapped credentials.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
+                    <li>
+                      <strong>Client ID (public)</strong>: from <strong>Settings → Developer Apps</strong>. It looks like <code className="bg-muted px-1 rounded">9c611f…</code>
+                      (this is <em>not</em> the internal UUID).
+                    </li>
+                    <li>
+                      <strong>Client Secret (private)</strong>: from <strong>Settings → Developer Apps</strong>. Keep it server-side only.
+                    </li>
+                    <li>
+                      <strong>Public API Key (public)</strong>: required <code className="bg-muted px-1 rounded">apikey</code> header for calling <strong>Token Exchange</strong> and <strong>User Info</strong>.
+                    </li>
+                  </ul>
+
+                  <CodeBlock code={`apikey: ${XCROL_PUBLIC_API_KEY}`} />
+
+                  <div className="p-3 bg-muted rounded-lg text-sm text-muted-foreground">
+                    <strong>User Info requires TWO headers:</strong>
+                    <div className="mt-2 space-y-1 font-mono text-xs">
+                      <div>Authorization: Bearer &lt;access_token&gt;</div>
+                      <div>apikey: {XCROL_PUBLIC_API_KEY}</div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -555,10 +598,10 @@ curl "${endpoints.userinfo}" \\
                 <div>
                   <h3 className="font-semibold text-red-500 mb-2">❌ Getting JSON directly instead of consent page</h3>
                   <p className="text-muted-foreground text-sm mb-2">
-                    You're calling the Supabase function directly for authorization. The authorization URL should be the frontend page:
+                    You're calling the backend function directly for authorization. The authorization URL should be the frontend page:
                   </p>
                   <div className="text-sm space-y-1">
-                    <p className="text-red-500">Wrong: <code className="bg-muted px-1 rounded">{SUPABASE_URL}/functions/v1/oauth-authorize</code></p>
+                    <p className="text-red-500">Wrong: <code className="bg-muted px-1 rounded">{XCROL_API_BASE_URL}/functions/v1/oauth-authorize</code></p>
                     <p className="text-green-500">Correct: <code className="bg-muted px-1 rounded">{endpoints.authorization}</code></p>
                   </div>
                 </div>
