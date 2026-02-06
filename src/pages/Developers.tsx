@@ -155,7 +155,7 @@ export default function Developers() {
             <h2 className="text-2xl font-bold mb-6">Quick Start</h2>
             
             <div className="space-y-6">
-              <Card>
+<Card>
                 <CardHeader>
                   <CardTitle>Step 1: Register Your Application</CardTitle>
                 </CardHeader>
@@ -166,11 +166,68 @@ export default function Developers() {
                   <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
                     <li><strong>App Name:</strong> Your application's name (shown to users)</li>
                     <li><strong>Homepage URL:</strong> Your application's homepage</li>
-                    <li><strong>Redirect URI:</strong> Where users return after authorization (e.g., <code className="bg-muted px-1 rounded">https://yourapp.com/auth/callback</code>)</li>
+                    <li><strong>Redirect URI:</strong> Where users return after authorization — see the section below for exact formatting</li>
                   </ul>
                   <p className="text-muted-foreground">
                     After creating the app, you'll receive a <strong>Client ID</strong> and <strong>Client Secret</strong>.
                   </p>
+                </CardContent>
+              </Card>
+
+              {/* Redirect URI Configuration */}
+              <Card className="border-2 border-primary/30">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    Redirect URI Configuration
+                  </CardTitle>
+                  <CardDescription>
+                    The redirect URI must match <strong>exactly</strong>. This is the most common source of authorization errors.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <p className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">
+                      ⛔ Common Mistake: Wrong Path
+                    </p>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Many integrations fail because the path in the registered URI doesn't match the actual callback route in your app.
+                    </p>
+                    <div className="space-y-2 text-sm">
+                      <p className="text-red-500">❌ Wrong: <code className="bg-muted px-1 rounded">/auth/callback/</code> (if your app uses <code className="bg-muted px-1 rounded">/auth/xcrol/callback</code>)</p>
+                      <p className="text-green-500">✅ Correct: <code className="bg-muted px-1 rounded">/auth/xcrol/callback</code> (must match your actual route)</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Formatting Rules</h4>
+                    <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
+                      <li><strong>No trailing slash</strong> — use <code className="bg-muted px-1 rounded">/callback</code> not <code className="bg-muted px-1 rounded">/callback/</code></li>
+                      <li><strong>Include protocol</strong> — always include <code className="bg-muted px-1 rounded">https://</code></li>
+                      <li><strong>Exact path match</strong> — the path in the URI must match your callback route exactly</li>
+                      <li><strong>One URI per line</strong> — each redirect URI must be entered as a separate entry</li>
+                      <li><strong>Include www if used</strong> — <code className="bg-muted px-1 rounded">https://www.example.com</code> and <code className="bg-muted px-1 rounded">https://example.com</code> are different URIs</li>
+                    </ul>
+                  </div>
+
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm font-medium mb-2">Example: Multi-Environment Redirect URIs</p>
+                    <p className="text-xs text-muted-foreground mb-3">Each of these should be added as a separate entry:</p>
+                    <div className="space-y-1 font-mono text-sm">
+                      <p className="text-green-600 dark:text-green-400">✅ http://localhost:3000/auth/xcrol/callback</p>
+                      <p className="text-green-600 dark:text-green-400">✅ https://preview--abc123.lovable.app/auth/xcrol/callback</p>
+                      <p className="text-green-600 dark:text-green-400">✅ https://www.myapp.com/auth/xcrol/callback</p>
+                      <p className="text-green-600 dark:text-green-400">✅ https://myapp.com/auth/xcrol/callback</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                    <p className="text-sm text-amber-600 dark:text-amber-400">
+                      <strong>⚠️ Tip:</strong> Check what callback route your framework uses. For example, some OAuth libraries 
+                      use <code className="bg-muted px-1 rounded">/auth/callback</code>, while others use <code className="bg-muted px-1 rounded">/auth/xcrol/callback</code> or <code className="bg-muted px-1 rounded">/api/auth/callback/xcrol</code>. 
+                      Your registered URI must match exactly.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
 
