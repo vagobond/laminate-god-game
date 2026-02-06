@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 
 const SUPABASE_URL = "https://ceuaibqpikcvcnmuesos.supabase.co";
+const XCROL_PUBLIC_API_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 const endpoints = {
   authorization: "https://xcrol.com/oauth/authorize",
@@ -142,9 +143,22 @@ export default function Developers() {
               </CardContent>
             </Card>
 
+<div className="mt-4 p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground mb-3">
+                <strong>Required:</strong> Requests to <strong>Token Exchange</strong> and <strong>User Info</strong> must include an
+                <code className="bg-background px-1 rounded mx-1">apikey</code> header. If you omit it, you'll often see
+                <strong className="mx-1">"Authentication Failed"</strong> and the request may not reach the endpoint.
+              </p>
+              <CodeBlock code={`apikey: ${XCROL_PUBLIC_API_KEY}`} />
+              <p className="text-xs text-muted-foreground mt-3">
+                (Some HTTP clients support passing this as a URL query param 
+                <code className="bg-background px-1 rounded mx-1">?apikey=...</code>, but headers are recommended.)
+              </p>
+            </div>
+
             <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
               <p className="text-sm text-amber-600 dark:text-amber-400">
-                <strong>⚠️ Common Mistake:</strong> The Authorization endpoint is the <strong>frontend page</strong> at xcrol.com, 
+                <strong>⚠️ Common Mistake:</strong> The Authorization endpoint is the <strong>frontend page</strong> at xcrol.com,
                 not the Supabase function. The Token endpoint is the Supabase function. Don't mix these up!
               </p>
             </div>
@@ -186,16 +200,16 @@ export default function Developers() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-                    <p className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">
+                  <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <p className="text-sm font-medium text-destructive mb-2">
                       ⛔ Common Mistake: Wrong Path
                     </p>
                     <p className="text-sm text-muted-foreground mb-3">
                       Many integrations fail because the path in the registered URI doesn't match the actual callback route in your app.
                     </p>
                     <div className="space-y-2 text-sm">
-                      <p className="text-red-500">❌ Wrong: <code className="bg-muted px-1 rounded">/auth/callback/</code> (if your app uses <code className="bg-muted px-1 rounded">/auth/xcrol/callback</code>)</p>
-                      <p className="text-green-500">✅ Correct: <code className="bg-muted px-1 rounded">/auth/xcrol/callback</code> (must match your actual route)</p>
+                      <p className="text-destructive">❌ Wrong: <code className="bg-muted px-1 rounded">/auth/callback/</code> (if your app uses <code className="bg-muted px-1 rounded">/auth/xcrol/callback</code>)</p>
+                      <p className="text-primary">✅ Correct: <code className="bg-muted px-1 rounded">/auth/xcrol/callback</code> (must match your actual route)</p>
                     </div>
                   </div>
 
@@ -214,10 +228,10 @@ export default function Developers() {
                     <p className="text-sm font-medium mb-2">Example: Multi-Environment Redirect URIs</p>
                     <p className="text-xs text-muted-foreground mb-3">Each of these should be added as a separate entry:</p>
                     <div className="space-y-1 font-mono text-sm">
-                      <p className="text-green-600 dark:text-green-400">✅ http://localhost:3000/auth/xcrol/callback</p>
-                      <p className="text-green-600 dark:text-green-400">✅ https://preview--abc123.lovable.app/auth/xcrol/callback</p>
-                      <p className="text-green-600 dark:text-green-400">✅ https://www.myapp.com/auth/xcrol/callback</p>
-                      <p className="text-green-600 dark:text-green-400">✅ https://myapp.com/auth/xcrol/callback</p>
+                      <p className="text-primary">✅ http://localhost:3000/auth/xcrol/callback</p>
+                      <p className="text-primary">✅ https://preview--abc123.lovable.app/auth/xcrol/callback</p>
+                      <p className="text-primary">✅ https://www.myapp.com/auth/xcrol/callback</p>
+                      <p className="text-primary">✅ https://myapp.com/auth/xcrol/callback</p>
                     </div>
                   </div>
 
@@ -241,7 +255,7 @@ export default function Developers() {
                   </p>
                   <CodeBlock code={`${endpoints.authorization}?
   client_id=YOUR_CLIENT_ID&
-  redirect_uri=https://yourapp.com/auth/callback&
+  redirect_uri=https://yourapp.com/auth/xcrol/callback&
   response_type=code&
   scope=profile:read&
   state=RANDOM_STATE_STRING`} />
@@ -269,11 +283,12 @@ export default function Developers() {
                   </p>
                   <CodeBlock code={`POST ${endpoints.token}
 Content-Type: application/json
+apikey: XCROL_PUBLIC_API_KEY
 
 {
   "grant_type": "authorization_code",
   "code": "THE_AUTH_CODE",
-  "redirect_uri": "https://yourapp.com/auth/callback",
+  "redirect_uri": "https://yourapp.com/auth/xcrol/callback",
   "client_id": "YOUR_CLIENT_ID",
   "client_secret": "YOUR_CLIENT_SECRET"
 }`} />
@@ -299,7 +314,8 @@ Content-Type: application/json
                     Use the access token to fetch the user's profile:
                   </p>
                   <CodeBlock code={`GET ${endpoints.userinfo}
-Authorization: Bearer ACCESS_TOKEN`} />
+Authorization: Bearer ACCESS_TOKEN
+apikey: XCROL_PUBLIC_API_KEY`} />
                   <p className="text-muted-foreground text-sm">
                     Response:
                   </p>
@@ -334,10 +350,16 @@ Authorization: Bearer ACCESS_TOKEN`} />
               </TabsList>
 
               <TabsContent value="javascript" className="mt-4">
-                <CodeBlock language="javascript" code={`// Step 1: Redirect to authorization
+                <CodeBlock
+                  language="javascript"
+                  code={`// You must include an apikey header when calling the Token + User Info endpoints.
+// This is a PUBLIC key (not your client secret).
+const XCROL_PUBLIC_API_KEY = "XCROL_PUBLIC_API_KEY";
+
+// Step 1: Redirect to authorization
 const authorizeUrl = new URL("${endpoints.authorization}");
 authorizeUrl.searchParams.set("client_id", CLIENT_ID);
-authorizeUrl.searchParams.set("redirect_uri", "https://yourapp.com/auth/callback");
+authorizeUrl.searchParams.set("redirect_uri", "https://yourapp.com/auth/xcrol/callback");
 authorizeUrl.searchParams.set("response_type", "code");
 authorizeUrl.searchParams.set("scope", "profile:read");
 authorizeUrl.searchParams.set("state", crypto.randomUUID());
@@ -348,33 +370,52 @@ window.location.href = authorizeUrl.toString();
 async function handleCallback(code) {
   const response = await fetch("${endpoints.token}", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      apikey: XCROL_PUBLIC_API_KEY,
+    },
     body: JSON.stringify({
       grant_type: "authorization_code",
-      code,
-      redirect_uri: "https://yourapp.com/auth/callback",
+      code: code,
+      redirect_uri: "https://yourapp.com/auth/xcrol/callback",
       client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET
-    })
+      client_secret: CLIENT_SECRET,
+    }),
   });
-  
-  const { access_token } = await response.json();
-  
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error("Token exchange failed [" + response.status + "]: " + errText);
+  }
+
+  const tokens = await response.json();
+  const access_token = tokens.access_token;
+
   // Step 3: Fetch user info
   const userResponse = await fetch("${endpoints.userinfo}", {
-    headers: { Authorization: \`Bearer \${access_token}\` }
+    headers: {
+      Authorization: "Bearer " + access_token,
+      apikey: XCROL_PUBLIC_API_KEY,
+    },
   });
-  
+
+  if (!userResponse.ok) {
+    const errText = await userResponse.text();
+    throw new Error("Userinfo failed [" + userResponse.status + "]: " + errText);
+  }
+
   const user = await userResponse.json();
-  
+
   // Map standard OAuth claims
   const userData = {
     id: user.sub,           // Standard OAuth 'sub' claim
     displayName: user.name, // Standard OAuth 'name' claim
     avatarUrl: user.picture // Standard OAuth 'picture' claim
   };
+
   console.log("Logged in as:", userData.displayName);
-}`} />
+}`} 
+                />
               </TabsContent>
 
               <TabsContent value="python" className="mt-4">
@@ -382,10 +423,12 @@ async function handleCallback(code) {
 from urllib.parse import urlencode
 import secrets
 
+XCROL_PUBLIC_API_KEY = "XCROL_PUBLIC_API_KEY"
+
 # Step 1: Generate authorization URL
 params = {
     "client_id": CLIENT_ID,
-    "redirect_uri": "https://yourapp.com/auth/callback",
+    "redirect_uri": "https://yourapp.com/auth/xcrol/callback",
     "response_type": "code",
     "scope": "profile:read",
     "state": secrets.token_urlsafe(16)
@@ -397,28 +440,34 @@ auth_url = f"${endpoints.authorization}?{urlencode(params)}"
 def handle_callback(code):
     response = requests.post(
         "${endpoints.token}",
+        headers={"apikey": XCROL_PUBLIC_API_KEY},
         json={
             "grant_type": "authorization_code",
             "code": code,
-            "redirect_uri": "https://yourapp.com/auth/callback",
+            "redirect_uri": "https://yourapp.com/auth/xcrol/callback",
             "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET
+            "client_secret": CLIENT_SECRET,
         }
     )
+    response.raise_for_status()
     tokens = response.json()
-    
+
     # Step 3: Fetch user info
     user_response = requests.get(
         "${endpoints.userinfo}",
-        headers={"Authorization": f"Bearer {tokens['access_token']}"}
+        headers={
+            "Authorization": f"Bearer {tokens['access_token']}",
+            "apikey": XCROL_PUBLIC_API_KEY,
+        }
     )
+    user_response.raise_for_status()
     user = user_response.json()
-    
+
     # Map standard OAuth claims
     user_data = {
-        "id": user["sub"],           # Standard OAuth 'sub' claim
-        "display_name": user["name"], # Standard OAuth 'name' claim
-        "avatar_url": user["picture"] # Standard OAuth 'picture' claim
+        "id": user["sub"],
+        "display_name": user["name"],
+        "avatar_url": user["picture"],
     }
     print(f"Logged in as: {user_data['display_name']}")`} />
               </TabsContent>
@@ -427,17 +476,19 @@ def handle_callback(code):
                 <CodeBlock code={`# Exchange authorization code for token
 curl -X POST "${endpoints.token}" \\
   -H "Content-Type: application/json" \\
+  -H "apikey: XCROL_PUBLIC_API_KEY" \\
   -d '{
     "grant_type": "authorization_code",
     "code": "AUTH_CODE_HERE",
-    "redirect_uri": "https://yourapp.com/auth/callback",
+    "redirect_uri": "https://yourapp.com/auth/xcrol/callback",
     "client_id": "YOUR_CLIENT_ID",
     "client_secret": "YOUR_CLIENT_SECRET"
   }'
 
 # Fetch user info
 curl "${endpoints.userinfo}" \\
-  -H "Authorization: Bearer ACCESS_TOKEN_HERE"`} />
+  -H "Authorization: Bearer ACCESS_TOKEN_HERE" \\
+  -H "apikey: XCROL_PUBLIC_API_KEY"`} />
               </TabsContent>
             </Tabs>
           </section>
@@ -487,6 +538,17 @@ curl "${endpoints.userinfo}" \\
                   <div className="text-sm space-y-1">
                     <p className="text-red-500">Wrong: <code className="bg-muted px-1 rounded">https://xcrol.com/oauth/token</code></p>
                     <p className="text-green-500">Correct: <code className="bg-muted px-1 rounded">{endpoints.token}</code></p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-destructive mb-2">❌ "Authentication Failed" / 401 when calling Token or User Info</h3>
+                  <p className="text-muted-foreground text-sm mb-2">
+                    Your request is missing the required <code className="bg-muted px-1 rounded">apikey</code> header.
+                    Add it to both the Token Exchange and User Info calls.
+                  </p>
+                  <div className="mt-2">
+                    <CodeBlock code={`apikey: ${XCROL_PUBLIC_API_KEY}`} />
                   </div>
                 </div>
 
@@ -592,9 +654,9 @@ const link = xcrolUser.link;`} />
                 <div className="p-4 bg-muted rounded-lg">
                   <p className="text-sm font-medium mb-2">Example redirect URIs to register:</p>
                   <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground font-mono">
-                    <li>http://localhost:3000/auth/callback</li>
-                    <li>https://myapp-staging.vercel.app/auth/callback</li>
-                    <li>https://myapp.com/auth/callback</li>
+                    <li>http://localhost:3000/auth/xcrol/callback</li>
+                    <li>https://myapp-staging.vercel.app/auth/xcrol/callback</li>
+                    <li>https://myapp.com/auth/xcrol/callback</li>
                   </ul>
                 </div>
                 <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
