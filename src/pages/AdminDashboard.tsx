@@ -26,6 +26,8 @@ interface UserProfile {
   username: string | null;
   email: string | null;
   created_at: string;
+  invited_by_name?: string | null;
+  invited_by_email?: string | null;
 }
 
 interface UserRole {
@@ -274,8 +276,54 @@ export default function AdminDashboard() {
           .order("created_at", { ascending: false })
       ]);
 
-      // Process users
-      if (usersResult.data) setUsers(usersResult.data);
+      if (usersResult.data) {
+        // Fetch invite data to show who invited each user
+        const userIds = usersResult.data.map(u => u.id);
+        const userEmails = usersResult.data.map(u => u.email).filter(Boolean) as string[];
+        
+        // Fetch accepted invites for these users
+        const { data: inviteData } = await supabase
+          .from("user_invites")
+          .select("invitee_id, invitee_email, inviter_id")
+          .eq("status", "accepted");
+        
+        // Build a map of invitee -> inviter_id
+        const inviterMap = new Map<string, string>();
+        (inviteData || []).forEach(inv => {
+          if (inv.invitee_id) inviterMap.set(inv.invitee_id, inv.inviter_id);
+          if (inv.invitee_email) {
+            const matchedUser = usersResult.data!.find(u => u.email === inv.invitee_email);
+            if (matchedUser && !inviterMap.has(matchedUser.id)) {
+              inviterMap.set(matchedUser.id, inv.inviter_id);
+            }
+          }
+        });
+
+        // Fetch inviter profiles
+        const inviterIds = [...new Set(inviterMap.values())];
+        let inviterProfiles = new Map<string, { display_name: string | null; email: string | null }>();
+        if (inviterIds.length > 0) {
+          const { data: invProfiles } = await supabase
+            .from("profiles")
+            .select("id, display_name, email")
+            .in("id", inviterIds);
+          (invProfiles || []).forEach(p => {
+            inviterProfiles.set(p.id, { display_name: p.display_name, email: p.email });
+          });
+        }
+
+        // Enrich users with invite info
+        const enrichedUsers = usersResult.data.map(user => {
+          const inviterId = inviterMap.get(user.id);
+          const inviter = inviterId ? inviterProfiles.get(inviterId) : null;
+          return {
+            ...user,
+            invited_by_name: inviter?.display_name || null,
+            invited_by_email: inviter?.email || null,
+          };
+        });
+        setUsers(enrichedUsers);
+      }
 
       // Set stats
       setStats({
@@ -632,6 +680,7 @@ export default function AdminDashboard() {
                       <TableHead>Display Name</TableHead>
                       <TableHead>@Username</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead>Invited By</TableHead>
                       <TableHead>Registered</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -646,6 +695,15 @@ export default function AdminDashboard() {
                           {user.username ? `@${user.username}` : "—"}
                         </TableCell>
                         <TableCell>{user.email || "No email"}</TableCell>
+                        <TableCell className="text-sm">
+                          {user.invited_by_name || user.invited_by_email ? (
+                            <span title={user.invited_by_email || undefined}>
+                              {user.invited_by_name || user.invited_by_email}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           {new Date(user.created_at).toLocaleDateString()}
                         </TableCell>
