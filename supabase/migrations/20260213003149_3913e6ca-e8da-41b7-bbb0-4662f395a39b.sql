@@ -1,0 +1,1 @@
+ALTER TABLE public.profile_widgets ADD COLUMN config JSONB DEFAULT '{}'::jsonb;

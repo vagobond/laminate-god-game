@@ -1118,6 +1118,7 @@ export type Database = {
       }
       profile_widgets: {
         Row: {
+          config: Json | null
           created_at: string
           enabled: boolean
           id: string
@@ -1126,6 +1127,7 @@ export type Database = {
           widget_key: string
         }
         Insert: {
+          config?: Json | null
           created_at?: string
           enabled?: boolean
           id?: string
@@ -1134,6 +1136,7 @@ export type Database = {
           widget_key: string
         }
         Update: {
+          config?: Json | null
           created_at?: string
           enabled?: boolean
           id?: string
