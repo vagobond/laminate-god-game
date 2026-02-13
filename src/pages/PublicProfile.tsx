@@ -27,6 +27,7 @@ import { MeetupRequestDialog } from "@/components/MeetupRequestDialog";
 import { HostingRequestDialog } from "@/components/HostingRequestDialog";
 import { PublicXcrolEntries } from "@/components/PublicXcrolEntries";
 import ConnectionDegreeBadge from "@/components/ConnectionDegreeBadge";
+import { ProfileWidgetsDisplay } from "@/components/ProfileWidgetsDisplay";
 import { Coffee, Home } from "lucide-react";
 interface Profile {
   id: string;
@@ -711,6 +712,14 @@ const PublicProfile = () => {
               viewerId={currentUser?.id || null}
             />
           </div>
+        )}
+
+        {/* Profile Widgets */}
+        {resolvedUserId && (
+          <ProfileWidgetsDisplay
+            userId={resolvedUserId}
+            username={username?.replace(/^@/, '') || null}
+          />
         )}
 
         {/* Mini-Game Stats */}

@@ -20,6 +20,7 @@ import { ProfileCompleteness } from "@/components/ProfileCompleteness";
 import { CustomFriendshipTypeManager } from "@/components/CustomFriendshipTypeManager";
 import { XcrolPrompt } from "@/components/XcrolPrompt";
 import IntroductionRequestsManager from "@/components/IntroductionRequestsManager";
+import { ProfileWidgetsManager } from "@/components/ProfileWidgetsManager";
 import { z } from "zod";
 
 // Validation constants
@@ -677,6 +678,15 @@ const Profile = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Profile Widgets */}
+        {user && (
+          <Card>
+            <CardContent className="pt-6">
+              <ProfileWidgetsManager userId={user.id} username={username || null} />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Custom Friendship Type */}
         {user && (
