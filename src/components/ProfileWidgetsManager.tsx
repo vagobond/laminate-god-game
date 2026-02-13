@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Blocks } from "lucide-react";
 
@@ -12,8 +13,16 @@ const AVAILABLE_WIDGETS = [
     description: "Show your micro victories on your profile",
     getEmbedUrl: (username: string) => `https://microvictoryarmy.com/embed/${username}`,
     icon: "🏆",
+    usernameLabel: "Your MicroVictoryArmy username",
+    usernamePlaceholder: "e.g. johndoe",
   },
 ];
+
+interface WidgetRow {
+  widget_key: string;
+  enabled: boolean;
+  config: Record<string, string> | null;
+}
 
 interface ProfileWidgetsManagerProps {
   userId: string;
@@ -21,7 +30,7 @@ interface ProfileWidgetsManagerProps {
 }
 
 export const ProfileWidgetsManager = ({ userId, username }: ProfileWidgetsManagerProps) => {
-  const [enabledWidgets, setEnabledWidgets] = useState<Record<string, boolean>>({});
+  const [widgets, setWidgets] = useState<Record<string, { enabled: boolean; config: Record<string, string> }>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
 
@@ -33,16 +42,19 @@ export const ProfileWidgetsManager = ({ userId, username }: ProfileWidgetsManage
     try {
       const { data, error } = await supabase
         .from("profile_widgets")
-        .select("widget_key, enabled")
+        .select("widget_key, enabled, config")
         .eq("user_id", userId);
 
       if (error) throw error;
 
-      const widgetMap: Record<string, boolean> = {};
-      (data || []).forEach((w) => {
-        widgetMap[w.widget_key] = w.enabled;
+      const widgetMap: Record<string, { enabled: boolean; config: Record<string, string> }> = {};
+      (data || []).forEach((w: any) => {
+        widgetMap[w.widget_key] = {
+          enabled: w.enabled,
+          config: (w.config as Record<string, string>) || {},
+        };
       });
-      setEnabledWidgets(widgetMap);
+      setWidgets(widgetMap);
     } catch (error) {
       console.error("Error loading widgets:", error);
     } finally {
@@ -50,26 +62,51 @@ export const ProfileWidgetsManager = ({ userId, username }: ProfileWidgetsManage
     }
   };
 
-  const toggleWidget = async (widgetKey: string, enabled: boolean) => {
+  const saveWidget = async (widgetKey: string, enabled: boolean, config: Record<string, string>) => {
     setSaving(widgetKey);
     try {
       const { error } = await supabase
         .from("profile_widgets")
         .upsert(
-          { user_id: userId, widget_key: widgetKey, enabled },
+          { user_id: userId, widget_key: widgetKey, enabled, config },
           { onConflict: "user_id,widget_key" }
         );
 
       if (error) throw error;
 
-      setEnabledWidgets((prev) => ({ ...prev, [widgetKey]: enabled }));
-      toast.success(enabled ? "Widget enabled!" : "Widget disabled");
+      setWidgets((prev) => ({ ...prev, [widgetKey]: { enabled, config } }));
+      toast.success(enabled ? "Widget updated!" : "Widget disabled");
     } catch (error) {
-      console.error("Error toggling widget:", error);
+      console.error("Error saving widget:", error);
       toast.error("Failed to update widget");
     } finally {
       setSaving(null);
     }
+  };
+
+  const toggleWidget = (widgetKey: string, enabled: boolean) => {
+    const current = widgets[widgetKey] || { enabled: false, config: {} };
+    if (enabled && !current.config?.username) {
+      toast.error("Please enter your username for this widget first");
+      return;
+    }
+    saveWidget(widgetKey, enabled, current.config);
+  };
+
+  const updateWidgetUsername = (widgetKey: string, value: string) => {
+    setWidgets((prev) => ({
+      ...prev,
+      [widgetKey]: {
+        enabled: prev[widgetKey]?.enabled ?? false,
+        config: { ...(prev[widgetKey]?.config || {}), username: value },
+      },
+    }));
+  };
+
+  const saveWidgetUsername = (widgetKey: string) => {
+    const current = widgets[widgetKey];
+    if (!current?.config?.username) return;
+    saveWidget(widgetKey, current.enabled, current.config);
   };
 
   if (loading) {
@@ -84,33 +121,51 @@ export const ProfileWidgetsManager = ({ userId, username }: ProfileWidgetsManage
       </div>
       <p className="text-sm text-muted-foreground">
         Enable widgets from Xcrol-connected projects to display on your public profile.
-        {!username && (
-        <span className="text-destructive ml-1">
-            Set a username above to activate widgets.
-          </span>
-        )}
       </p>
 
       <div className="space-y-3">
-        {AVAILABLE_WIDGETS.map((widget) => (
-          <div
-            key={widget.key}
-            className="flex items-center justify-between p-4 border border-border rounded-lg bg-card/50"
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{widget.icon}</span>
-              <div>
-                <div className="font-medium">{widget.name}</div>
-                <div className="text-xs text-muted-foreground">{widget.description}</div>
+        {AVAILABLE_WIDGETS.map((widget) => {
+          const state = widgets[widget.key] || { enabled: false, config: {} };
+          return (
+            <div
+              key={widget.key}
+              className="p-4 border border-border rounded-lg bg-card/50 space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{widget.icon}</span>
+                  <div>
+                    <div className="font-medium">{widget.name}</div>
+                    <div className="text-xs text-muted-foreground">{widget.description}</div>
+                  </div>
+                </div>
+                <Switch
+                  checked={state.enabled}
+                  onCheckedChange={(checked) => toggleWidget(widget.key, checked)}
+                  disabled={saving === widget.key}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm text-muted-foreground">{widget.usernameLabel}</label>
+                <div className="flex gap-2">
+                  <Input
+                    value={state.config?.username || ""}
+                    onChange={(e) => updateWidgetUsername(widget.key, e.target.value)}
+                    placeholder={widget.usernamePlaceholder}
+                    className="flex-1"
+                  />
+                  <button
+                    onClick={() => saveWidgetUsername(widget.key)}
+                    disabled={saving === widget.key || !state.config?.username}
+                    className="px-3 py-1 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    Save
+                  </button>
+                </div>
               </div>
             </div>
-            <Switch
-              checked={enabledWidgets[widget.key] ?? false}
-              onCheckedChange={(checked) => toggleWidget(widget.key, checked)}
-              disabled={saving === widget.key || !username}
-            />
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
