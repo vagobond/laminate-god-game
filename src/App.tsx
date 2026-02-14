@@ -37,7 +37,14 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const Developers = lazy(() => import("./pages/Developers"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Loading fallback for lazy-loaded routes
 const PageLoader = () => (
