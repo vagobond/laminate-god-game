@@ -25,13 +25,34 @@ const WIDGET_REGISTRY: Record<string, {
   },
 };
 
-interface ProfileWidgetsDisplayProps {
-  userId: string;
-  username?: string | null; // kept for backwards compat but no longer used for embed URL
+// Friendship level hierarchy for visibility checks
+const LEVEL_RANK: Record<string, number> = {
+  public: 0,
+  friendly_acquaintance: 1,
+  buddy: 2,
+  close_friend: 3,
+  family: 3,
+  secret_friend: 3,
+};
+
+function canViewWidget(requiredLevel: string, viewerLevel: string | null, isOwnProfile: boolean): boolean {
+  if (isOwnProfile) return true;
+  if (!requiredLevel || requiredLevel === "public") return true;
+  if (!viewerLevel) return false;
+  const required = LEVEL_RANK[requiredLevel] ?? 0;
+  const viewer = LEVEL_RANK[viewerLevel] ?? 0;
+  return viewer >= required;
 }
 
-export const ProfileWidgetsDisplay = ({ userId }: ProfileWidgetsDisplayProps) => {
-  const [widgetsToRender, setWidgetsToRender] = useState<{ key: string; name: string; embedUrl: string; height: number }[]>([]);
+interface ProfileWidgetsDisplayProps {
+  userId: string;
+  username?: string | null;
+  viewerFriendshipLevel?: string | null;
+  isOwnProfile?: boolean;
+}
+
+export const ProfileWidgetsDisplay = ({ userId, viewerFriendshipLevel = null, isOwnProfile = false }: ProfileWidgetsDisplayProps) => {
+  const [widgetsToRender, setWidgetsToRender] = useState<{ key: string; name: string; embedUrl: string; height: number; minLevel: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,9 +76,10 @@ export const ProfileWidgetsDisplay = ({ userId }: ProfileWidgetsDisplayProps) =>
               name: reg.name,
               embedUrl: reg.getEmbedUrl(config.username),
               height: reg.height,
+              minLevel: config.min_friendship_level || "public",
             };
           })
-          .filter(Boolean) as { key: string; name: string; embedUrl: string; height: number }[];
+          .filter(Boolean) as { key: string; name: string; embedUrl: string; height: number; minLevel: string }[];
 
         setWidgetsToRender(rendered);
       } catch (err) {
@@ -69,7 +91,9 @@ export const ProfileWidgetsDisplay = ({ userId }: ProfileWidgetsDisplayProps) =>
     load();
   }, [userId]);
 
-  if (loading || widgetsToRender.length === 0) return null;
+  const visibleWidgets = widgetsToRender.filter(w => canViewWidget(w.minLevel, viewerFriendshipLevel, isOwnProfile));
+
+  if (loading || visibleWidgets.length === 0) return null;
 
   return (
     <div className="space-y-4">
@@ -78,7 +102,7 @@ export const ProfileWidgetsDisplay = ({ userId }: ProfileWidgetsDisplayProps) =>
         <h2 className="text-lg font-semibold">Widgets</h2>
       </div>
       <div className="space-y-4">
-        {widgetsToRender.map((widget) => (
+        {visibleWidgets.map((widget) => (
           <div key={widget.key} className="rounded-lg overflow-hidden border border-border">
             <iframe
               src={widget.embedUrl}
