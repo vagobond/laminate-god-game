@@ -1,16 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
-import { Bell, Star, Waves } from "lucide-react";
+import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -18,52 +15,29 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useUnreadMessages } from "@/hooks/use-unread-messages";
+import { toast } from "sonner";
 import { FriendshipLevelSelector, type FriendshipLevel } from "@/components/FriendshipLevelSelector";
-
-interface FriendRequest {
-  id: string;
-  from_user_id: string;
-  message: string | null;
-  created_at: string;
-  from_profile?: {
-    display_name: string | null;
-    avatar_url: string | null;
-  };
-}
-
-interface PendingFriendship {
-  id: string;
-  friend_id: string;
-  friend_profile?: {
-    display_name: string | null;
-    avatar_url: string | null;
-  };
-}
-
-interface NewReference {
-  id: string;
-  from_user_id: string;
-  reference_type: string;
-  rating: number | null;
-  created_at: string;
-  from_profile?: {
-    display_name: string | null;
-    avatar_url: string | null;
-    username: string | null;
-  };
-  hasLeftReturn?: boolean;
-}
-
-// FriendshipLevel type is imported from FriendshipLevelSelector
+import { useNotifications } from "@/hooks/use-notifications";
+import type { FriendRequest, PendingFriendship } from "@/hooks/use-notifications";
+import UnreadMessagesItem from "@/components/notifications/UnreadMessagesItem";
+import PendingFriendshipItem from "@/components/notifications/PendingFriendshipItem";
+import FriendRequestItem from "@/components/notifications/FriendRequestItem";
+import ReferenceItem from "@/components/notifications/ReferenceItem";
 
 const NotificationBell = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [requests, setRequests] = useState<FriendRequest[]>([]);
-  const [pendingFriendships, setPendingFriendships] = useState<PendingFriendship[]>([]);
-  const [newReferences, setNewReferences] = useState<NewReference[]>([]);
-  const { unreadCount: unreadMessageCount } = useUnreadMessages(user?.id || null);
+  const {
+    user,
+    requests,
+    pendingFriendships,
+    newReferences,
+    unreadMessageCount,
+    totalNotifications,
+    dismissReferenceNotification,
+    loadRequests,
+    loadPendingFriendships,
+  } = useNotifications();
+
   const [selectedRequest, setSelectedRequest] = useState<FriendRequest | null>(null);
   const [selectedPendingFriendship, setSelectedPendingFriendship] = useState<PendingFriendship | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<FriendshipLevel>("buddy");
@@ -71,27 +45,15 @@ const NotificationBell = () => {
   const [hasShownMessageToast, setHasShownMessageToast] = useState(false);
   const [hasShownReferenceToast, setHasShownReferenceToast] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      loadRequests();
-      loadPendingFriendships();
-      loadNewReferences();
-    }
-  }, [user]);
-
-  // Show toast for unread messages (once per session/page load)
+  // Show toast for unread messages (once per session)
   useEffect(() => {
     if (unreadMessageCount > 0 && !hasShownMessageToast) {
       const currentPath = window.location.pathname;
-      // Don't show toast if already on messages page
-      if (!currentPath.startsWith('/messages')) {
+      if (!currentPath.startsWith("/messages")) {
         toast.info(
-          `You have ${unreadMessageCount} unread message${unreadMessageCount > 1 ? 's' : ''}`,
+          `You have ${unreadMessageCount} unread message${unreadMessageCount > 1 ? "s" : ""}`,
           {
-            action: {
-              label: 'View',
-              onClick: () => navigate('/messages'),
-            },
+            action: { label: "View", onClick: () => navigate("/messages") },
             duration: 5000,
           }
         );
@@ -100,212 +62,38 @@ const NotificationBell = () => {
     }
   }, [unreadMessageCount, hasShownMessageToast, navigate]);
 
-  // Show toast for new references (once per session/page load)
+  // Show toast for new references (once per session)
   useEffect(() => {
     if (newReferences.length > 0 && !hasShownReferenceToast) {
       const currentPath = window.location.pathname;
-      // Don't show toast if already on profile page
-      if (!currentPath.startsWith('/profile')) {
-        const firstName = newReferences[0].from_profile?.display_name?.split(' ')[0] || 'Someone';
-        toast.info(
-          `${firstName} left you a reference!`,
-          {
-            action: {
-              label: 'View',
-              onClick: () => navigate('/profile'),
-            },
-            duration: 5000,
-          }
-        );
+      if (!currentPath.startsWith("/profile")) {
+        const firstName =
+          newReferences[0].from_profile?.display_name?.split(" ")[0] || "Someone";
+        toast.info(`${firstName} left you a reference!`, {
+          action: { label: "View", onClick: () => navigate("/profile") },
+          duration: 5000,
+        });
         setHasShownReferenceToast(true);
       }
     }
   }, [newReferences, hasShownReferenceToast, navigate]);
 
-
-  const getDismissedReferenceIds = (): string[] => {
-    try {
-      const stored = localStorage.getItem('dismissed_reference_notifications');
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  };
-
-  const dismissReferenceNotification = (refId: string) => {
-    const dismissed = getDismissedReferenceIds();
-    if (!dismissed.includes(refId)) {
-      dismissed.push(refId);
-      localStorage.setItem('dismissed_reference_notifications', JSON.stringify(dismissed));
-    }
-    // Remove from state immediately
-    setNewReferences(prev => prev.filter(ref => ref.id !== refId));
-  };
-
-  const loadNewReferences = async () => {
-    if (!user) return;
-
-    // Get references from the last 30 days that the user hasn't seen
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const { data, error } = await supabase
-      .from("user_references")
-      .select("id, from_user_id, reference_type, rating, created_at")
-      .eq("to_user_id", user.id)
-      .gte("created_at", thirtyDaysAgo.toISOString())
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error loading references:", error);
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      setNewReferences([]);
-      return;
-    }
-
-    // Get dismissed notification IDs
-    const dismissedIds = getDismissedReferenceIds();
-
-    // Filter out already dismissed notifications
-    const undismissedData = data.filter(ref => !dismissedIds.includes(ref.id));
-
-    if (undismissedData.length === 0) {
-      setNewReferences([]);
-      return;
-    }
-
-    // Batch load all profiles at once instead of N+1 queries
-    const fromUserIds = [...new Set(undismissedData.map(ref => ref.from_user_id))];
-    
-    const [profilesResult, returnRefsResult] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url, username")
-        .in("id", fromUserIds),
-      supabase
-        .from("user_references")
-        .select("to_user_id")
-        .eq("from_user_id", user.id)
-        .in("to_user_id", fromUserIds)
-    ]);
-
-    const profilesMap = new Map(
-      (profilesResult.data || []).map(p => [p.id, p])
-    );
-    const returnRefSet = new Set(
-      (returnRefsResult.data || []).map(r => r.to_user_id)
-    );
-
-    const referencesWithDetails = undismissedData.map(ref => ({
-      ...ref,
-      from_profile: profilesMap.get(ref.from_user_id) || undefined,
-      hasLeftReturn: returnRefSet.has(ref.from_user_id)
-    }));
-
-    // Only show references where user hasn't left a return reference
-    const unreturned = referencesWithDetails.filter(ref => !ref.hasLeftReturn);
-    setNewReferences(unreturned);
-  };
-
-  const loadRequests = async () => {
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from("friend_requests")
-      .select("*")
-      .eq("to_user_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error loading requests:", error);
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      setRequests([]);
-      return;
-    }
-
-    // Batch load all profiles at once instead of N+1 queries
-    const fromUserIds = [...new Set(data.map(req => req.from_user_id))];
-    
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, display_name, avatar_url")
-      .in("id", fromUserIds);
-
-    const profilesMap = new Map(
-      (profiles || []).map(p => [p.id, p])
-    );
-
-    const requestsWithProfiles = data.map(req => ({
-      ...req,
-      from_profile: profilesMap.get(req.from_user_id) || undefined,
-    }));
-
-    setRequests(requestsWithProfiles);
-  };
-
-  const loadPendingFriendships = async () => {
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from("friendships")
-      .select("id, friend_id")
-      .eq("user_id", user.id)
-      .eq("needs_level_set", true);
-
-    if (error) {
-      console.error("Error loading pending friendships:", error);
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      setPendingFriendships([]);
-      return;
-    }
-
-    // Batch load all profiles at once instead of N+1 queries
-    const friendIds = [...new Set(data.map(f => f.friend_id))];
-    
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, display_name, avatar_url")
-      .in("id", friendIds);
-
-    const profilesMap = new Map(
-      (profiles || []).map(p => [p.id, p])
-    );
-
-    const friendshipsWithProfiles = data.map(friendship => ({
-      ...friendship,
-      friend_profile: profilesMap.get(friendship.friend_id) || undefined,
-    }));
-
-    setPendingFriendships(friendshipsWithProfiles);
-  };
-
   const handleAccept = async () => {
     if (!selectedRequest || !user) return;
     setProcessing(true);
-
     try {
-      // Use the secure RPC function to handle friend request acceptance
-      const { error } = await supabase.rpc('accept_friend_request', {
+      const { error } = await supabase.rpc("accept_friend_request", {
         request_id: selectedRequest.id,
         friendship_level: selectedLevel,
       });
-
       if (error) throw error;
 
-      const message = selectedLevel === "not_friend"
-        ? "Request declined"
-        : selectedLevel === "secret_enemy"
-          ? "Request handled (they'll think you're friends, but get no real info)"
-          : "Friend request accepted!";
+      const message =
+        selectedLevel === "not_friend"
+          ? "Request declined"
+          : selectedLevel === "secret_enemy"
+            ? "Request handled (they'll think you're friends, but get no real info)"
+            : "Friend request accepted!";
       toast.success(message);
       setSelectedRequest(null);
       setSelectedLevel("buddy");
@@ -321,14 +109,12 @@ const NotificationBell = () => {
   const handleSetFriendshipLevel = async () => {
     if (!selectedPendingFriendship || !user) return;
     setProcessing(true);
-
     try {
       const { error } = await supabase
         .from("friendships")
         .update({ level: selectedLevel, needs_level_set: false })
         .eq("id", selectedPendingFriendship.id)
         .eq("user_id", user.id);
-
       if (error) throw error;
 
       toast.success("Friendship level set!");
@@ -343,37 +129,14 @@ const NotificationBell = () => {
     }
   };
 
-  const handleDecline = async (requestId: string) => {
-    try {
-      await supabase
-        .from("friend_requests")
-        .delete()
-        .eq("id", requestId);
-
-      toast.success("Friend request declined");
-      loadRequests();
-    } catch (error) {
-      console.error("Error declining request:", error);
-      toast.error("Failed to decline request");
-    }
-  };
-
   const handleBlock = async (request: FriendRequest) => {
+    if (!user) return;
     try {
-      // Delete the request
-      await supabase
-        .from("friend_requests")
-        .delete()
-        .eq("id", request.id);
-
-      // Add to blocks
-      await supabase
-        .from("user_blocks")
-        .insert({
-          blocker_id: user.id,
-          blocked_id: request.from_user_id,
-        });
-
+      await supabase.from("friend_requests").delete().eq("id", request.id);
+      await supabase.from("user_blocks").insert({
+        blocker_id: user.id,
+        blocked_id: request.from_user_id,
+      });
       toast.success("User blocked");
       loadRequests();
     } catch (error) {
@@ -383,8 +146,6 @@ const NotificationBell = () => {
   };
 
   if (!user) return null;
-
-  const totalNotifications = requests.length + pendingFriendships.length + unreadMessageCount + newReferences.length;
 
   return (
     <>
@@ -406,168 +167,37 @@ const NotificationBell = () => {
               <p className="text-sm text-muted-foreground p-2">No pending notifications</p>
             ) : (
               <div className="space-y-2 max-h-80 overflow-y-auto">
-                {/* Unread messages notification */}
                 {unreadMessageCount > 0 && (
-                  <button
-                    onClick={() => navigate('/messages')}
-                    className="w-full p-3 bg-blue-500/10 rounded-lg border border-blue-500/30 hover:bg-blue-500/20 transition-colors text-left"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                        <Bell className="h-5 w-5 text-blue-500" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium">Unread Messages</p>
-                        <p className="text-sm text-muted-foreground">
-                          You have {unreadMessageCount} unread message{unreadMessageCount > 1 ? 's' : ''}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
+                  <UnreadMessagesItem count={unreadMessageCount} />
                 )}
-                {/* Pending friendships - need to set level */}
+
                 {pendingFriendships.map((friendship) => (
-                  <div key={friendship.id} className="p-3 bg-primary/10 rounded-lg space-y-2 border border-primary/30">
-                    <div className="flex items-center gap-3">
-                      <Avatar 
-                        className="h-10 w-10 cursor-pointer" 
-                        onClick={() => navigate(`/u/${friendship.friend_id}`)}
-                      >
-                        <AvatarImage src={friendship.friend_profile?.avatar_url || undefined} />
-                        <AvatarFallback>
-                          {(friendship.friend_profile?.display_name || "?").slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p 
-                          className="font-medium truncate cursor-pointer hover:underline"
-                          onClick={() => navigate(`/u/${friendship.friend_id}`)}
-                        >
-                          {friendship.friend_profile?.display_name || "Unknown User"}
-                        </p>
-                        <p className="text-sm text-primary">Accepted your request! Set your friendship level.</p>
-                      </div>
-                    </div>
-                    <Button 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => {
-                        setSelectedPendingFriendship(friendship);
-                        setSelectedLevel("buddy");
-                      }}
-                    >
-                      Choose Friendship Level
-                    </Button>
-                  </div>
+                  <PendingFriendshipItem
+                    key={friendship.id}
+                    friendship={friendship}
+                    onChooseLevel={(f) => {
+                      setSelectedPendingFriendship(f);
+                      setSelectedLevel("buddy");
+                    }}
+                  />
                 ))}
 
-                {/* Friend requests */}
                 {requests.map((request) => (
-                  <div key={request.id} className="p-3 bg-secondary/50 rounded-lg space-y-2">
-                    <div className="flex items-center gap-3">
-                      <Avatar 
-                        className="h-10 w-10 cursor-pointer" 
-                        onClick={() => navigate(`/u/${request.from_user_id}`)}
-                      >
-                        <AvatarImage src={request.from_profile?.avatar_url || undefined} />
-                        <AvatarFallback>
-                          {(request.from_profile?.display_name || "?").slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p 
-                          className="font-medium truncate cursor-pointer hover:underline"
-                          onClick={() => navigate(`/u/${request.from_user_id}`)}
-                        >
-                          {request.from_profile?.display_name || "Unknown User"}
-                        </p>
-                        {request.message && (
-                          <p className="text-sm text-muted-foreground truncate">{request.message}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => setSelectedRequest(request)}
-                      >
-                        Respond
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="destructive"
-                        onClick={() => handleBlock(request)}
-                      >
-                        Block
-                      </Button>
-                    </div>
-                  </div>
+                  <FriendRequestItem
+                    key={request.id}
+                    request={request}
+                    onRespond={setSelectedRequest}
+                    onBlock={handleBlock}
+                  />
                 ))}
 
-                {/* New references received */}
-                {newReferences.map((ref) => {
-                  // Use username route if available, otherwise use userId route
-                  const profilePath = ref.from_profile?.username 
-                    ? `/${ref.from_profile.username}` 
-                    : `/u/${ref.from_user_id}`;
-                  
-                  const getRefTypeEmoji = (type: string) => {
-                    switch (type) {
-                      case 'host': return '🏠';
-                      case 'guest': return '🧳';
-                      case 'business': return '💼';
-                      default: return '☕';
-                    }
-                  };
-
-                  return (
-                    <div key={ref.id} className="p-3 bg-yellow-500/10 rounded-lg space-y-2 border border-yellow-500/30">
-                      <div className="flex items-center gap-3">
-                        <Avatar 
-                          className="h-10 w-10 cursor-pointer" 
-                          onClick={() => {
-                            dismissReferenceNotification(ref.id);
-                            navigate(profilePath);
-                          }}
-                        >
-                          <AvatarImage src={ref.from_profile?.avatar_url || undefined} />
-                          <AvatarFallback>
-                            {(ref.from_profile?.display_name || "?").slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p 
-                            className="font-medium truncate cursor-pointer hover:underline"
-                            onClick={() => {
-                              dismissReferenceNotification(ref.id);
-                              navigate(profilePath);
-                            }}
-                          >
-                            {ref.from_profile?.display_name || "Someone"}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Left you a {getRefTypeEmoji(ref.reference_type)} reference
-                            {ref.rating && ` (${ref.rating}★)`}
-                          </p>
-                        </div>
-                        <Star className="h-5 w-5 text-yellow-500 flex-shrink-0" />
-                      </div>
-                      <Button 
-                        size="sm" 
-                        className="w-full"
-                        variant="outline"
-                        onClick={() => {
-                          dismissReferenceNotification(ref.id);
-                          navigate(profilePath);
-                        }}
-                      >
-                        <Star className="h-4 w-4 mr-2" />
-                        Leave Reference Back
-                      </Button>
-                    </div>
-                  );
-                })}
+                {newReferences.map((ref) => (
+                  <ReferenceItem
+                    key={ref.id}
+                    reference={ref}
+                    onDismiss={dismissReferenceNotification}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -580,10 +210,10 @@ const NotificationBell = () => {
           <DialogHeader>
             <DialogTitle>Accept Friend Request</DialogTitle>
             <DialogDescription>
-              Choose how you want to add {selectedRequest?.from_profile?.display_name || "this person"} as a friend.
+              Choose how you want to add{" "}
+              {selectedRequest?.from_profile?.display_name || "this person"} as a friend.
             </DialogDescription>
           </DialogHeader>
-          
           <div className="flex-1 overflow-y-auto pr-2">
             <FriendshipLevelSelector
               value={selectedLevel}
@@ -594,7 +224,6 @@ const NotificationBell = () => {
               compact={true}
             />
           </div>
-
           <div className="flex gap-2 pt-4 border-t border-border">
             <Button onClick={handleAccept} disabled={processing} className="flex-1">
               {processing ? "Accepting..." : "Confirm"}
@@ -607,15 +236,18 @@ const NotificationBell = () => {
       </Dialog>
 
       {/* Dialog for setting friendship level on accepted requests */}
-      <Dialog open={!!selectedPendingFriendship} onOpenChange={(open) => !open && setSelectedPendingFriendship(null)}>
+      <Dialog
+        open={!!selectedPendingFriendship}
+        onOpenChange={(open) => !open && setSelectedPendingFriendship(null)}
+      >
         <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Set Friendship Level</DialogTitle>
             <DialogDescription>
-              {selectedPendingFriendship?.friend_profile?.display_name || "This person"} accepted your friend request! Now choose what type of friend they are to you.
+              {selectedPendingFriendship?.friend_profile?.display_name || "This person"}{" "}
+              accepted your friend request! Now choose what type of friend they are to you.
             </DialogDescription>
           </DialogHeader>
-          
           <div className="flex-1 overflow-y-auto pr-2">
             <FriendshipLevelSelector
               value={selectedLevel}
@@ -626,12 +258,15 @@ const NotificationBell = () => {
               compact={true}
             />
           </div>
-
           <div className="flex gap-2 pt-4 border-t border-border">
             <Button onClick={handleSetFriendshipLevel} disabled={processing} className="flex-1">
               {processing ? "Saving..." : "Confirm"}
             </Button>
-            <Button variant="outline" onClick={() => setSelectedPendingFriendship(null)} className="flex-1">
+            <Button
+              variant="outline"
+              onClick={() => setSelectedPendingFriendship(null)}
+              className="flex-1"
+            >
               Cancel
             </Button>
           </div>
