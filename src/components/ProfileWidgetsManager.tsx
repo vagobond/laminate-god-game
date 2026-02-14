@@ -16,6 +16,15 @@ const AVAILABLE_WIDGETS = [
     usernameLabel: "Your MicroVictoryArmy username",
     usernamePlaceholder: "e.g. johndoe",
   },
+  {
+    key: "w3wu",
+    name: "W3WU",
+    description: "Show your W3WU profile on your Xcrol profile",
+    getEmbedUrl: (username: string) => `https://w3wu.lovable.app/embed/${username}`,
+    icon: "🌐",
+    usernameLabel: "Your W3WU username",
+    usernamePlaceholder: "e.g. johndoe",
+  },
 ];
 
 interface WidgetRow {
