@@ -27,10 +27,8 @@ const Welcome = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Initialize and play background music — deferred until GIF animation ends
+  // Pre-load audio during GIF phase so it's ready when animation ends
   useEffect(() => {
-    if (animationPhase === "gif") return;
-
     const audio = document.createElement("audio");
     audio.src = "/audio/Skyforge_Citadel.mp3";
     audio.loop = true;
@@ -38,21 +36,27 @@ const Welcome = () => {
     audio.preload = "auto";
     audioRef.current = audio;
 
-    // Check initial mute state
     const isMuted = localStorage.getItem("audio-muted") === "true";
     audio.muted = isMuted;
 
-    // Handle when audio is ready to play
     const handleCanPlay = () => {
       setAudioReady(true);
     };
     audio.addEventListener("canplaythrough", handleCanPlay);
 
-    // Try to play (may be blocked by browser autoplay policy)
+    return () => {
+      audio.removeEventListener("canplaythrough", handleCanPlay);
+    };
+  }, []);
+
+  // Play music once GIF phase ends and audio is ready
+  useEffect(() => {
+    if (animationPhase === "gif") return;
+    if (!audioRef.current) return;
+
     const attemptPlay = () => {
       if (audioRef.current) {
         audioRef.current.play().catch(() => {
-          // Autoplay blocked - attach to user interaction
           console.log("Autoplay blocked, waiting for user interaction");
         });
       }
@@ -85,9 +89,10 @@ const Welcome = () => {
 
     return () => {
       clearTimeout(playTimeout);
-      audio.pause();
-      audio.removeEventListener("canplaythrough", handleCanPlay);
-      audio.src = "";
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+      }
       document.removeEventListener("click", handleInteraction);
       document.removeEventListener("keydown", handleInteraction);
       window.removeEventListener("audio-mute-changed", handleMuteChange as EventListener);
