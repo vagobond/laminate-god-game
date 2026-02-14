@@ -18,6 +18,11 @@ const WIDGET_REGISTRY: Record<string, {
     getEmbedUrl: (username) => `https://w3wu.lovable.app/embed/${username}`,
     height: 400,
   },
+  voicemarkr: {
+    name: "VoiceMarkr",
+    getEmbedUrl: (username) => `https://www.voicemarkr.com/embed/${username}`,
+    height: 400,
+  },
 };
 
 interface ProfileWidgetsDisplayProps {
