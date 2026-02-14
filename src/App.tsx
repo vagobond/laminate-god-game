@@ -1,4 +1,5 @@
 import { Suspense, lazy } from "react";
+import { Helmet } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -49,6 +50,12 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
+        <Helmet>
+          <link rel="icon" type="image/png" href="/favicon.png" />
+          <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+          <link rel="shortcut icon" href="/favicon.png" type="image/png" />
+          <link rel="apple-touch-icon" href="/favicon.png" />
+        </Helmet>
         <Toaster />
         <Sonner />
         <BrowserRouter>
