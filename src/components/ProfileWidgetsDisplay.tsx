@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Blocks } from "lucide-react";
 
@@ -114,23 +114,52 @@ export const ProfileWidgetsDisplay = ({ userId, viewerFriendshipLevel = null, is
       </div>
       <div className="space-y-4">
         {visibleWidgets.map((widget) => (
-          <div key={widget.key} className="rounded-lg overflow-hidden border border-border">
-            <div className="px-3 py-2 bg-muted/50 border-b border-border text-sm font-medium text-muted-foreground">
-              {widget.siteName}
-            </div>
-            <iframe
-              src={widget.embedUrl}
-              title={widget.name}
-              className="w-full border-0"
-              style={{ height: widget.height }}
-              sandbox="allow-scripts allow-same-origin allow-popups"
-              loading="lazy"
-            />
-          </div>
+          <LazyIframe key={widget.key} widget={widget} />
         ))}
       </div>
     </div>
   );
 };
+
+const LazyIframe = ({ widget }: { widget: { key: string; name: string; siteName: string; embedUrl: string; height: number } }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="rounded-lg overflow-hidden border border-border">
+      <div className="px-3 py-2 bg-muted/50 border-b border-border text-sm font-medium text-muted-foreground">
+        {widget.siteName}
+      </div>
+      {visible ? (
+        <iframe
+          src={widget.embedUrl}
+          title={widget.name}
+          className="w-full border-0"
+          style={{ height: widget.height }}
+          sandbox="allow-scripts allow-same-origin allow-popups"
+        />
+      ) : (
+        <div style={{ height: widget.height }} className="bg-muted/20 animate-pulse" />
+      )}
+    </div>
+  );
+};
+
 
 export default ProfileWidgetsDisplay;
