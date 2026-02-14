@@ -5,21 +5,25 @@ import { Blocks } from "lucide-react";
 // Must match the registry in ProfileWidgetsManager
 const WIDGET_REGISTRY: Record<string, {
   name: string;
+  siteName: string;
   getEmbedUrl: (username: string) => string;
   height: number;
 }> = {
   microvictoryarmy: {
     name: "MicroVictoryArmy",
+    siteName: "MicroVictoryArmy.com",
     getEmbedUrl: (username) => `https://microvictoryarmy.com/embed/${username}`,
     height: 400,
   },
   w3wu: {
     name: "W3WU",
+    siteName: "W3WU.com",
     getEmbedUrl: (username) => `https://w3wu.lovable.app/embed/${username}`,
     height: 400,
   },
   voicemarkr: {
     name: "VoiceMarkr",
+    siteName: "VoiceMarkr.com",
     getEmbedUrl: (username) => `https://www.voicemarkr.com/embed/${username}`,
     height: 400,
   },
@@ -52,7 +56,7 @@ interface ProfileWidgetsDisplayProps {
 }
 
 export const ProfileWidgetsDisplay = ({ userId, viewerFriendshipLevel = null, isOwnProfile = false }: ProfileWidgetsDisplayProps) => {
-  const [widgetsToRender, setWidgetsToRender] = useState<{ key: string; name: string; embedUrl: string; height: number; minLevel: string }[]>([]);
+  const [widgetsToRender, setWidgetsToRender] = useState<{ key: string; name: string; siteName: string; embedUrl: string; height: number; minLevel: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -74,12 +78,13 @@ export const ProfileWidgetsDisplay = ({ userId, viewerFriendshipLevel = null, is
             return {
               key: w.widget_key,
               name: reg.name,
+              siteName: reg.siteName,
               embedUrl: reg.getEmbedUrl(config.username),
               height: reg.height,
               minLevel: config.min_friendship_level || "public",
             };
           })
-          .filter(Boolean) as { key: string; name: string; embedUrl: string; height: number; minLevel: string }[];
+          .filter(Boolean) as { key: string; name: string; siteName: string; embedUrl: string; height: number; minLevel: string }[];
 
         setWidgetsToRender(rendered);
       } catch (err) {
@@ -99,11 +104,14 @@ export const ProfileWidgetsDisplay = ({ userId, viewerFriendshipLevel = null, is
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Blocks className="w-5 h-5 text-primary" />
-        <h2 className="text-lg font-semibold">Widgets</h2>
+        <h2 className="text-lg font-semibold">Xcrol Integrations</h2>
       </div>
       <div className="space-y-4">
         {visibleWidgets.map((widget) => (
           <div key={widget.key} className="rounded-lg overflow-hidden border border-border">
+            <div className="px-3 py-2 bg-muted/50 border-b border-border text-sm font-medium text-muted-foreground">
+              {widget.siteName}
+            </div>
             <iframe
               src={widget.embedUrl}
               title={widget.name}
