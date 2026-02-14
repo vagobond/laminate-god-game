@@ -55,6 +55,17 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     usernameLabel: "Your Baoism username",
     usernamePlaceholder: "e.g. johndoe",
   },
+  {
+    key: "xmap",
+    name: "Xmap",
+    siteName: "xmap.vagobond.com",
+    description: "Show your Xmap profile on your Xcrol profile",
+    icon: "🗺️",
+    getEmbedUrl: (username) => `https://xmap.vagobond.com/embed/${username}`,
+    height: 400,
+    usernameLabel: "Your Xmap username",
+    usernamePlaceholder: "e.g. johndoe",
+  },
 ];
 
 /** Lookup a widget by key */
