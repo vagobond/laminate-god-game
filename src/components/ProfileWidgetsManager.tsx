@@ -25,6 +25,15 @@ const AVAILABLE_WIDGETS = [
     usernameLabel: "Your W3WU username",
     usernamePlaceholder: "e.g. johndoe",
   },
+  {
+    key: "voicemarkr",
+    name: "VoiceMarkr",
+    description: "Show your VoiceMarkr profile on your Xcrol profile",
+    getEmbedUrl: (username: string) => `https://www.voicemarkr.com/embed/${username}`,
+    icon: "🎙️",
+    usernameLabel: "Your VoiceMarkr username",
+    usernamePlaceholder: "e.g. johndoe",
+  },
 ];
 
 interface WidgetRow {
