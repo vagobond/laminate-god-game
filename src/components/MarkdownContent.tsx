@@ -42,8 +42,9 @@ const MarkdownContent = ({ content, className = "" }: MarkdownContentProps) => {
 
     // @username mentions - link to user profile
     // Match @username where username is 2-30 alphanumeric characters
+    // Negative lookbehind ensures we don't match @username inside URLs (preceded by /)
     html = html.replace(
-      /@([a-zA-Z0-9]{2,30})\b/g,
+      /(?<![\/a-zA-Z0-9])@([a-zA-Z0-9]{2,30})\b/g,
       '<a href="/$1" class="text-primary font-medium hover:underline">@$1</a>'
     );
 
