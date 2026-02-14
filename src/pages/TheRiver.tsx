@@ -49,52 +49,12 @@ const FILTER_OPTIONS = [
   { value: "public", label: "Public Only" },
 ];
 
-// Hierarchy for standard friendship levels (Family is independent)
-const FRIENDSHIP_HIERARCHY = ["close_friend", "secret_friend", "buddy", "friendly_acquaintance"];
-
-// Helper to check if viewer can see a post based on privacy level and friendship
-const canViewPost = (
-  postPrivacy: string,
-  viewerFriendshipLevel: string | undefined,
-  isOwnPost: boolean
-): boolean => {
-  // Own posts always visible
-  if (isOwnPost) return true;
-  
-  // Public posts visible to everyone
-  if (postPrivacy === "public") return true;
-  
-  // Private posts only visible to owner (handled above)
-  if (postPrivacy === "private") return false;
-  
-  // No friendship = can't see non-public posts
-  if (!viewerFriendshipLevel) return false;
-  
-  // Family privacy level: visible to family AND close_friend/secret_friend
-  if (postPrivacy === "family") {
-    return ["family", "close_friend", "secret_friend"].includes(viewerFriendshipLevel);
-  }
-  
-  // Standard hierarchy-based visibility
-  const postIndex = FRIENDSHIP_HIERARCHY.indexOf(postPrivacy);
-  const viewerIndex = FRIENDSHIP_HIERARCHY.indexOf(viewerFriendshipLevel);
-  
-  // If either is not in hierarchy, check exact match
-  if (postIndex === -1 || viewerIndex === -1) {
-    return false;
-  }
-  
-  // Viewer can see post if their level is at or above the required level
-  return viewerIndex <= postIndex;
-};
-
 export default function TheRiver() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const highlightedPostId = searchParams.get("post");
   const { user, loading: authLoading } = useAuth();
   const [entries, setEntries] = useState<RiverEntry[]>([]);
-  const [friendships, setFriendships] = useState<FriendshipMap>({});
   const [reactions, setReactions] = useState<ReactionsMap>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -106,13 +66,9 @@ export default function TheRiver() {
 
   useEffect(() => {
     if (authLoading) return;
-    
     loadEntries();
-    if (user) {
-      loadFriendships();
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading]);
+  }, [user, authLoading, filter]);
 
   // Scroll to highlighted post when it becomes available
   useEffect(() => {
@@ -125,23 +81,6 @@ export default function TheRiver() {
     }
   }, [highlightedPostId, hasScrolledToPost, loading, entries]);
 
-  const loadFriendships = async () => {
-    if (!user) return;
-
-    const { data } = await supabase
-      .from("friendships")
-      .select("friend_id, level")
-      .eq("user_id", user.id);
-
-    if (data) {
-      const map: FriendshipMap = {};
-      data.forEach((f) => {
-        map[f.friend_id] = f.level;
-      });
-      setFriendships(map);
-    }
-  };
-
   const loadEntries = async (loadMore = false) => {
     if (!loadMore) {
       setLoading(true);
@@ -149,22 +88,14 @@ export default function TheRiver() {
     }
 
     const currentPage = loadMore ? page + 1 : 0;
-    const from = currentPage * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
+    const offset = currentPage * PAGE_SIZE;
 
-    const { data, error } = await supabase
-      .from("xcrol_entries")
-      .select(`
-        id,
-        content,
-        link,
-        entry_date,
-        privacy_level,
-        user_id
-      `)
-      .order("entry_date", { ascending: false })
-      .order("created_at", { ascending: false })
-      .range(from, to);
+    const { data, error } = await supabase.rpc("get_river_entries", {
+      p_viewer_id: user?.id ?? null,
+      p_limit: PAGE_SIZE,
+      p_offset: offset,
+      p_filter: filter,
+    });
 
     if (error) {
       console.error("Error loading entries:", error);
@@ -179,32 +110,41 @@ export default function TheRiver() {
       return;
     }
 
-    // Fetch reactions first to get all user IDs, then batch fetch ALL profiles in one query
-    const entryIds = data.map((e) => e.id);
-    const authorUserIds = new Set(data.map((e) => e.user_id));
-    
-    // Fetch reactions to collect reaction user IDs
+    const entryIds = data.map((e: any) => e.id);
+    const allUserIds = new Set(data.map((e: any) => e.user_id));
+
+    // Fetch reactions
     const { data: reactionsData } = await supabase
       .from("xcrol_reactions")
       .select("entry_id, emoji, user_id")
       .in("entry_id", entryIds);
 
-    // Collect ALL user IDs (authors + reactors) for a single batch profile fetch
-    const allUserIds = new Set(authorUserIds);
-    (reactionsData || []).forEach(r => allUserIds.add(r.user_id));
-    
-    // Single batch fetch for all profiles (eliminates secondary profile fetch)
-    const { data: profilesData } = await supabase
-      .from("profiles")
-      .select("id, display_name, avatar_url, username")
-      .in("id", [...allUserIds]);
-
-    const profileMap: Record<string, { id: string; display_name: string | null; avatar_url: string | null; username: string | null }> = {};
-    profilesData?.forEach((p) => {
-      profileMap[p.id] = p;
+    // Collect reactor user IDs for profile lookup
+    const reactorIds = new Set<string>();
+    (reactionsData || []).forEach(r => {
+      if (!allUserIds.has(r.user_id)) reactorIds.add(r.user_id);
     });
 
-    // Group reactions by entry_id with user info
+    // Fetch reactor profiles (authors already come from the RPC)
+    let reactorProfileMap: Record<string, { display_name: string | null; username: string | null }> = {};
+    if (reactorIds.size > 0) {
+      const { data: reactorProfiles } = await supabase
+        .from("profiles")
+        .select("id, display_name, username")
+        .in("id", [...reactorIds]);
+      reactorProfiles?.forEach(p => {
+        reactorProfileMap[p.id] = p;
+      });
+    }
+
+    // Build author map from RPC data
+    const authorMap: Record<string, { display_name: string | null; username: string | null }> = {};
+    data.forEach((e: any) => {
+      authorMap[e.user_id] = { display_name: e.author_display_name, username: e.author_username };
+    });
+    const profileMap = { ...authorMap, ...reactorProfileMap };
+
+    // Group reactions by entry_id
     const newReactionsMap: ReactionsMap = {};
     (reactionsData || []).forEach((r) => {
       if (!newReactionsMap[r.entry_id]) {
@@ -230,12 +170,17 @@ export default function TheRiver() {
       }
     });
 
-    const entriesWithAuthors: RiverEntry[] = data.map((entry) => ({
-      ...entry,
+    const entriesWithAuthors: RiverEntry[] = data.map((e: any) => ({
+      id: e.id,
+      content: e.content,
+      link: e.link,
+      entry_date: e.entry_date,
+      privacy_level: e.privacy_level,
+      user_id: e.user_id,
       author: {
-        display_name: profileMap[entry.user_id]?.display_name ?? null,
-        avatar_url: profileMap[entry.user_id]?.avatar_url ?? null,
-        username: profileMap[entry.user_id]?.username ?? null,
+        display_name: e.author_display_name,
+        avatar_url: e.author_avatar_url,
+        username: e.author_username,
       },
     }));
 
@@ -252,45 +197,7 @@ export default function TheRiver() {
     setLoading(false);
   };
 
-  const getFilteredEntries = () => {
-    // First, filter to only posts the user can actually see
-    const visibleEntries = entries.filter((e) => {
-      const isOwnPost = e.user_id === user?.id;
-      const friendshipLevel = friendships[e.user_id];
-      return canViewPost(e.privacy_level, friendshipLevel, isOwnPost);
-    });
-
-    // Then apply the UI filter
-    if (filter === "all") return visibleEntries;
-    if (filter === "public") {
-      return visibleEntries.filter((e) => e.privacy_level === "public");
-    }
-    if (filter === "family") {
-      // Show posts from family members (regardless of post privacy level they can see)
-      return visibleEntries.filter((e) => {
-        if (e.user_id === user?.id) return true;
-        return friendships[e.user_id] === "family";
-      });
-    }
-
-    // Filter by friendship level in hierarchy
-    const filterIndex = FRIENDSHIP_HIERARCHY.indexOf(filter);
-    if (filterIndex === -1) return visibleEntries;
-
-    return visibleEntries.filter((e) => {
-      if (e.user_id === user?.id) return true;
-      
-      const level = friendships[e.user_id];
-      if (!level) return false;
-
-      const levelIndex = FRIENDSHIP_HIERARCHY.indexOf(level);
-      if (levelIndex === -1) return false;
-
-      return levelIndex <= filterIndex;
-    });
-  };
-
-  const filteredEntries = getFilteredEntries();
+  const filteredEntries = entries;
 
   return (
     <div className="min-h-screen bg-background">

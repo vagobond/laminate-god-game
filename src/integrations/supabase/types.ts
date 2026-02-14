@@ -1787,6 +1787,25 @@ export type Database = {
           id: string
         }[]
       }
+      get_river_entries: {
+        Args: {
+          p_filter?: string
+          p_limit?: number
+          p_offset?: number
+          p_viewer_id?: string
+        }
+        Returns: {
+          author_avatar_url: string
+          author_display_name: string
+          author_username: string
+          content: string
+          entry_date: string
+          id: string
+          link: string
+          privacy_level: string
+          user_id: string
+        }[]
+      }
       get_user_invite_stats: { Args: { p_user_id: string }; Returns: Json }
       get_visible_friends: {
         Args: { profile_id: string; viewer_id: string }
