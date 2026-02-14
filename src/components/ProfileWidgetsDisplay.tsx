@@ -13,6 +13,11 @@ const WIDGET_REGISTRY: Record<string, {
     getEmbedUrl: (username) => `https://microvictoryarmy.com/embed/${username}`,
     height: 400,
   },
+  w3wu: {
+    name: "W3WU",
+    getEmbedUrl: (username) => `https://w3wu.lovable.app/embed/${username}`,
+    height: 400,
+  },
 };
 
 interface ProfileWidgetsDisplayProps {
