@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,35 +51,19 @@ const MyXcrol = () => {
   const [searchParams] = useSearchParams();
   // Support both "link" and "optional_link" query params for external integrations
   const prefillLink = searchParams.get("link") || searchParams.get("optional_link") || "";
-  const [user, setUser] = useState<any>(null);
-  const [authChecked, setAuthChecked] = useState(false);
+  const { user, loading: authLoading } = useAuth();
   const [entries, setEntries] = useState<XcrolEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string | null>(null);
   const { todayDate, loading: dateLoading, timezone } = useHometownDate(user?.id ?? null);
 
   useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setAuthChecked(true);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setAuthChecked(true);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (authChecked && !user) {
+    if (authLoading) return;
+    if (!user) {
       const returnUrl = window.location.pathname + window.location.search;
       navigate(`/auth?returnUrl=${encodeURIComponent(returnUrl)}`, { replace: true });
     }
-  }, [authChecked, user, navigate]);
+  }, [authLoading, user, navigate]);
 
   useEffect(() => {
     if (user?.id && !dateLoading) {
@@ -136,7 +121,7 @@ const MyXcrol = () => {
     }
   };
 
-  if (!authChecked) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center p-4 pt-20">
         <div className="text-muted-foreground">Checking sign-in…</div>

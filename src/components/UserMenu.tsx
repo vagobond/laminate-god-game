@@ -37,13 +37,6 @@ const UserMenu = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  useEffect(() => {
-    if (!user?.id) return;
-    // Defer data fetches outside onAuthStateChange to avoid deadlocks
-    loadProfile(user.id);
-    checkAdminStatus(user.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
 
   const loadProfile = async (userId: string) => {
     const { data } = await supabase
