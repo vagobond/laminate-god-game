@@ -2,8 +2,18 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Blocks } from "lucide-react";
+import { friendshipLevelLabels, type FriendshipLevelKey } from "@/lib/friendship-labels";
+
+const VISIBILITY_OPTIONS: { value: string; label: string }[] = [
+  { value: "public", label: "Everyone (Public)" },
+  ...( ["friendly_acquaintance", "buddy", "close_friend", "family", "secret_friend"] as FriendshipLevelKey[]).map(key => ({
+    value: key,
+    label: friendshipLevelLabels[key].shortLabel,
+  })),
+];
 
 // Predefined Xcrol-enabled widgets
 const AVAILABLE_WIDGETS = [
@@ -179,6 +189,35 @@ export const ProfileWidgetsManager = ({ userId, username }: ProfileWidgetsManage
                   >
                     Save
                   </button>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm text-muted-foreground">Who can see this widget?</label>
+                <div className="flex gap-2">
+                  <Select
+                    value={state.config?.min_friendship_level || "public"}
+                    onValueChange={(value) => {
+                      setWidgets((prev) => ({
+                        ...prev,
+                        [widget.key]: {
+                          enabled: prev[widget.key]?.enabled ?? false,
+                          config: { ...(prev[widget.key]?.config || {}), min_friendship_level: value },
+                        },
+                      }));
+                      // Auto-save visibility change
+                      const current = widgets[widget.key] || { enabled: false, config: {} };
+                      saveWidget(widget.key, current.enabled, { ...current.config, min_friendship_level: value });
+                    }}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VISIBILITY_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>

@@ -719,6 +719,8 @@ const PublicProfile = () => {
           <ProfileWidgetsDisplay
             userId={resolvedUserId}
             username={username?.replace(/^@/, '') || null}
+            viewerFriendshipLevel={friendshipLevel}
+            isOwnProfile={isOwnProfile}
           />
         )}
 
