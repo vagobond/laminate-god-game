@@ -86,7 +86,7 @@ const Powers = () => {
   );
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center p-4 pt-20">
       <div className="text-center space-y-16 animate-fade-in max-w-4xl">
         <div className="space-y-6">
           <h1 className="text-5xl md:text-7xl font-bold text-glow">
