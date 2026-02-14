@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -64,7 +65,7 @@ const DEFAULT_SETTINGS: UserSettings = {
 const Settings = () => {
   const navigate = useNavigate();
   const { reopenTutorial } = useTutorial();
-  const [user, setUser] = useState<any>(null);
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
 
@@ -85,32 +86,15 @@ const Settings = () => {
   const [loadingRequest, setLoadingRequest] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        navigate("/auth");
-        return;
-      }
-      setUser(session.user);
-      setLoading(false);
-      loadDeletionRequest(session.user.id);
-      loadUserSettings(session.user.id);
-    };
-
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user) {
-        navigate("/auth");
-      } else {
-        setUser(session.user);
-        loadDeletionRequest(session.user.id);
-        loadUserSettings(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    if (authLoading) return;
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    setLoading(false);
+    loadDeletionRequest(user.id);
+    loadUserSettings(user.id);
+  }, [user, authLoading, navigate]);
 
   const loadUserSettings = async (userId: string) => {
     try {
