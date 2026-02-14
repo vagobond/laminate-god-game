@@ -104,6 +104,12 @@ All colors MUST be HSL.
       hsl(var(--cosmic-mid)) 50%, 
       hsl(var(--cosmic-end)) 100%);
     background-attachment: fixed;
+  }
+
+  @media (max-width: 768px) {
+    body {
+      background-attachment: scroll;
+    }
     min-height: 100vh;
   }
 }
