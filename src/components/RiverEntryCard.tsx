@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { XcrolReactions } from "@/components/XcrolReactions";
 import { MentionText } from "@/components/MentionText";
+import { LinkPreview } from "@/components/LinkPreview";
 import type { ReactionData } from "@/pages/TheRiver";
 
 interface RiverEntryCardProps {
@@ -86,15 +87,18 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange }: R
             </p>
 
             {entry.link && (
-              <a
-                href={entry.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 inline-flex items-center gap-1 text-primary hover:underline text-sm"
-              >
-                <ExternalLink className="h-3 w-3" />
-                {new URL(entry.link).hostname}
-              </a>
+              <>
+                <LinkPreview url={entry.link} />
+                <a
+                  href={entry.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center gap-1 text-primary hover:underline text-sm"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  {new URL(entry.link).hostname}
+                </a>
+              </>
             )}
 
             <div className="mt-3 flex items-center gap-2 flex-wrap">
