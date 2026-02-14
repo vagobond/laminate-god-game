@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Blocks } from "lucide-react";
 import { friendshipLevelLabels, type FriendshipLevelKey } from "@/lib/friendship-labels";
+import { WIDGET_REGISTRY } from "@/lib/widget-registry";
 
 const VISIBILITY_OPTIONS: { value: string; label: string }[] = [
   { value: "public", label: "Everyone (Public)" },
@@ -13,46 +14,6 @@ const VISIBILITY_OPTIONS: { value: string; label: string }[] = [
     value: key,
     label: friendshipLevelLabels[key].shortLabel,
   })),
-];
-
-// Predefined Xcrol-enabled widgets
-const AVAILABLE_WIDGETS = [
-  {
-    key: "microvictoryarmy",
-    name: "MicroVictoryArmy",
-    description: "Show your micro victories on your profile",
-    getEmbedUrl: (username: string) => `https://microvictoryarmy.com/embed/${username}`,
-    icon: "🏆",
-    usernameLabel: "Your MicroVictoryArmy username",
-    usernamePlaceholder: "e.g. johndoe",
-  },
-  {
-    key: "w3wu",
-    name: "W3WU",
-    description: "Show your W3WU profile on your Xcrol profile",
-    getEmbedUrl: (username: string) => `https://w3wu.lovable.app/embed/${username}`,
-    icon: "🌐",
-    usernameLabel: "Your W3WU username",
-    usernamePlaceholder: "e.g. johndoe",
-  },
-  {
-    key: "voicemarkr",
-    name: "VoiceMarkr",
-    description: "Show your VoiceMarkr profile on your Xcrol profile",
-    getEmbedUrl: (username: string) => `https://www.voicemarkr.com/embed/${username}`,
-    icon: "🎙️",
-    usernameLabel: "Your VoiceMarkr username",
-    usernamePlaceholder: "e.g. johndoe",
-  },
-  {
-    key: "baoism",
-    name: "Baoism",
-    description: "Show your Baoism profile on your Xcrol profile",
-    getEmbedUrl: (username: string) => `https://www.baoism.org/embed/${username}`,
-    icon: "☯️",
-    usernameLabel: "Your Baoism username",
-    usernamePlaceholder: "e.g. johndoe",
-  },
 ];
 
 interface WidgetRow {
@@ -161,7 +122,7 @@ export const ProfileWidgetsManager = ({ userId, username }: ProfileWidgetsManage
       </p>
 
       <div className="space-y-3">
-        {AVAILABLE_WIDGETS.map((widget) => {
+        {WIDGET_REGISTRY.map((widget) => {
           const state = widgets[widget.key] || { enabled: false, config: {} };
           return (
             <div
@@ -213,7 +174,6 @@ export const ProfileWidgetsManager = ({ userId, username }: ProfileWidgetsManage
                           config: { ...(prev[widget.key]?.config || {}), min_friendship_level: value },
                         },
                       }));
-                      // Auto-save visibility change
                       const current = widgets[widget.key] || { enabled: false, config: {} };
                       saveWidget(widget.key, current.enabled, { ...current.config, min_friendship_level: value });
                     }}

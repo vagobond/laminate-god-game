@@ -1,39 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Blocks } from "lucide-react";
-
-// Must match the registry in ProfileWidgetsManager
-const WIDGET_REGISTRY: Record<string, {
-  name: string;
-  siteName: string;
-  getEmbedUrl: (username: string) => string;
-  height: number;
-}> = {
-  microvictoryarmy: {
-    name: "MicroVictoryArmy",
-    siteName: "MicroVictoryArmy.com",
-    getEmbedUrl: (username) => `https://microvictoryarmy.com/embed/${username}`,
-    height: 400,
-  },
-  w3wu: {
-    name: "W3WU",
-    siteName: "W3WU.com",
-    getEmbedUrl: (username) => `https://w3wu.lovable.app/embed/${username}`,
-    height: 400,
-  },
-  voicemarkr: {
-    name: "VoiceMarkr",
-    siteName: "VoiceMarkr.com",
-    getEmbedUrl: (username) => `https://www.voicemarkr.com/embed/${username}`,
-    height: 400,
-  },
-  baoism: {
-    name: "Baoism",
-    siteName: "Baoism.org",
-    getEmbedUrl: (username) => `https://www.baoism.org/embed/${username}`,
-    height: 400,
-  },
-};
+import { getWidgetByKey } from "@/lib/widget-registry";
 
 // Friendship level hierarchy for visibility checks
 const LEVEL_RANK: Record<string, number> = {
@@ -78,7 +46,7 @@ export const ProfileWidgetsDisplay = ({ userId, viewerFriendshipLevel = null, is
 
         const rendered = (data || [])
           .map((w: any) => {
-            const reg = WIDGET_REGISTRY[w.widget_key];
+            const reg = getWidgetByKey(w.widget_key);
             const config = (w.config as Record<string, string>) || {};
             if (!reg || !config.username) return null;
             return {
@@ -160,6 +128,5 @@ const LazyIframe = ({ widget }: { widget: { key: string; name: string; siteName:
     </div>
   );
 };
-
 
 export default ProfileWidgetsDisplay;
