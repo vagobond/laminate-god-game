@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import scrollOpenGif from "@/assets/scroll-paper-open-up.gif";
 import xcrolLogo from "@/assets/xcrol-logo.png";
-import AudioMuteButton from "@/components/AudioMuteButton";
+
 
 const Welcome = () => {
   const navigate = useNavigate();
@@ -113,10 +113,6 @@ const Welcome = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 overflow-hidden relative">
-      {/* Audio mute button in top-right corner */}
-      <div className="fixed top-4 right-4 z-50">
-        <AudioMuteButton />
-      </div>
       
       <div className="text-center space-y-12 relative w-full h-full">
         {/* GIF Animation - Full Page */}
