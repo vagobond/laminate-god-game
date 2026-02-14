@@ -3,6 +3,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useTutorial } from "@/components/onboarding";
 
+const CACHE_KEY = "xcrol-invite-notification-seen";
+
+function getCachedSeen(userId: string): boolean {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    return parsed.userId === userId && parsed.seen === true;
+  } catch {
+    return false;
+  }
+}
+
+function setCachedSeen(userId: string) {
+  localStorage.setItem(CACHE_KEY, JSON.stringify({ userId, seen: true }));
+}
+
 export const useInviteNotification = () => {
   const { user } = useAuth();
   const { isVisible: tutorialVisible } = useTutorial();
@@ -17,22 +34,27 @@ export const useInviteNotification = () => {
         return;
       }
 
+      // Check localStorage cache first
+      if (getCachedSeen(user.id)) {
+        setHasSeenNotification(true);
+        setLoading(false);
+        return;
+      }
+
       try {
-        // Check if user has already seen the notification
         const { data: seenData } = await supabase
           .from('invite_notification_seen')
           .select('id')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
-        if (!seenData) {
-          // User hasn't seen the notification yet
-          setHasSeenNotification(false);
-        } else {
+        if (seenData) {
           setHasSeenNotification(true);
+          setCachedSeen(user.id);
+        } else {
+          setHasSeenNotification(false);
         }
       } catch (err) {
-        // If no record found, user hasn't seen it
         setHasSeenNotification(false);
       } finally {
         setLoading(false);
@@ -53,6 +75,7 @@ export const useInviteNotification = () => {
     if (!user) return;
 
     setShowNotification(false);
+    setCachedSeen(user.id);
     
     try {
       await supabase

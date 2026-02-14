@@ -109,8 +109,8 @@ All colors MUST be HSL.
   @media (max-width: 768px) {
     body {
       background-attachment: scroll;
+      min-height: 100vh;
     }
-    min-height: 100vh;
   }
 }
 
