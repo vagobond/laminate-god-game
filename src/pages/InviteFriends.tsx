@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Users, Mail, Check, Clock, X, ArrowLeft, Sparkles, Copy, Infinity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
+import { useAuth } from "@/hooks/use-auth";
 interface Invite {
   id: string;
   invite_code: string;
@@ -29,8 +29,8 @@ interface InviteStats {
 
 const InviteFriends = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
+  const [dataLoading, setDataLoading] = useState(true);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [inviteStats, setInviteStats] = useState<InviteStats | null>(null);
   
@@ -39,20 +39,16 @@ const InviteFriends = () => {
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    checkUser();
-  }, []);
-
-  const checkUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      setUser(session.user);
-      await Promise.all([
-        loadInvites(session.user.id),
-        loadInviteStats(session.user.id)
-      ]);
+    if (authLoading) return;
+    if (user) {
+      Promise.all([
+        loadInvites(user.id),
+        loadInviteStats(user.id)
+      ]).then(() => setDataLoading(false));
+    } else {
+      setDataLoading(false);
     }
-    setLoading(false);
-  };
+  }, [user, authLoading]);
 
   const loadInvites = async (userId: string) => {
     const { data } = await supabase
@@ -189,7 +185,7 @@ const InviteFriends = () => {
     }
   };
 
-  if (loading) {
+  if (authLoading || dataLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>

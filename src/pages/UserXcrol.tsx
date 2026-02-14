@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Scroll, ExternalLink, ArrowLeft, Loader2, Globe, Users, UserCheck, Heart } from "lucide-react";
@@ -38,17 +39,11 @@ const PRIVACY_LABELS: Record<string, string> = {
 const UserXcrol = () => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const [entries, setEntries] = useState<XcrolEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [profileInfo, setProfileInfo] = useState<ProfileInfo | null>(null);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [notFound, setNotFound] = useState(false);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setCurrentUser(session?.user ?? null);
-    });
-  }, []);
 
   useEffect(() => {
     if (username) {
