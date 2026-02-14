@@ -382,7 +382,7 @@ const PublicProfile = () => {
             {/* Avatar - positioned to overlap banner */}
             <div className="flex justify-center -mt-12 mb-4">
               <Avatar className="w-24 h-24 border-4 border-background shadow-lg" key={profile.avatar_url}>
-                <AvatarImage src={profile.avatar_url || undefined} alt={displayName} />
+                <AvatarImage src={profile.avatar_url || undefined} alt={displayName} optimizeSize={256} />
                 <AvatarFallback className="text-2xl">
                   {displayName.slice(0, 2).toUpperCase()}
                 </AvatarFallback>

@@ -500,7 +500,7 @@ const Profile = () => {
             <div className="flex flex-col items-center space-y-4">
               <div className="relative">
                 <Avatar className="w-24 h-24" key={avatarUrl}>
-                  <AvatarImage src={avatarUrl} alt={displayName || "Profile"} />
+                  <AvatarImage src={avatarUrl} alt={displayName || "Profile"} optimizeSize={256} />
                   <AvatarFallback>
                     <User className="w-12 h-12 text-muted-foreground" />
                   </AvatarFallback>
