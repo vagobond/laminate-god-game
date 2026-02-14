@@ -7,6 +7,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { TUTORIAL_STEPS } from "./tutorialSteps";
 import { ScrollTutorialUI } from "./ScrollTutorialUI";
 
+const TUTORIAL_CACHE_KEY = "xcrol-tutorial-completed";
+
+function getCachedCompletion(userId: string): boolean {
+  try {
+    const raw = localStorage.getItem(TUTORIAL_CACHE_KEY);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    return parsed.userId === userId && parsed.completed === true;
+  } catch {
+    return false;
+  }
+}
+
+function setCachedCompletion(userId: string, completed: boolean) {
+  localStorage.setItem(TUTORIAL_CACHE_KEY, JSON.stringify({ userId, completed }));
+}
+
 interface TutorialContextType {
   reopenTutorial: () => void;
   isVisible: boolean;
@@ -34,6 +51,13 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Check localStorage cache first
+    if (getCachedCompletion(userId)) {
+      setIsLoading(false);
+      setIsVisible(false);
+      return;
+    }
+
     const checkCompletion = async () => {
       const { data } = await supabase
         .from("tutorial_completion")
@@ -42,7 +66,12 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       setIsLoading(false);
-      setIsVisible(!data); // Show if not completed
+      if (data) {
+        setCachedCompletion(userId, true);
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
     };
 
     checkCompletion();
@@ -68,6 +97,7 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
   const complete = useCallback(async (skipped: boolean = false) => {
     if (!userId) return;
 
+    setCachedCompletion(userId, true);
     await supabase
       .from("tutorial_completion")
       .insert({ user_id: userId, skipped });
@@ -77,6 +107,8 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
 
   const reopen = useCallback(async () => {
     if (!userId) return;
+
+    setCachedCompletion(userId, false);
 
     // Delete the completion record to allow re-showing
     await supabase

@@ -13,7 +13,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { User as UserIcon, LogIn, LogOut, Settings, Shield, Mail, Scroll, Users, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
-import { useUnreadMessages } from "@/hooks/use-unread-messages";
 
 const UserMenu = () => {
   const navigate = useNavigate();
@@ -22,7 +21,6 @@ const UserMenu = () => {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const { unreadCount, refreshUnreadCount } = useUnreadMessages(user?.id || null);
 
   useEffect(() => {
     if (!user?.id) {
@@ -93,11 +91,7 @@ const UserMenu = () => {
   }
 
   return (
-    <DropdownMenu
-      onOpenChange={(open) => {
-        if (open && user?.id) refreshUnreadCount();
-      }}
-    >
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
@@ -138,11 +132,6 @@ const UserMenu = () => {
         <DropdownMenuItem onClick={() => navigate("/messages")} className="cursor-pointer">
           <Mail className="w-4 h-4 mr-2" />
           Messages
-          {unreadCount > 0 && (
-            <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-medium px-1.5 py-0.5 rounded-full">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-          )}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate("/my-xcrol")} className="cursor-pointer">
           <Scroll className="w-4 h-4 mr-2" />

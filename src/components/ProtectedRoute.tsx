@@ -1,4 +1,6 @@
 import { ReactNode } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useInviteVerified } from "@/hooks/use-invite-verified";
 import { InviteCodeGate } from "@/components/InviteCodeGate";
@@ -12,6 +14,16 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children, requireInvite = true }: ProtectedRouteProps) => {
   const { user, loading: authLoading } = useAuth();
   const { isVerified, loading: verifyLoading, refetch } = useInviteVerified();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirect unauthenticated users to /auth
+  useEffect(() => {
+    if (!authLoading && !user) {
+      const returnUrl = location.pathname + location.search;
+      navigate(`/auth?returnUrl=${encodeURIComponent(returnUrl)}`, { replace: true });
+    }
+  }, [authLoading, user, navigate, location]);
 
   // Show loading spinner while checking auth/verification status
   if (authLoading || verifyLoading) {
@@ -22,9 +34,9 @@ export const ProtectedRoute = ({ children, requireInvite = true }: ProtectedRout
     );
   }
 
-  // If user is not logged in, show children (individual pages handle their own auth redirects)
+  // Still waiting for redirect
   if (!user) {
-    return <>{children}</>;
+    return null;
   }
 
   // If invite verification is required and user is not verified, show the gate

@@ -57,13 +57,6 @@ const MyXcrol = () => {
   const [username, setUsername] = useState<string | null>(null);
   const { todayDate, loading: dateLoading, timezone } = useHometownDate(user?.id ?? null);
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      const returnUrl = window.location.pathname + window.location.search;
-      navigate(`/auth?returnUrl=${encodeURIComponent(returnUrl)}`, { replace: true });
-    }
-  }, [authLoading, user, navigate]);
 
   useEffect(() => {
     if (user?.id && !dateLoading) {
@@ -121,36 +114,10 @@ const MyXcrol = () => {
     }
   };
 
-  if (authLoading) {
+  if (authLoading || !user) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center p-4 pt-20">
-        <div className="text-muted-foreground">Checking sign-in…</div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center p-4 pt-20">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-center">Sign In Required</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-center text-muted-foreground">
-              Please sign in to access your Xcrol diary.
-            </p>
-            <Button
-              onClick={() => {
-                const returnUrl = window.location.pathname + window.location.search;
-                navigate(`/auth?returnUrl=${encodeURIComponent(returnUrl)}`);
-              }}
-              className="w-full"
-            >
-              Sign In
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="text-muted-foreground">Loading…</div>
       </div>
     );
   }
