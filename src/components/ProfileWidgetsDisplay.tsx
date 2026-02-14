@@ -27,6 +27,12 @@ const WIDGET_REGISTRY: Record<string, {
     getEmbedUrl: (username) => `https://www.voicemarkr.com/embed/${username}`,
     height: 400,
   },
+  baoism: {
+    name: "Baoism",
+    siteName: "Baoism.org",
+    getEmbedUrl: (username) => `https://www.baoism.org/embed/${username}`,
+    height: 400,
+  },
 };
 
 // Friendship level hierarchy for visibility checks

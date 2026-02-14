@@ -44,6 +44,15 @@ const AVAILABLE_WIDGETS = [
     usernameLabel: "Your VoiceMarkr username",
     usernamePlaceholder: "e.g. johndoe",
   },
+  {
+    key: "baoism",
+    name: "Baoism",
+    description: "Show your Baoism profile on your Xcrol profile",
+    getEmbedUrl: (username: string) => `https://www.baoism.org/embed/${username}`,
+    icon: "☯️",
+    usernameLabel: "Your Baoism username",
+    usernamePlaceholder: "e.g. johndoe",
+  },
 ];
 
 interface WidgetRow {
