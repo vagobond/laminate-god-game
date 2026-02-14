@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Scroll, Lock, Users, UserCheck, Heart, ExternalLink, Trash2 } from "lucide-react";
 import { XcrolEntryForm } from "@/components/XcrolEntryForm";
+import { LinkPreview } from "@/components/LinkPreview";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useHometownDate } from "@/hooks/use-hometown-date";
@@ -243,15 +244,18 @@ const MyXcrol = () => {
                     </div>
                     <p className="text-foreground whitespace-pre-wrap">{entry.content}</p>
                     {entry.link && (
-                      <a
-                        href={entry.link.startsWith("http") ? entry.link : `https://${entry.link}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        {entry.link.length > 50 ? entry.link.slice(0, 50) + "..." : entry.link}
-                      </a>
+                      <>
+                        <LinkPreview url={entry.link.startsWith("http") ? entry.link : `https://${entry.link}`} />
+                        <a
+                          href={entry.link.startsWith("http") ? entry.link : `https://${entry.link}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          {entry.link.length > 50 ? entry.link.slice(0, 50) + "..." : entry.link}
+                        </a>
+                      </>
                     )}
                   </div>
                 ))}
