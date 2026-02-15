@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
   requireInvite?: boolean;
 }
 
-export const ProtectedRoute = ({ children, requireInvite = true }: ProtectedRouteProps) => {
+export const ProtectedRoute = ({ children, requireInvite = false }: ProtectedRouteProps) => {
   const { user, loading: authLoading } = useAuth();
   const { isVerified, loading: verifyLoading, refetch } = useInviteVerified();
   const navigate = useNavigate();
