@@ -70,9 +70,13 @@ export async function fetchSnapshot(): Promise<PublicSnapshot | null> {
 export type BackendStatus = "checking" | "online" | "offline";
 
 /**
- * Lightweight backend health probe. Hits the lightweight `health` edge
- * function (already exists, JWT-free, cached). Used to decide whether to
- * surface the offline banner — does NOT gate any rendering.
+ * Lightweight backend health probe. Hits the JWT-free `health` edge function.
+ *
+ * Mobile-safe: slow/flaky mobile networks (and PWA cold starts where the tab
+ * is backgrounded) used to abort the single 6s request and latch the app into
+ * read-only mode forever. Now we retry a few times with a generous timeout,
+ * respect navigator.onLine, and re-probe when the device comes back online or
+ * the tab becomes visible again.
  */
 export function useBackendHealth(): BackendStatus {
   const [status, setStatus] = useState<BackendStatus>("checking");
@@ -82,36 +86,69 @@ export function useBackendHealth(): BackendStatus {
       setStatus("offline");
       return;
     }
-    let cancelled = false;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
 
-    (async () => {
+    let cancelled = false;
+    let controller: AbortController | null = null;
+
+    const probeOnce = async (timeoutMs: number) => {
+      controller = new AbortController();
+      const timeout = setTimeout(() => controller?.abort(), timeoutMs);
       try {
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/health`, {
+        // Any HTTP response — even 5xx — means the edge network is reachable.
+        await fetch(`${SUPABASE_URL}/functions/v1/health`, {
           signal: controller.signal,
           cache: "no-store",
         });
-        if (cancelled) return;
-        // Any HTTP response — even 5xx — means the edge network is up
-        // and reachable. Only treat a total network failure as offline,
-        // otherwise a degraded-but-responding backend (e.g. stale backup)
-        // would incorrectly flip the whole site to read-only mode.
-        setStatus("online");
-        void res;
+        return true;
       } catch {
-        if (!cancelled) setStatus("offline");
+        return false;
       } finally {
         clearTimeout(timeout);
       }
-    })();
+    };
+
+    const run = async () => {
+      // Browser already knows there's no connectivity — don't burn retries.
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        if (!cancelled) setStatus("offline");
+        return;
+      }
+      // 3 attempts with increasing patience: 10s, 15s, 20s.
+      for (const timeoutMs of [10000, 15000, 20000]) {
+        const ok = await probeOnce(timeoutMs);
+        if (cancelled) return;
+        if (ok) {
+          setStatus("online");
+          return;
+        }
+        // Tab backgrounded mid-probe (common on mobile) — don't count it.
+        if (typeof document !== "undefined" && document.hidden) return;
+        await new Promise((r) => setTimeout(r, 2000));
+        if (cancelled) return;
+      }
+      if (!cancelled) setStatus("offline");
+    };
+
+    void run();
+
+    const retry = () => {
+      if (cancelled) return;
+      if (typeof document !== "undefined" && document.hidden) return;
+      setStatus("checking");
+      void run();
+    };
+
+    window.addEventListener("online", retry);
+    document.addEventListener("visibilitychange", retry);
 
     return () => {
       cancelled = true;
-      controller.abort();
-      clearTimeout(timeout);
+      controller?.abort();
+      window.removeEventListener("online", retry);
+      document.removeEventListener("visibilitychange", retry);
     };
   }, []);
 
   return status;
 }
+
