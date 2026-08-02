@@ -236,9 +236,18 @@ export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt, focusC
                   </p>
                 </div>
 
-                {/* Comment reactions */}
-                <div className="mt-1">
+                {/* Comment reactions + reply */}
+                <div className="mt-1 flex items-center gap-1">
                   <GroupPostReactions targetId={comment.id} targetType="comment" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs text-muted-foreground gap-1"
+                    onClick={() => handleReply(comment)}
+                  >
+                    <MessageSquare className="h-3 w-3" />
+                    Reply
+                  </Button>
                 </div>
 
                 {comment.user_id === currentUserId && (
