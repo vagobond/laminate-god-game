@@ -38,6 +38,7 @@ export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt, focusC
   const [submitting, setSubmitting] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const focusedCommentRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const [highlightOn, setHighlightOn] = useState(false);
 
   // Auto-expand and scroll to a focused comment when present
@@ -131,6 +132,18 @@ export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt, focusC
     }
   };
 
+  const handleReply = (comment: Comment) => {
+    const handle = comment.author_username
+      ? `@${comment.author_username} `
+      : `${comment.author_display_name || "Anonymous"}, `;
+    setShowInput(true);
+    setContent((prev) => (prev.includes(handle.trim()) ? prev : `${handle}${prev}`));
+    setTimeout(() => {
+      inputRef.current?.focus();
+      inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+  };
+
   const handleAuthorClick = (comment: Comment) => {
     if (comment.author_username) navigate(`/${comment.author_username}`);
     else navigate(`/u/${comment.user_id}`);
@@ -172,6 +185,7 @@ export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt, focusC
       {showInput && (
         <div className="flex gap-2 mb-3">
           <Textarea
+            ref={inputRef}
             placeholder="Write a comment..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -222,9 +236,18 @@ export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt, focusC
                   </p>
                 </div>
 
-                {/* Comment reactions */}
-                <div className="mt-1">
+                {/* Comment reactions + reply */}
+                <div className="mt-1 flex items-center gap-1">
                   <GroupPostReactions targetId={comment.id} targetType="comment" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs text-muted-foreground gap-1"
+                    onClick={() => handleReply(comment)}
+                  >
+                    <MessageSquare className="h-3 w-3" />
+                    Reply
+                  </Button>
                 </div>
 
                 {comment.user_id === currentUserId && (
