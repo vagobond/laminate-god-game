@@ -38,6 +38,7 @@ export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt, focusC
   const [submitting, setSubmitting] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const focusedCommentRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const [highlightOn, setHighlightOn] = useState(false);
 
   // Auto-expand and scroll to a focused comment when present
@@ -129,6 +130,18 @@ export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt, focusC
       console.error("Error deleting comment:", error);
       toast.error("Failed to delete comment");
     }
+  };
+
+  const handleReply = (comment: Comment) => {
+    const handle = comment.author_username
+      ? `@${comment.author_username} `
+      : `${comment.author_display_name || "Anonymous"}, `;
+    setShowInput(true);
+    setContent((prev) => (prev.includes(handle.trim()) ? prev : `${handle}${prev}`));
+    setTimeout(() => {
+      inputRef.current?.focus();
+      inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
   };
 
   const handleAuthorClick = (comment: Comment) => {
