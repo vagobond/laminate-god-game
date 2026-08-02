@@ -185,6 +185,7 @@ export const GroupPostComments = ({ postId, currentUserId, lastVisitedAt, focusC
       {showInput && (
         <div className="flex gap-2 mb-3">
           <Textarea
+            ref={inputRef}
             placeholder="Write a comment..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
