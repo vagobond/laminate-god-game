@@ -1,8 +1,11 @@
 name: Weekly Restore Verification
 
-# Pulls the most recent Xcrol backup from Backblaze B2, validates the manifest,
-# loads every table dump into a throwaway Postgres instance, and asserts that
-# row counts match the manifest. Fails loudly if anything is off.
+# Pulls the most recent Xcrol backup from Backblaze B2, asserts it is FRESH
+# (written within the last 48h — catches a dead nightly cron), validates the
+# manifest, checks every dump for gzip/JSON corruption, and asserts row counts
+# match the manifest (see scripts/verify_restore.py). Fails loudly if anything
+# is off. Note: this does NOT restore into Postgres — the full restore path is
+# covered by docs/RUNBOOK.md.
 #
 # Required repo secrets:
 #   B2_KEY_ID, B2_APPLICATION_KEY, B2_BUCKET_NAME
@@ -19,20 +22,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: verify
-          POSTGRES_DB: verify
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -43,7 +32,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install b2 psycopg2-binary
+        run: pip install b2
 
       - name: Authenticate to Backblaze B2
         env:
@@ -71,13 +60,26 @@ jobs:
           echo "SNAPSHOT_PREFIX=$PREFIX" >> "$GITHUB_ENV"
           b2 sync "b2://$B2_BUCKET_NAME/$PREFIX" ./snapshot
 
+      - name: Assert snapshot freshness (fail if older than 48h)
+        run: |
+          python3 - <<'EOF'
+          import os, re, sys
+          from datetime import datetime, timezone
+
+          prefix = os.environ["SNAPSHOT_PREFIX"]
+          m = re.search(r"(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})", prefix)
+          if not m:
+              print(f"::error::Cannot parse timestamp from snapshot prefix: {prefix}")
+              sys.exit(1)
+          ts = datetime(*map(int, m.groups()), tzinfo=timezone.utc)
+          age_h = (datetime.now(timezone.utc) - ts).total_seconds() / 3600
+          print(f"Latest snapshot: {ts.isoformat()} ({age_h:.1f}h old)")
+          if age_h > 48:
+              print(f"::error::Latest snapshot is {age_h:.1f}h old (>48h) — the nightly backup is NOT running. Check cron job nightly-backup-0400-utc and backup_runs.")
+              sys.exit(1)
+          EOF
+
       - name: Verify manifest and row counts
-        env:
-          PGHOST: localhost
-          PGPORT: "5432"
-          PGUSER: postgres
-          PGPASSWORD: verify
-          PGDATABASE: verify
         run: python scripts/verify_restore.py ./snapshot
 
       - name: Notify on failure
