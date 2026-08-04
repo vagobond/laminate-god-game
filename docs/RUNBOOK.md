@@ -121,11 +121,15 @@ re-provision values yourself:
 
 | Secret | Where to get a new value |
 | ------ | ------------------------ |
-| `LOVABLE_API_KEY` | If Lovable AI is unavailable, leave this unset. BYOK in Scrolls keeps working. |
 | `RESEND_API_KEY` | resend.com → API keys |
-| `MAPBOX_TOKEN` | mapbox.com → tokens (or switch to MapTiler) |
-| `B2_*` | reuse the bucket above |
-| `CRON_SECRET` | generate a fresh random string |
+| `MAPBOX_PUBLIC_TOKEN` | mapbox.com → tokens (or switch to MapTiler) |
+| `B2_KEY_ID` | reuse the bucket above |
+| `B2_APPLICATION_KEY` | reuse the bucket above |
+| `B2_BUCKET_NAME` | reuse the bucket above |
+| `CRON_SECRET` | generate a fresh random string, and store it in Vault too |
+
+`LOVABLE_API_KEY` is Lovable-managed and has no revival value — Xcrol no longer
+calls Lovable AI at all (Scrolls AI is bring-your-own-key), so leave it unset.
 
 ## 6. Deploy the frontend
 Cloudflare Pages: connect to the GitHub mirror, set build command `bun run build`,
@@ -148,4 +152,13 @@ first 24 hours so you can revert quickly.
 
 ## 9. Re-schedule backups
 On the new project, re-run the cron SQL in `BACKUP-ARCHITECTURE.md` with the
-new project ref + `CRON_SECRET`. You now have a fully self-contained Xcrol.
+new project ref + `CRON_SECRET`.
+
+**Do not omit `timeout_milliseconds := 300000` from the `net.http_post` calls.**
+pg_net's default timeout is 5 seconds, which a cold-starting edge function can
+never beat — this single omission silently blocked every nightly backup on the
+original project for 33 days while `cron.job_run_details` kept reporting
+`succeeded`. After scheduling, confirm a real run using the two verification
+queries in `BACKUP-ARCHITECTURE.md` before trusting the schedule.
+
+You now have a fully self-contained Xcrol.
