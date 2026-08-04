@@ -1,43 +1,67 @@
-## Goal
-Eliminate every code path in Xcrol that calls the Lovable AI Gateway or reads `LOVABLE_API_KEY`. Scroll AI stays available to users via the existing BYOK (bring-your-own-key) browser path, which never touches Lovable AI.
+# Fix 1 — Nightly backup cron timeout
 
-## Current Lovable AI surface
-1. `supabase/functions/adventure-game/index.ts` — calls `https://ai.gateway.lovable.dev/v1/chat/completions` with `LOVABLE_API_KEY`. **Orphaned**: nothing in `src/` invokes it.
-2. `supabase/functions/dream-trip/index.ts` — same pattern. **Orphaned**: no caller in `src/`.
-3. `supabase/functions/scroll-ai/index.ts` — already returns 402 for everyone (Wayfarer+ gate stub). Contains a commented-out Lovable AI snippet for the future paid tier.
-4. `supabase/functions/nightly-backup/index.ts` — only lists `LOVABLE_API_KEY` in a secret-name inventory (names, not values).
+## Confirmed current state
 
-No other files in `src/` or `supabase/functions/` reference the gateway.
+`cron.job` has three jobs. The relevant one, `nightly-backup-0400-utc` (`0 4 * * *`), calls the backup function with **no `timeout_milliseconds` argument** — so pg_net applies its 5-second default and kills the request during the edge function's cold start. That matches the `Timeout of 5000 ms reached` entries in `net._http_response` and the absence of any `kind='nightly'` row in `backup_runs`.
 
-## Changes
+`heartbeat-check` is **not scheduled at all** — the dead-man's switch has never had a trigger.
 
-### 1. Delete the two orphaned AI edge functions
-- Remove `supabase/functions/adventure-game/` (entire directory).
-- Remove `supabase/functions/dream-trip/` (entire directory).
-- Remove their `[functions.adventure-game]` and `[functions.dream-trip]` blocks from `supabase/config.toml`.
+## What gets changed
 
-### 2. Strip the Lovable AI paid path from `scroll-ai`
-- Edit `supabase/functions/scroll-ai/index.ts` to:
-  - Remove the commented-out Lovable AI Gateway snippet entirely.
-  - Replace `hasWayfarerPlus` and the gated branch with a permanent 410 / 404 response explaining Scroll AI runs only via BYOK in the browser.
-- Edit `src/lib/scroll-ai.ts`:
-  - Remove `userHasPaidTier()` and the `invokeEdge` function.
-  - Remove the `supabase.functions.invoke("scroll-ai", …)` call and the `supabase` import.
-  - `runScrollAi` always uses the BYOK path; if no key, throws `no_byok_key` as today.
-- Remove the `[functions.scroll-ai]` block from `supabase/config.toml` (function no longer needed).
-- Delete `supabase/functions/scroll-ai/` directory.
+### 1. Reschedule the backup job with a real timeout
 
-### 3. Remove `LOVABLE_API_KEY` from the backup inventory
-- Edit `supabase/functions/nightly-backup/index.ts` line 199: drop `"LOVABLE_API_KEY"` from the `secretInventory` array.
+Applied live via the insert tool (not a migration — the URL and Vault reference are project-specific and must not ship to forks):
 
-### 4. After deploy
-- The `LOVABLE_API_KEY` secret in Lovable Cloud becomes unused. It can stay (harmless) or the user can delete it from project secrets later. No code change required.
+```sql
+select cron.unschedule('nightly-backup-0400-utc');
 
-## Out of scope
-- BYOK Scroll AI (calls OpenAI / OpenRouter / Anthropic / Google directly from the browser) is preserved untouched — it does not use Lovable AI.
-- No UI changes; nothing in the app currently surfaces the orphaned Adventure / Dream Trip endpoints.
+select cron.schedule('nightly-backup-0400-utc', '0 4 * * *', $$
+  select net.http_post(
+    url := 'https://<project-ref>.supabase.co/functions/v1/nightly-backup',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'CRON_SECRET' limit 1)
+    ),
+    body := jsonb_build_object('triggered_at', now()),
+    timeout_milliseconds := 300000
+  );
+$$);
+```
 
-## Verification
-- `rg "LOVABLE_API_KEY|ai\.gateway\.lovable|Lovable-API-Key"` returns no hits in `src/` or `supabase/functions/`.
-- Scroll editor's AI button still works when a BYOK key is configured; shows the existing "Add your AI provider key" message otherwise.
-- Nightly backup runs without referencing the key.
+Everything else about the job is preserved verbatim — same name, same schedule, same Vault-backed secret lookup. The only addition is `timeout_milliseconds := 300000`.
+
+### 2. Schedule the heartbeat job
+
+`heartbeat-check` gets a weekly job (`0 5 * * 0`) with the same Vault secret pattern and the same 300s timeout. It stays inert until `DEADMAN_ENABLED` and `TRUSTEE_EMAIL` are set (Fix 2), but the trigger will exist and be proven.
+
+### 3. Immediate proof
+
+Right after scheduling, invoke `nightly-backup` once by hand with the cron secret so a full run happens now rather than waiting until 04:00 UTC. Then verify:
+
+- a `backup_runs` row with `kind='nightly'` and `status='success'`
+- a non-zero `files_uploaded` and a `manifest_key` under today's `xcrol/` prefix
+- `net._http_response` showing status 200 instead of a timeout
+
+If the manual run reveals the function needs longer than 300s, the timeout gets raised before the scheduled job's first firing.
+
+### 4. Documentation — part of the fix, not an afterthought
+
+`docs/BACKUP-ARCHITECTURE.md` currently prints the cron SQL **without** `timeout_milliseconds`, and with a hardcoded `<CRON_SECRET>` in the header instead of the Vault lookup. A stranger reviving Xcrol from that doc reproduces the never-ran bug exactly. Both `docs/BACKUP-ARCHITECTURE.md` and `docs/RUNBOOK.md` get:
+
+- the corrected SQL above, verbatim, for both jobs
+- an explicit warning that pg_net defaults to a 5-second timeout and that a cold-starting edge function will always exceed it
+- an explicit warning that a `succeeded` row in `cron.job_run_details` proves only that the HTTP call was *issued*; the only proof a backup ran is a `backup_runs` row with `kind='nightly'` plus the matching B2 prefix
+
+### 5. Secret-inventory correction
+
+While in the file, `nightly-backup/index.ts`'s `secretInventory` array is corrected: `MAPBOX_TOKEN` → `MAPBOX_PUBLIC_TOKEN` (the real name; the manifest has been silently omitting it from every backup), and the now-unused `LOVABLE_API_KEY` is not added since it dies with Lovable and has no revival value. The escrow list in the runbook gains `MAPBOX_PUBLIC_TOKEN`.
+
+## Not in this slice
+
+Fixes 2 (dead-man's switch secrets), 3 (BYO Google OAuth), 4 (auth email ownership), and 5 (storage byte sync) are untouched.
+
+## Technical notes
+
+- No frontend changes; no migration files.
+- One live SQL statement set, one edge function file edit, two doc edits.
+- `nightly-backup` already distinguishes `kind='nightly'` (cron secret) from `kind='manual'` (admin JWT), so the manual proof run must send `x-cron-secret` to produce a `nightly` row.
