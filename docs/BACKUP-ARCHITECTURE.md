@@ -48,37 +48,67 @@ A scheduled Supabase Edge Function `nightly-backup`:
 7. Optionally POSTs a one-line status to `BACKUP_ALERT_WEBHOOK`.
 
 ## Scheduling
-Run this once (replace placeholders) using `supabase--insert` SQL, not a
-migration — the URL + secret are project-specific and shouldn't ship to forks:
+
+> **CRITICAL — pg_net defaults to a 5 second timeout.**
+> An edge function that is cold-starting will *always* exceed 5 seconds, so a
+> `net.http_post` without an explicit `timeout_milliseconds` kills the backup
+> before it begins. This exact omission silently prevented every nightly backup
+> from running for 33 days. Always pass `timeout_milliseconds := 300000`.
+
+Store `CRON_SECRET` in Vault (`vault.create_secret`) rather than inlining it, so
+the job body contains no secret material. Run this once using `supabase--insert`
+SQL, not a migration — the URL + Vault reference are project-specific and
+shouldn't ship to forks:
 
 ```sql
-select cron.schedule(
-  'xcrol-nightly-backup',
-  '0 4 * * *',
-  $$
+select cron.schedule('nightly-backup-0400-utc', '0 4 * * *', $$
   select net.http_post(
-    url:='https://<project-ref>.functions.supabase.co/nightly-backup',
-    headers:='{"Content-Type":"application/json","x-cron-secret":"<CRON_SECRET>"}'::jsonb,
-    body:='{}'::jsonb
+    url := 'https://<project-ref>.supabase.co/functions/v1/nightly-backup',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'CRON_SECRET' limit 1)
+    ),
+    body := jsonb_build_object('triggered_at', now()),
+    timeout_milliseconds := 300000
   );
-  $$
-);
+$$);
 
-select cron.schedule(
-  'xcrol-weekly-heartbeat',
-  '0 5 * * 0',
-  $$
+select cron.schedule('heartbeat-check-weekly', '0 5 * * 0', $$
   select net.http_post(
-    url:='https://<project-ref>.functions.supabase.co/heartbeat-check',
-    headers:='{"Content-Type":"application/json","x-cron-secret":"<CRON_SECRET>"}'::jsonb,
-    body:='{}'::jsonb
+    url := 'https://<project-ref>.supabase.co/functions/v1/heartbeat-check',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'CRON_SECRET' limit 1)
+    ),
+    body := jsonb_build_object('triggered_at', now()),
+    timeout_milliseconds := 300000
   );
-  $$
-);
+$$);
 ```
 
 Cron requires the `pg_cron` and `pg_net` extensions to be enabled in the
 project.
+
+### Verifying a backup actually ran
+
+> **A `succeeded` row in `cron.job_run_details` proves only that the HTTP call
+> was *issued*.** It says nothing about whether the function completed. Two
+> checks are the only real proof:
+
+```sql
+-- 1. A run row must exist with kind='nightly'
+select id, kind, status, files_uploaded, manifest_key, started_at
+from public.backup_runs where kind = 'nightly'
+order by started_at desc limit 5;
+
+-- 2. The underlying HTTP call must have returned 200, not timed out
+select id, status_code, error_msg, created
+from net._http_response order by created desc limit 5;
+```
+
+A `Timeout of 5000 ms reached` in `net._http_response` means the
+`timeout_milliseconds` argument is missing from the cron job body.
+Cross-check that the matching `xcrol/YYYY-MM-DD/` prefix exists in B2.
 
 ## Retention (apply via B2 Lifecycle Rules)
 - `xcrol/` keep all uploads for 14 days
