@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "xcrol",
+  "compatibility_date": "2026-07-25",
+  "observability": {
+    "enabled": true
+  },
+  // Static-assets-only Worker: serves the Vite build output as a SPA.
+  // Deliberately NO routes/custom domain — deploys to *.workers.dev only.
+  // xcrol.com continues to be served by Lovable until DNS is switched on purpose.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
