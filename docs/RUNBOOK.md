@@ -196,4 +196,23 @@ original project for 33 days while `cron.job_run_details` kept reporting
 `succeeded`. After scheduling, confirm a real run using the two verification
 queries in `BACKUP-ARCHITECTURE.md` before trusting the schedule.
 
+## 10. Ongoing maintenance without Lovable (works with any AI tool)
+The codebase is standard open tech (Vite/React, Supabase, SQL migrations, Deno
+edge functions) — nothing proprietary. Any agentic coding tool (GitHub Copilot
+agent mode, Cursor, Claude, etc.) can maintain it. The workflow that replaces
+Lovable's "type a sentence, see it live":
+
+1. AI tool makes the code change and opens a PR
+2. Human merges the PR on GitHub
+3. Frontend deploys automatically (Cloudflare Workers Builds, already live —
+   see `wrangler.jsonc`)
+4. Backend deploys via Supabase CLI: `supabase db push` for migrations,
+   `supabase functions deploy` for edge functions
+
+**TODO (set up during the dry-run revival):** a GitHub Action that runs step 4
+automatically on merge to main, so backend changes deploy with zero terminal
+work. It needs two repo secrets: `SUPABASE_ACCESS_TOKEN` (dashboard → account →
+access tokens) and `SUPABASE_PROJECT_REF`. Until it exists, step 4 is a manual
+CLI command.
+
 You now have a fully self-contained Xcrol.
