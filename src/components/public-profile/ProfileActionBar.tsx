@@ -77,8 +77,8 @@ export const ProfileActionBar = ({
             size="sm"
             onClick={() => {
               const ogUrl = username
-                ? `https://ceuaibqpikcvcnmuesos.supabase.co/functions/v1/og-profile?username=${username.replace(/^@/, "")}`
-                : `https://ceuaibqpikcvcnmuesos.supabase.co/functions/v1/og-profile?userId=${resolvedUserId}`;
+                ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/og-profile?username=${username.replace(/^@/, "")}`
+                : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/og-profile?userId=${resolvedUserId}`;
               navigator.clipboard.writeText(ogUrl);
               toast.success("Profile link copied! Share it anywhere for a nice preview.");
             }}
