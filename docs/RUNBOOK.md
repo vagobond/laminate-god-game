@@ -131,6 +131,40 @@ re-provision values yourself:
 `LOVABLE_API_KEY` is Lovable-managed and has no revival value — Xcrol no longer
 calls Lovable AI at all (Scrolls AI is bring-your-own-key), so leave it unset.
 
+### 5a. Auth email (SMTP) — REQUIRED, or resets/confirmations silently fail
+On the original project, Supabase *auth* mail (signup confirmations, password
+resets, email-change confirmations) is sent by Lovable's default shared sender.
+That path dies with Lovable. App mail (invites) already uses our own Resend and
+is unaffected.
+
+On the new project, wire auth mail to our Resend account:
+
+Supabase dashboard → **Authentication → Emails → SMTP settings** → enable
+**Custom SMTP**:
+
+| Field | Value |
+| ----- | ----- |
+| Host | `smtp.resend.com` |
+| Port | `465` |
+| Username | `resend` (literally) |
+| Password | a Resend API key (resend.com → API keys; a dedicated key named `xcrol-auth-smtp` may already exist) |
+| Sender email | `noreply@invites.xcrol.com` (domain already verified in Resend) — or verify a new subdomain like `auth.xcrol.com` in Resend first |
+| Sender name | `Xcrol` |
+
+Then send yourself a password reset and confirm the From address.
+
+**Do NOT use any wizard that asks you to add NS records pointing at
+`*.lovable.cloud`.** Lovable's "Emails" domain-connect flow (offered 2026-08-05
+for `auth.xcrol.com`) works by delegating `notify.auth.xcrol.com` to
+`ns5/ns6.lovable.cloud` — a Lovable-controlled DNS zone, i.e. the same
+dependency this runbook exists to remove. It was deliberately rejected; those
+records were never added to xcrol.com's DNS (hosted at WordPress.com).
+
+Note: Lovable's dashboard does not expose Supabase's custom-SMTP setting
+anywhere (checked 2026-08-05), so while the app lives on Lovable Cloud this
+dependency is accepted. If it has since been configured via the Lovable AI
+agent (management-API route), the smoke test below still applies.
+
 ## 6. Deploy the frontend
 Cloudflare Pages: connect to the GitHub mirror, set build command `bun run build`,
 output `dist`. Set env vars `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`,
@@ -144,6 +178,7 @@ first 24 hours so you can revert quickly.
 
 ## 8. Smoke test
 - [ ] Sign in with an existing account → password works
+- [ ] Request a password reset → email arrives, From address is ours (see 5a)
 - [ ] Open the River → entries visible
 - [ ] Post a new entry
 - [ ] Send a message
