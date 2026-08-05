@@ -33,6 +33,12 @@ Both paths share steps 2–6.
 2. Note the project ref, anon key, service role key, and DB URL.
 3. Enable the `pg_cron` and `pg_net` extensions (Database → Extensions).
 
+Free-tier fit (checked 2026-08-05): database backup <1 MB and storage ~52 MB
+vs limits of 500 MB / 1 GB — comfortable. Caveat: Supabase pauses free
+projects after ~1 week of zero activity. Live traffic plus the nightly backup
+cron should prevent that, but if the project ever pauses, restore it from the
+dashboard and check whether the crons resumed.
+
 ### Path B — self-hosted Supabase
 1. Spin up a Hetzner CPX21 (or larger) running Ubuntu.
 2. Follow https://supabase.com/docs/guides/self-hosting/docker — set strong
