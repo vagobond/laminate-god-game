@@ -58,6 +58,17 @@ npx supabase db push
 
 This recreates every table, RLS policy, function, trigger, and grant.
 
+**Known failure (verified in the 2026-08-06 dry run):** `db push` dies partway
+through at migration `20251206020240_*` with a foreign-key error. That
+migration hardcodes an INSERT into `user_roles` for the admin user id
+`8b7e8511-ac9e-4e49-a759-7f00ce0de42d`, which does not exist in a fresh
+project's `auth.users`. Fix: **before** running `db push`, create that auth
+user via the admin API (`POST /auth/v1/admin/users` with the service role key,
+body `{"id": "8b7e8511-ac9e-4e49-a759-7f00ce0de42d", "email": "<admin email>",
+"email_confirm": true}`) — or restore all auth users first (step 4a can run
+before step 4). If `db push` has already failed, create the user and re-run;
+it resumes from the failed migration.
+
 ## 4. Restore the data
 
 Pick the most recent successful backup folder in B2 (look for a folder that
@@ -96,8 +107,51 @@ done
 (Simpler: write a 20-line Node script that reads each NDJSON file and calls
 `supabase.from(table).insert(rows)` in 500-row batches with the service key.)
 
-### 4a. Restore auth users (preserving passwords)
-The dump includes `encrypted_password`. Use the Supabase admin API:
+**Dry-run notes (2026-08-06) — read before loading:**
+
+- The table list above is stale in places (e.g. `friendship_requests`,
+  `blocked_users`, `references`, `user_points` no longer exist; the live names
+  are `friend_requests`, `user_blocks`, `user_references`, …). Don't trust a
+  hardcoded order — instead load **whatever `.ndjson.gz` files the snapshot's
+  `db/` folder actually contains**, using a multi-pass retry loop: attempt
+  every table, collect the ones that fail with FK errors, retry them in
+  another pass, stop when a pass makes no progress. In the dry run all 66
+  tables loaded in 2 passes with upserts
+  (`Prefer: resolution=merge-duplicates`).
+- **Loading over REST re-fires triggers.** In the dry run this inflated
+  `audit_log` (1,572 rows vs 525 in the snapshot) and `notifications` (3,170
+  vs 1,011) with freshly generated rows. If you care about clean audit/
+  notification history, load over a direct SQL connection with
+  `SET session_replication_role = replica;` (disables triggers), then reset
+  it. If you load over REST, expect these two tables to be inflated and
+  consider truncating them and re-loading just those two from the snapshot
+  with triggers off.
+- **Migrations seed some rows** (e.g. a default `layers` row), so a few
+  tables will end up with snapshot rows *plus* seeded rows under different
+  ids. Harmless, but explains small count mismatches when verifying.
+- Verify counts afterwards against `manifest.json.gz` (`tables.<name>.rows`).
+  Note `scroll_ai_usage` has no `id` column (composite key) — count it with
+  `select=*` not `select=id`.
+
+### 4a. Restore auth users
+
+> **CORRECTION (2026-08-06 dry run): the dump does NOT contain
+> `encrypted_password`.** The backup edge function exports users via the
+> admin `listUsers` API, which never returns password hashes — verified: 0 of
+> 83 users in the 2026-08-06 snapshot have one. **Passwords are therefore NOT
+> preserved by the current backup.** On revival:
+>
+> - Email/password users must use "Forgot password" to set a new one (which
+>   is why step 5a — working auth SMTP — is a hard prerequisite).
+> - Google OAuth users are unaffected: as long as the same OAuth client is
+>   configured (creds in escrow), sign-in re-matches by email.
+>
+> **Follow-up if password preservation matters:** change the backup function
+> to also dump `auth.users` (including `encrypted_password`) via a direct SQL
+> query with the service role, not via `listUsers`. Until that ships, plan
+> for reset-on-revival.
+
+Restore the users you have (ids, emails, metadata) via the admin API:
 
 ```ts
 import { createClient } from "@supabase/supabase-js";
@@ -106,14 +160,17 @@ for (const u of usersFromDump) {
   await admin.auth.admin.createUser({
     id: u.id, email: u.email,
     email_confirm: !!u.email_confirmed_at,
-    password_hash: u.encrypted_password, // bcrypt hash from old project
+    // password_hash: u.encrypted_password, // only if the backup ever starts
+    //                                       // capturing hashes — see above
     user_metadata: u.user_metadata,
     app_metadata: u.app_metadata,
   });
 }
 ```
 
-Users keep their original passwords.
+Preserving the original `id` matters: every table's `user_id` FKs reference
+it. Verify afterwards that the created count equals the dump count — creation
+failures are silent if you don't check each response.
 
 ### 4b. Storage
 The backup contains an object catalog, not bytes. If the original Supabase
