@@ -168,8 +168,17 @@ records were never added to xcrol.com's DNS (hosted at WordPress.com).
 
 Note: Lovable's dashboard does not expose Supabase's custom-SMTP setting
 anywhere (checked 2026-08-05), so while the app lives on Lovable Cloud this
-dependency is accepted. If it has since been configured via the Lovable AI
-agent (management-API route), the smoke test below still applies.
+dependency is accepted. The management-API route was also attempted via the
+Lovable AI agent (2026-08-06) and is **not** available: Lovable Cloud projects
+have no Supabase personal access token, and `api.supabase.com` rejects every
+credential reachable from the agent sandbox (anon key and `LOVABLE_API_KEY`
+both return 401). The agent's auth-configuration tool exposes only signup /
+anonymous / auto-confirm / HIBP / email rate-limit — no SMTP fields. Therefore
+custom SMTP can only be set **after** migrating to a Supabase project you own
+(step 2 above), where it is a 2-minute dashboard change. Until then, auth mail
+goes out via Lovable's shared sender and dies with Lovable — which is why 5a is
+a REQUIRED revival step, not an optional one.
+
 
 ## 6. Deploy the frontend
 Cloudflare Pages: connect to the GitHub mirror, set build command `bun run build`,
