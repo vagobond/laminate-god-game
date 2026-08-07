@@ -149,9 +149,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3) Dump auth.users (hashed passwords included so accounts survive)
+    // 3) Dump auth.users.
+    // listUsers alone does NOT return encrypted_password (verified in the
+    // 2026-08-06 dry-run revival — see docs/DRYRUN-2026-08-06.md), so we merge
+    // in bcrypt hashes from the service_role-only SECURITY DEFINER RPC
+    // backup_export_auth_password_hashes(). Without this, accounts survive a
+    // revival but passwords do not.
     try {
-      const users: unknown[] = [];
+      const users: Record<string, unknown>[] = [];
       let page = 1;
       // deno-lint-ignore no-constant-condition
       while (true) {
@@ -160,6 +165,27 @@ Deno.serve(async (req) => {
         users.push(...data.users);
         if (!data.users.length || data.users.length < 1000) break;
         page += 1;
+      }
+      // Merge password hashes. If the RPC fails, still upload the hash-less
+      // dump but record the error so the run is marked failed (a backup that
+      // silently drops hashes is exactly what the dry run caught).
+      try {
+        const { data: hashRows, error: hashErr } = await admin.rpc(
+          "backup_export_auth_password_hashes",
+        );
+        if (hashErr) throw hashErr;
+        const hashById = new Map<string, string>(
+          (hashRows ?? []).map((r: { id: string; encrypted_password: string }) => [
+            r.id,
+            r.encrypted_password,
+          ]),
+        );
+        for (const u of users) {
+          const h = hashById.get(u.id as string);
+          if (h) u.encrypted_password = h;
+        }
+      } catch (e) {
+        errors.push(`auth.users password hashes: ${errMsg(e)}`);
       }
       const gz = await gzipString(users.map((u) => JSON.stringify(u)).join("\n"));
       const target = await b2GetUploadUrl(auth);
