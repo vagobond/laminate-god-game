@@ -2763,6 +2763,13 @@ export type Database = {
         Args: { user1_id: string; user2_id: string }
         Returns: boolean
       }
+      backup_export_auth_password_hashes: {
+        Args: never
+        Returns: {
+          encrypted_password: string
+          id: string
+        }[]
+      }
       calculate_all_user_points: {
         Args: never
         Returns: {
