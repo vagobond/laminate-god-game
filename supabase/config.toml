@@ -62,3 +62,11 @@ verify_jwt = false
 
 [functions.host-activeness-response]
 verify_jwt = false
+
+# Cron-invoked functions: gateway JWT check off; they self-authenticate
+# via the x-cron-secret header (see BACKUP-ARCHITECTURE.md).
+[functions.nightly-backup]
+verify_jwt = false
+
+[functions.heartbeat-check]
+verify_jwt = false
