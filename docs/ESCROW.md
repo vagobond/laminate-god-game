@@ -4,9 +4,12 @@
 > Every credential a trustee needs to revive or maintain Xcrol is listed here,
 > with what it unlocks and where the sealed value lives.
 >
-> The sealed values live in: **[SEALED-STORE LOCATION — CD to fill in]**
-> (e.g., password-manager emergency access, sealed letter with the will,
-> encrypted file). One store, one location, named in the trustee letter.
+> The sealed values live in: **a KeePassXC vault file, `CD-estate-credentials.kdbx`**
+> (open format, AES-256; open it with the free KeePassXC app on any OS).
+> Copies exist in three places: a thumbdrive stored with the will, CD's
+> Dropbox, and CD's Mac (`~/Documents/CD-Estate-Vault/`). The master
+> passphrase is in a sealed envelope stored with the will. Vault created
+> 2026-08-09; it also holds the wider estate credentials, not just Xcrol.
 >
 > Companion documents: `RUNBOOK.md` (how to revive), `BACKUP-ARCHITECTURE.md`
 > (how backups work). Estate context: the will names CD's sister as
