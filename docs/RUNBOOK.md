@@ -281,10 +281,14 @@ Lovable's "type a sentence, see it live":
 4. Backend deploys via Supabase CLI: `supabase db push` for migrations,
    `supabase functions deploy` for edge functions
 
-**TODO (set up during the dry-run revival):** a GitHub Action that runs step 4
-automatically on merge to main, so backend changes deploy with zero terminal
-work. It needs two repo secrets: `SUPABASE_ACCESS_TOKEN` (dashboard → account →
-access tokens) and `SUPABASE_PROJECT_REF`. Until it exists, step 4 is a manual
-CLI command.
+Step 4 is automated by `.github/workflows/backend-deploy.yml`: on merge to
+main touching `supabase/**` (or manual "Run workflow"), it applies migrations
+and deploys all edge functions to the project named by three repo secrets:
+`SUPABASE_ACCESS_TOKEN` (dashboard → account → access tokens),
+`SUPABASE_PROJECT_REF`, and `SUPABASE_DB_PASSWORD`. While the app lives on
+Lovable these point at the dry-run/staging project (Lovable Cloud exposes no
+access token, so the live project cannot be targeted); at cutover, repoint
+the three secrets at the new production project and this workflow IS the
+production backend deploy.
 
 You now have a fully self-contained Xcrol.
