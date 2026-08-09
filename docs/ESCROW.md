@@ -29,21 +29,22 @@
 | 1 | 1 | **Backblaze account login** (email + password + 2FA recovery) | B2 bucket `xcrol-backups` — all nightly snapshots incl. password hashes. Can mint new keys. | SEALED STORE | ☐ |
 | 2 | 1 | **B2 application key (full access)** | Direct restore access without the account login | SEALED STORE (note: a read-only key also exists on CD's Mac in My Agent System `.env`) | ☐ |
 | 3 | 1 | **GitHub account access OR successor designation** | Private repo `vagobond/xcrol` — full source, migrations, edge functions, this runbook | github.com/settings/admin → successor = sister (no secret value needed once set) | ☐ pending |
+| 3b | 1 | **Supabase account login** (email + password + 2FA recovery) | THE production backend since 2026-08-09 cutover: project `wmatvlxehyaufhjljtby` — live DB, auth, storage, edge functions, SMTP/OAuth config | SEALED STORE | ☐ |
 | 4 | 2 | **Google Cloud account login** (owns project `xcrol`, OAuth client `xcrol-web`) | OAuth client ID + secret — the 22 Google-identity users (17 OAuth-only) sign back in with zero friction only if the same client is reused | SEALED STORE | ☐ |
 | 5 | 2 | **Google OAuth client ID + secret** (copy of the values themselves) | Same as #4 without needing console access; paste into new Supabase project's Google provider | SEALED STORE | ☐ |
 | 6 | 2 | **Resend account login** | Auth SMTP (RUNBOOK 5a — REQUIRED for password resets on revival) + invite mail; domain `invites.xcrol.com` verified here | SEALED STORE | ☐ |
 | 7 | 2 | **Resend API key `xcrol-auth-smtp`** | SMTP password for Supabase custom SMTP | SEALED STORE (or mint fresh from #6) | ☐ |
-| 8 | 3 | **WordPress.com login** | `xcrol.com` registration + DNS (registered for max term) | SEALED STORE | ☐ |
-| 9 | 4 | **Cloudflare account login** | Workers deploy pipeline (`xcrol.baldjesusnft.workers.dev`), escape-pod frontend | SEALED STORE | ☐ |
+| 8 | 3 | **Cloudflare account login** | Since 2026-08-09 cutover: xcrol.com DNS zone (NS sloan/piers.ns.cloudflare.com) + Worker serving the frontend on xcrol.com/www. (An API token also sits on CD's Mac in My Agent System `.env` as `CLOUDFLARE_API_TOKEN`.) | SEALED STORE | ☐ |
+| 9 | 3 | **WordPress.com login** | `xcrol.com` REGISTRATION only (registered for max term; DNS moved to Cloudflare 2026-08-09). Needed to renew or re-delegate the domain. | SEALED STORE | ☐ |
 | 10 | 4 | **Mapbox account login** | `MAPBOX_PUBLIC_TOKEN` (or trustee switches to MapTiler per RUNBOOK) | SEALED STORE | ☐ |
-| 11 | 4 | **Lovable account login** | Only relevant while Xcrol still lives on Lovable — lets trustee keep lights on / export. Dies at cutover. | SEALED STORE | ☐ |
+| 11 | 4 | **Lovable account login** | Historical only — Lovable removed from all serving paths at the 2026-08-09 cutover. Keep until subscription cancelled, then delete this row. | SEALED STORE | ☐ |
 
 ## Deliberately NOT in escrow
 
-- **Supabase service_role key / DB password** — not retrievable from Lovable
-  Cloud, and not needed: revival = new project = new keys (RUNBOOK step 2).
-  After cutover to CD-owned Supabase, ADD the Supabase account login to the
-  sealed store and update this table.
+- **Supabase service_role key / DB password** — retrievable from the Supabase
+  dashboard with the account login (row 3b), so no separate escrow needed;
+  revival-from-B2 also works without them (new project = new keys, RUNBOOK
+  step 2).
 - **`CRON_SECRET`** — regenerated on revival (RUNBOOK step 5).
 - **`LOVABLE_API_KEY`** — unused by code; dies with Lovable.
 - **Xcrol user passwords** — bcrypt hashes ride in the nightly backup itself
