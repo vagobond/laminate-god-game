@@ -1,0 +1,50 @@
+# Backend deploy — applies migrations + deploys edge functions on merge to main.
+#
+# This is the Lovable replacement for backend deploys (RUNBOOK section 10,
+# step 4). It targets whatever Supabase project the repo secrets point at:
+#   SUPABASE_ACCESS_TOKEN — personal access token (dashboard -> account -> tokens)
+#   SUPABASE_PROJECT_REF  — target project ref
+#   SUPABASE_DB_PASSWORD  — target project's database password
+#
+# While Xcrol still lives on Lovable, point these at the dry-run/staging
+# project (Lovable Cloud has no access token, so the live project CANNOT be
+# targeted — verified 2026-08-06). At cutover, repoint the three secrets at
+# the new production project and this workflow becomes the production deploy.
+#
+# Note: push-triggered workflows do NOT suffer GitHub's 60-day auto-disable
+# (that only affects `schedule` triggers on inactive repos).
+
+name: backend-deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/**"
+  workflow_dispatch:
+
+concurrency:
+  group: backend-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link project
+        run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+
+      - name: Apply migrations
+        run: supabase db push
+
+      - name: Deploy edge functions
+        run: supabase functions deploy --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
