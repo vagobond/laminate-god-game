@@ -238,6 +238,7 @@ npm run dev
 
 ### Deployment
 
-Open [Lovable](https://lovable.dev/projects/fa5167be-abaf-40fa-ab93-6bb97c8ef840) and click Share → Publish.
+- **Frontend:** `npm run deploy` builds the app and publishes it to the Cloudflare Worker serving `xcrol.com` (requires `CLOUDFLARE_API_TOKEN`; config in `wrangler.jsonc`).
+- **Backend:** merging changes under `supabase/**` to `main` triggers `.github/workflows/backend-deploy.yml`, which applies migrations and deploys edge functions to the Supabase project.
 
-Custom domains: Project → Settings → Domains → Connect Domain. [Docs](https://docs.lovable.dev/features/custom-domain#custom-domain)
+See `docs/RUNBOOK.md` for full operational detail.

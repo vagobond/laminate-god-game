@@ -98,7 +98,7 @@ export default function QuickStartSection() {
               <p className="text-xs text-muted-foreground mb-3">Each of these should be added as a separate entry:</p>
               <div className="space-y-1 font-mono text-sm">
                 <p className="text-primary">✅ http://localhost:3000/auth/xcrol/callback</p>
-                <p className="text-primary">✅ https://preview--abc123.lovable.app/auth/xcrol/callback</p>
+                <p className="text-primary">✅ https://staging.myapp.com/auth/xcrol/callback</p>
                 <p className="text-primary">✅ https://www.myapp.com/auth/xcrol/callback</p>
                 <p className="text-primary">✅ https://myapp.com/auth/xcrol/callback</p>
               </div>

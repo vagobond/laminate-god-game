@@ -5,9 +5,8 @@
   "observability": {
     "enabled": true
   },
-  // Static-assets-only Worker: serves the Vite build output as a SPA.
-  // Cutover 2026-08-09: xcrol.com + www now served by this Worker
-  // (zone moved to Cloudflare; Lovable no longer in the serving path).
+  // Static-assets-only Worker: serves the Vite build output as a SPA
+  // on xcrol.com + www (zone hosted on Cloudflare since 2026-08-09).
   "routes": [
     { "pattern": "xcrol.com", "custom_domain": true },
     { "pattern": "www.xcrol.com", "custom_domain": true }

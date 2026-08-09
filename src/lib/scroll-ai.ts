@@ -2,7 +2,7 @@
  * Scroll AI router.
  *
  * Browser-only: every call goes direct to the user's BYOK provider.
- * Xcrol servers and Lovable AI are never involved.
+ * Xcrol servers are never involved and never see the user's key.
  */
 
 import { callByok, ByokError } from "./scroll-ai-byok";
