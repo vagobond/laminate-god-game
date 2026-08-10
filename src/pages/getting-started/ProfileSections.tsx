@@ -156,7 +156,7 @@ export default function ProfileSections() {
             </div>
           </div>
           <p className="text-sm text-muted-foreground mt-4">
-            <strong>Connection Degrees:</strong> XCROL also shows you how you're connected to people you haven't friended yet—friend-of-a-friend chains up to 6 degrees.
+            <strong>Connection Degrees:</strong> XCROL also shows you how you're connected to people you haven't friended yet—friend-of-a-friend chains up to 3 degrees.
           </p>
         </div>
       </section>
