@@ -60,6 +60,22 @@ jobs:
                'authenticated', 'authenticated', 'ci-admin-seed@xcrol.test', '',
                '{\"provider\":\"email\",\"providers\":[\"email\"]}', '{}', now(), now())"
 
+      - name: Mirror hosted-platform default privileges
+        # Hosted Supabase grants CRUD on new public tables/sequences to anon,
+        # authenticated and service_role via default privileges. The bare local
+        # db lacks that baseline, so migration-created tables get NO grants and
+        # every role-switched query dies with "permission denied" before RLS is
+        # even evaluated (run 1 failure). Recreate the baseline BEFORE the
+        # migrations so later revokes (profiles column lockdown, rate limiting)
+        # land exactly as they did in prod.
+        run: |
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -c "
+            grant usage on schema public to anon, authenticated, service_role;
+            alter default privileges for role postgres in schema public
+              grant all on tables to anon, authenticated, service_role;
+            alter default privileges for role postgres in schema public
+              grant all on sequences to anon, authenticated, service_role;"
+
       - name: Apply all migrations
         run: supabase migration up
 
