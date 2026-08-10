@@ -6,6 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// PKCE S256 code-challenge hash (base64url output) — do not confuse with sha256Hex.
 async function sha256(message: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(message);
@@ -14,6 +15,19 @@ async function sha256(message: string): Promise<string> {
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
+}
+
+// Generate a 64-char hex token (matches the format the old column DEFAULT produced).
+function generateToken(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// sha256 hex digest — this is what gets stored in oauth_tokens; plaintext never touches the DB.
+async function sha256Hex(input: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 Deno.serve(async (req) => {
@@ -174,7 +188,9 @@ Deno.serve(async (req) => {
       // Delete the used authorization code
       await supabase.from("oauth_authorization_codes").delete().eq("id", authCode.id);
 
-      // Create access token
+      // Create access token — plaintext goes to the client once; only hashes are stored
+      const accessTokenPlain = generateToken();
+      const refreshTokenPlain = generateToken();
       const { data: token, error: tokenError } = await supabase
         .from("oauth_tokens")
         .insert({
@@ -182,8 +198,10 @@ Deno.serve(async (req) => {
           user_id: authCode.user_id,
           scopes: authCode.scopes,
           revoked: false,
+          access_token: await sha256Hex(accessTokenPlain),
+          refresh_token: await sha256Hex(refreshTokenPlain),
         })
-        .select("access_token, refresh_token, access_token_expires_at, scopes")
+        .select("access_token_expires_at, scopes")
         .single();
 
       if (tokenError) {
@@ -196,10 +214,10 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify({
-          access_token: token.access_token,
+          access_token: accessTokenPlain,
           token_type: "Bearer",
           expires_in: 3600,
-          refresh_token: token.refresh_token,
+          refresh_token: refreshTokenPlain,
           scope: token.scopes.join(" "),
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -214,11 +232,11 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Find existing token
+      // Find existing token (stored value is the sha256 hex digest)
       const { data: existingToken, error: tokenError } = await supabase
         .from("oauth_tokens")
         .select("*, oauth_clients!inner(client_id, client_secret_hash)")
-        .eq("refresh_token", refresh_token)
+        .eq("refresh_token", await sha256Hex(refresh_token))
         .or("revoked.is.null,revoked.eq.false")
         .single();
 
@@ -262,7 +280,9 @@ Deno.serve(async (req) => {
       // Revoke old token
       await supabase.from("oauth_tokens").update({ revoked: true }).eq("id", existingToken.id);
 
-      // Create new token
+      // Create new token — plaintext goes to the client once; only hashes are stored
+      const newAccessTokenPlain = generateToken();
+      const newRefreshTokenPlain = generateToken();
       const { data: newToken, error: newTokenError } = await supabase
         .from("oauth_tokens")
         .insert({
@@ -270,8 +290,10 @@ Deno.serve(async (req) => {
           user_id: existingToken.user_id,
           scopes: existingToken.scopes,
           revoked: false,
+          access_token: await sha256Hex(newAccessTokenPlain),
+          refresh_token: await sha256Hex(newRefreshTokenPlain),
         })
-        .select("access_token, refresh_token, access_token_expires_at, scopes")
+        .select("access_token_expires_at, scopes")
         .single();
 
       if (newTokenError) {
@@ -283,10 +305,10 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify({
-          access_token: newToken.access_token,
+          access_token: newAccessTokenPlain,
           token_type: "Bearer",
           expires_in: 3600,
-          refresh_token: newToken.refresh_token,
+          refresh_token: newRefreshTokenPlain,
           scope: newToken.scopes.join(" "),
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }

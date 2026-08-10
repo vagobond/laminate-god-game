@@ -5,6 +5,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// oauth_tokens stores sha256 hex digests, never plaintext — hash before lookup.
+async function sha256Hex(input: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -37,7 +43,7 @@ Deno.serve(async (req) => {
     const { data: token, error: tokenError } = await supabase
       .from("oauth_tokens")
       .select("user_id, scopes, access_token_expires_at, revoked")
-      .eq("access_token", accessToken)
+      .eq("access_token", await sha256Hex(accessToken))
       .eq("revoked", false)
       .single();
 
