@@ -34,8 +34,16 @@ jobs:
         with:
           version: latest
 
-      - name: Start local database
-        run: supabase db start
+      - name: Start local database (without migrations)
+        # `supabase db start` auto-applies migrations, but 20251206020240 needs
+        # an auth user seeded FIRST — so boot the DB with the migrations dir
+        # hidden, seed, then apply migrations explicitly.
+        run: |
+          mv supabase/migrations /tmp/migrations-stash
+          mkdir supabase/migrations
+          supabase db start
+          rmdir supabase/migrations
+          mv /tmp/migrations-stash supabase/migrations
 
       - name: Seed pre-migration dependency
         # Migration 20251206020240 INSERTs a user_roles row for this hardcoded
