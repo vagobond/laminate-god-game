@@ -18,7 +18,7 @@ Ordered by severity/leverage. Check off as completed.
 - [ ] **5. Connection-degree BFS.** `get_connection_degree_fast` = query-time recursive CTE over `friendship_pairs`, max_depth 3. Cheap now; wall #2 at a few thousand densely-connected users. Also: README says "6 degrees," function defaults to 3 — fix the doc (cheaper) or the default.
 - [ ] **6. Uptime monitoring.** Nothing alerts if xcrol.com or the health function goes down. Free UptimeRobot-class check on the health endpoint.
 - [ ] **7. Arm the dead-man's switch.** Built but unarmed — TRUSTEE_EMAIL / DEADMAN_* secrets unset. Needs trustee email from CD.
-- [ ] **8. RUNBOOK refresh.** Predates the cutover; contains dead Lovable-era paths. Successor following it today would fail.
+- [x] **8. RUNBOOK refresh.** DONE 2026-08-10 (PR #16): full rewrite against live-verified 2026-08-10 state — current architecture, day-2 ops, monitoring, revival with hashes-now-present (original passwords survive restore; auth-first order sidesteps the admin-user landmine), all dry-run landmines kept, Lovable content removed. Original scope: predates the cutover; contains dead Lovable-era paths. Successor following it today would fail.
 - [ ] **9. 140 vs 240 characters.** Product/README = 240; CD's framing said 140. Decide canonical number before it appears in public copy.
 
 ### CD decisions (product/philosophy — options, not prescriptions)
