@@ -302,6 +302,69 @@ begin
 end $$;
 reset role;
 
+-- ===========================================================================
+-- 5. get_river_entries parity (worklist #4 — the river RPC must enforce the
+--    exact same visibility ladder as the RLS policies above) + keyset paging
+-- ===========================================================================
+
+-- Distinct created_at per entry so keyset ordering is exercised for real
+-- (seeded rows all share now() otherwise).
+update public.xcrol_entries
+  set created_at = entry_date::timestamptz
+  where user_id = '00000000-0000-4000-8000-00000000000a';
+
+\echo '[5a] river visibility matches the entry ladder for every viewer'
+do $$
+declare
+  viewer uuid; expected int; got int;
+begin
+  for viewer, expected in
+    select * from (values
+      (null::uuid,                                   1),  -- anonymous
+      ('00000000-0000-4000-8000-00000000000f'::uuid, 1),  -- stranger frank
+      ('00000000-0000-4000-8000-00000000000b'::uuid, 3),  -- buddy bob
+      ('00000000-0000-4000-8000-00000000000d'::uuid, 4),  -- close friend dave
+      ('00000000-0000-4000-8000-00000000000c'::uuid, 4),  -- secret friend carol
+      ('00000000-0000-4000-8000-00000000000e'::uuid, 1),  -- blocked buddy eve
+      ('00000000-0000-4000-8000-00000000000a'::uuid, 5)   -- owner alice
+    ) as v(viewer, expected)
+  loop
+    select count(*) into got
+      from public.get_river_entries(viewer, 100, 0, 'all') r
+      where r.user_id = '00000000-0000-4000-8000-00000000000a';
+    if got <> expected then
+      raise exception 'FAIL: get_river_entries viewer % sees % alice entries, expected %',
+        coalesce(viewer::text, 'anon'), got, expected;
+    end if;
+  end loop;
+end $$;
+
+\echo '[5b] keyset pagination walks the same rows as one big page, no dupes/gaps'
+do $$
+declare
+  expected uuid[]; walked uuid[] := '{}';
+  cur_ts timestamptz := null; cur_id uuid := null;
+  r record; n int;
+begin
+  select array_agg(id) into expected from (
+    select id from public.get_river_entries(
+      '00000000-0000-4000-8000-00000000000a', 100, 0, 'all')
+  ) s;
+  loop
+    n := 0;
+    for r in
+      select * from public.get_river_entries(
+        '00000000-0000-4000-8000-00000000000a', 2, 0, 'all', cur_ts, cur_id)
+    loop
+      walked := walked || r.id; cur_ts := r.sort_at; cur_id := r.id; n := n + 1;
+    end loop;
+    exit when n = 0;
+  end loop;
+  if walked is distinct from expected then
+    raise exception 'FAIL: keyset walk % != single page %', walked, expected;
+  end if;
+end $$;
+
 rollback;
 
 \echo ''
