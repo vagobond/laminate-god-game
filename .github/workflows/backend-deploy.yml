@@ -46,5 +46,16 @@ jobs:
       - name: Apply migrations
         run: supabase db push
 
+      # esm.sh intermittently 522s during bundling (seen 2026-08-09 and
+      # 2026-08-10) — retry up to 3 times before failing the run.
       - name: Deploy edge functions
-        run: supabase functions deploy --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+        run: |
+          for attempt in 1 2 3; do
+            if supabase functions deploy --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"; then
+              exit 0
+            fi
+            echo "functions deploy failed (attempt $attempt/3); retrying in 30s..."
+            sleep 30
+          done
+          echo "functions deploy failed after 3 attempts"
+          exit 1
