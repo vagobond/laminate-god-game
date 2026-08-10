@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { enforceRateLimit } from "../_shared/ratelimit.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -24,6 +25,9 @@ const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const limited = await enforceRateLimit(req, "get-public-stats", { limit: 30 }, corsHeaders);
+  if (limited) return limited;
 
   try {
     // Serve from in-memory cache if fresh

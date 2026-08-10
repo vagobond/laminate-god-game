@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { enforceRateLimit } from "../_shared/ratelimit.ts";
 import { encode as base64Encode } from "https://deno.land/std@0.208.0/encoding/base64.ts";
 
 const corsHeaders = {
@@ -34,6 +35,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const limited = await enforceRateLimit(req, "oauth-token", { limit: 20 }, corsHeaders);
+  if (limited) return limited;
 
   if (req.method !== "POST") {
     return new Response(
