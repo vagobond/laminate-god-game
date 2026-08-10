@@ -2962,6 +2962,8 @@ export type Database = {
       }
       get_river_entries: {
         Args: {
+          p_before_id?: string
+          p_before_ts?: string
           p_filter?: string
           p_limit?: number
           p_offset?: number
@@ -2976,6 +2978,7 @@ export type Database = {
           id: string
           link: string
           privacy_level: string
+          sort_at: string
           user_id: string
         }[]
       }

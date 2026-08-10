@@ -78,8 +78,9 @@ export default function TheRiver() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState(isGuest ? "public" : "all");
-  const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  // Keyset pagination cursor: sort_at + id of the last entry loaded.
+  const cursorRef = useRef<{ ts: string; id: string } | null>(null);
   const [hasScrolledToPost, setHasScrolledToPost] = useState(false);
   const [newPostsCount, setNewPostsCount] = useState(0);
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -204,19 +205,19 @@ export default function TheRiver() {
     if (!loadMore) {
       setLoading(true);
       setLoadError(null);
-      setPage(0);
+      cursorRef.current = null;
     }
 
     try {
-      const currentPage = loadMore ? page + 1 : 0;
-      const offset = currentPage * PAGE_SIZE;
+      const cursor = loadMore ? cursorRef.current : null;
 
       const { data, error } = await withTimeout(
         supabase.rpc("get_river_entries", {
           p_viewer_id: user?.id ?? null,
           p_limit: PAGE_SIZE,
-          p_offset: offset,
           p_filter: filter,
+          p_before_ts: cursor?.ts ?? null,
+          p_before_id: cursor?.id ?? null,
         }),
         "The River is taking too long to respond."
       );
@@ -340,11 +341,13 @@ export default function TheRiver() {
         },
       }));
 
+      const last = data[data.length - 1] as any;
+      cursorRef.current = { ts: last.sort_at, id: last.id };
+
       if (loadMore) {
         setEntries((prev) => [...prev, ...entriesWithAuthors]);
         setReactions((prev) => ({ ...prev, ...newReactionsMap }));
         setRepliesMap((prev) => ({ ...prev, ...newRepliesMap }));
-        setPage(currentPage);
       } else {
         setEntries(entriesWithAuthors);
         setReactions(newReactionsMap);
