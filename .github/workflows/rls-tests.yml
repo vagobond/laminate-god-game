@@ -1,0 +1,83 @@
+name: RLS Visibility Tests
+
+# Spins up a local Supabase Postgres, applies every migration to an empty
+# database, then runs supabase/tests/rls_visibility.sql — asserting the
+# privacy promises (entry visibility ladder, secret friendships, blocks,
+# profiles column lockdown) hold under RLS. Worklist #3 in
+# docs/ASSESSMENT-2026-08-09.md. No secrets required — everything is local.
+
+on:
+  pull_request:
+    paths:
+      - "supabase/**"
+      - ".github/workflows/rls-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/**"
+      - ".github/workflows/rls-tests.yml"
+  workflow_dispatch:
+
+jobs:
+  rls-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local database (without migrations)
+        # `supabase db start` auto-applies migrations, but 20251206020240 needs
+        # an auth user seeded FIRST — so boot the DB with the migrations dir
+        # hidden, seed, then apply migrations explicitly.
+        run: |
+          mv supabase/migrations /tmp/migrations-stash
+          mkdir supabase/migrations
+          supabase db start
+          rmdir supabase/migrations
+          mv /tmp/migrations-stash supabase/migrations
+
+      - name: Seed pre-migration dependency
+        # Migration 20251206020240 INSERTs a user_roles row for this hardcoded
+        # admin uuid; on an empty database the auth user must exist before the
+        # migrations run (dry-run finding, RUNBOOK section 3).
+        run: |
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -c "
+            insert into auth.users
+              (id, instance_id, aud, role, email, encrypted_password,
+               raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+            values
+              ('8b7e8511-ac9e-4e49-a759-7f00ce0de42d',
+               '00000000-0000-0000-0000-000000000000',
+               'authenticated', 'authenticated', 'ci-admin-seed@xcrol.test', '',
+               '{\"provider\":\"email\",\"providers\":[\"email\"]}', '{}', now(), now())"
+
+      - name: Mirror hosted-platform default privileges
+        # Hosted Supabase grants CRUD on new public tables/sequences to anon,
+        # authenticated and service_role via default privileges. The bare local
+        # db lacks that baseline, so migration-created tables get NO grants and
+        # every role-switched query dies with "permission denied" before RLS is
+        # even evaluated (run 1 failure). Recreate the baseline BEFORE the
+        # migrations so later revokes (profiles column lockdown, rate limiting)
+        # land exactly as they did in prod.
+        run: |
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -c "
+            grant usage on schema public to anon, authenticated, service_role;
+            alter default privileges for role postgres in schema public
+              grant all on tables to anon, authenticated, service_role;
+            alter default privileges for role postgres in schema public
+              grant all on sequences to anon, authenticated, service_role;"
+
+      - name: Apply all migrations
+        run: supabase migration up
+
+      - name: Run RLS visibility tests
+        run: psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/rls_visibility.sql
