@@ -29,7 +29,7 @@ Your profile is your digital identity within XCROL. Not all friends are equal, a
 
 You can also create **custom friendship types** (e.g., "Work Colleagues", "Travel Buddies") with granular visibility controls.
 
-**Connection Degrees**: See how you're connected to non-friends via friend-of-a-friend chains up to 6 degrees.
+**Connection Degrees**: See how you're connected to non-friends via friend-of-a-friend chains up to 3 degrees (OAuth API partners can query up to 6).
 
 ---
 
