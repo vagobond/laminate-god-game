@@ -28,22 +28,10 @@ function formatDuration(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-// Big Tech domains — never send to edge function
-const BIG_TECH_DOMAINS = [
-  "youtube.com", "youtu.be", "facebook.com", "fb.com", "instagram.com",
-  "twitter.com", "x.com", "tiktok.com", "reddit.com", "linkedin.com",
-  "threads.net", "snapchat.com", "pinterest.com",
-];
-
 function isPreviewableUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
-    const hostname = parsed.hostname.toLowerCase();
-    if (BIG_TECH_DOMAINS.some((d) => hostname === d || hostname.endsWith("." + d))) {
-      return false;
-    }
-    return true;
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
   } catch {
     return false;
   }

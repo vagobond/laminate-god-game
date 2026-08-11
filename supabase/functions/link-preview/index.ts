@@ -17,22 +17,6 @@ interface LinkPreviewResult {
   original_url: string;
 }
 
-// Big Tech domains — blocked immediately, no outbound requests
-const BIG_TECH_DOMAINS = [
-  'youtube.com', 'youtu.be', 'facebook.com', 'fb.com', 'instagram.com',
-  'twitter.com', 'x.com', 'tiktok.com', 'reddit.com', 'linkedin.com',
-  'threads.net', 'snapchat.com', 'pinterest.com',
-];
-
-function isBigTechUrl(url: string): boolean {
-  try {
-    const hostname = new URL(url).hostname.toLowerCase();
-    return BIG_TECH_DOMAINS.some(d => hostname === d || hostname.endsWith('.' + d));
-  } catch {
-    return false;
-  }
-}
-
 // Block private/internal IP ranges and localhost (unchanged SSRF protection)
 function isBlockedUrl(url: string): boolean {
   try {
@@ -277,25 +261,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 2. Big Tech blocklist
-    if (isBigTechUrl(url)) {
-      return new Response(JSON.stringify({ type: 'unknown', original_url: url }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     let result: LinkPreviewResult;
 
-    // 3. PeerTube path pattern? -> probe API
+    // 2. PeerTube path pattern? -> probe API
     const peerTubeVideoId = extractPeerTubeVideoId(url);
     if (peerTubeVideoId) {
       result = await probePeerTube(url, peerTubeVideoId);
     }
-    // 4. PixelFed path pattern? -> probe oEmbed
+    // 3. PixelFed path pattern? -> probe oEmbed
     else if (hasPixelFedPath(url)) {
       result = await probePixelFed(url);
     }
-    // 5. Generic OG preview
+    // 4. Generic OG preview
     else {
       result = await fetchOgPreview(url, 'generic');
     }
