@@ -1,0 +1,39 @@
+# Worklist #6: uptime monitoring.
+# Pings the public frontend and the health edge function every 30 minutes.
+# If either check fails, the run fails and GitHub emails the workflow actor
+# (whoever last touched this file — i.e. CD). No third-party accounts,
+# no secrets, nothing to maintain.
+#
+# Notes:
+# - The health function (supabase/functions/health) returns 200 only when
+#   the database is reachable; backup freshness is informational in the body.
+# - curl retries twice with a 15s gap so a single transient blip on the
+#   runner's network doesn't page anyone.
+# - GitHub disables cron workflows after 60 days of repo inactivity; any
+#   commit re-enables them. See docs/RUNBOOK.md.
+
+name: Uptime check
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  uptime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Frontend (xcrol.com)
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --retry 2 --retry-delay 15 --retry-all-errors --max-time 30 https://xcrol.com)
+          echo "xcrol.com -> HTTP $code"
+          test "$code" = "200"
+
+      - name: Backend health (Supabase edge function)
+        run: |
+          body=$(curl -sS --retry 2 --retry-delay 15 --retry-all-errors --max-time 30 https://wmatvlxehyaufhjljtby.supabase.co/functions/v1/health)
+          echo "$body"
+          echo "$body" | grep -q '"status":"healthy"'
