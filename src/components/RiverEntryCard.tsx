@@ -181,30 +181,33 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, rep
                     initialReactions={initialReactions}
                     onReactionsChange={onReactionsChange}
                   />
-                  {currentUserId === entry.user_id && entry.privacy_level === "public" && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-muted-foreground hover:text-primary"
-                        onClick={() => setShareOpen(true)}
-                      >
-                        <Share2 className="h-3.5 w-3.5 mr-1" />
-                        <span className="text-xs">Share</span>
-                      </Button>
-                      <SharePostDialog
-                        open={shareOpen}
-                        onOpenChange={setShareOpen}
-                        postId={entry.id}
-                        snippet={entry.content}
-                        authorLabel={
-                          entry.author.display_name || entry.author.username
-                            ? `${entry.author.display_name || entry.author.username} on XCROL`
-                            : undefined
-                        }
-                      />
-                    </>
-                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-muted-foreground hover:text-primary"
+                    onClick={() => setShareOpen(true)}
+                  >
+                    <Share2 className="h-3.5 w-3.5 mr-1" />
+                    <span className="text-xs">Share</span>
+                  </Button>
+                  <SharePostDialog
+                    open={shareOpen}
+                    onOpenChange={setShareOpen}
+                    postId={entry.id}
+                    // Only seed share text with content the sharer may broadcast:
+                    // public posts, or the author's own words. The link itself is
+                    // always shareable — recipients only see what RLS allows.
+                    snippet={
+                      entry.privacy_level === "public" || currentUserId === entry.user_id
+                        ? entry.content
+                        : undefined
+                    }
+                    authorLabel={
+                      entry.author.display_name || entry.author.username
+                        ? `${entry.author.display_name || entry.author.username} on XCROL`
+                        : undefined
+                    }
+                  />
                 </>
               )}
             </div>
