@@ -1,207 +1,237 @@
-# Xcrol Revival Runbook
+# Xcrol Operations & Revival Runbook
 
-If you are reading this because the original operator is unavailable, this
-document tells you exactly how to bring Xcrol back online from the backup
-bundle + GitHub mirror.
+Last verified against live infrastructure: **2026-08-10** (post-cutover).
 
-You will need: a credit card, a domain registrar login (the `xcrol.com`
-registration), and ~3 hours.
+Xcrol runs 100% on owner-controlled infrastructure. There is no Lovable
+dependency anywhere. This document covers (A) how the system runs today,
+(B) routine operations, and (C) full disaster revival from backups if the
+original operator is unavailable.
 
-## 0. What you have
-1. **Backblaze B2 bucket** `xcrol-backups` — daily snapshots (last 90 days).
-2. **GitHub repository mirror** — full app source, migrations, edge functions.
-3. **The trustee letter** (if delivered via deadman switch) — contains B2
-   access credentials and any context the operator left.
+If you are a successor reading this cold: start at **Section 0**, then jump
+to **Section 4 (Revival)**. You will need the credentials escrow
+(`docs/ESCROW.md` describes it — an offline KeePassXC vault), a credit card,
+and ~3 hours.
 
-If you are missing the B2 credentials, contact the operator's heirs / lawyer;
-without them, you can still revive the *application* from GitHub but you will
-lose all user data.
+---
 
-## 1. Choose a hosting path
+## 0. Current architecture (as of 2026-08-10)
 
-| Path | Monthly cost | Effort | When to choose |
-| ---- | ------------ | ------ | -------------- |
-| **A. Managed Supabase + Cloudflare Pages** | ~$25–45 | low | You want minimum ops work |
-| **B. Self-hosted Supabase on Hetzner** | ~$8–15 | medium | You want full sovereignty |
+| Piece | What / where |
+| ----- | ------------ |
+| Backend | Managed Supabase project **`wmatvlxehyaufhjljtby`** (region `ap-southeast-2`), owner's own account. Free tier — DB ~23 MB / storage ~52 MB vs 500 MB / 1 GB limits. |
+| Frontend | Static Vite build served by a **Cloudflare Worker** (assets-only, see `wrangler.jsonc`) with custom domains `xcrol.com` + `www.xcrol.com`. Escape-pod URL: `xcrol.baldjesusnft.workers.dev` (same bundle, also on the Supabase auth redirect allowlist). |
+| DNS | `xcrol.com` **zone hosted on Cloudflare** (nameservers `sloan` + `piers` .ns.cloudflare.com). WordPress.com is registrar only. |
+| Auth email (SMTP) | Supabase custom SMTP → owner's Resend account (values in §6). Already configured on the live project. |
+| Google OAuth | Owner's own Google Cloud client (project `xcrol`, client `xcrol-web`). Credentials in escrow. No third-party-managed OAuth anywhere. |
+| Backups | Nightly pg_cron → `nightly-backup` edge function → Backblaze B2 bucket `xcrol-backups`, **including auth password hashes** (see §3). |
+| CI/CD | GitHub repo `vagobond/xcrol` (private). Frontend auto-deploys via Cloudflare Workers Builds on merge to main; backend via `.github/workflows/backend-deploy.yml`; RLS tests via `.github/workflows/rls-tests.yml`; uptime via `.github/workflows/uptime.yml`; weekly restore verification via `.github/workflows/restore-verify.yml`. |
 
-Both paths share steps 2–6.
+Free-tier caveat: Supabase pauses free projects after ~1 week of zero
+activity. Live daily traffic plus the nightly backup cron prevents this. If
+the project ever pauses anyway, restore it from the Supabase dashboard and
+verify the crons resumed (§8 verification queries).
 
-## 2. Provision the backend
+---
 
-### Path A — managed Supabase
-1. Sign up at supabase.com, create a new project in your region of choice.
+## 1. Routine operations (day 2)
+
+The workflow is AI-agnostic — the codebase is standard open tech
+(Vite/React, Supabase, SQL migrations, Deno edge functions). Any agentic
+coding tool can maintain it:
+
+1. Make the change on a branch, open a PR.
+2. CI runs the RLS test suite on any `supabase/**` change
+   (`rls-tests.yml` — replays all migrations from zero and asserts the
+   visibility/privacy policies).
+3. Merge to main:
+   - **Frontend** deploys automatically (Cloudflare Workers Builds).
+     Manual alternative: `npm run deploy` with `CLOUDFLARE_API_TOKEN` set.
+   - **Backend** deploys automatically via `backend-deploy.yml` when the
+     merge touches `supabase/**` (or manual "Run workflow"): links the CLI,
+     runs `db push`, deploys all edge functions. Uses three repo secrets —
+     `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`
+     — which point at the **production** project. The workflow retries the
+     functions deploy 3× because esm.sh occasionally 522s during bundling.
+
+Known deploy flake: if a Workers build fails on a frozen-lockfile error,
+regenerate `bun.lock` in the same commit as any dependency change.
+
+---
+
+## 2. Monitoring & alarms
+
+| Check | Mechanism | Cadence |
+| ----- | --------- | ------- |
+| Site + backend up | `uptime.yml` — curls `https://xcrol.com` (expects 200) and `https://wmatvlxehyaufhjljtby.supabase.co/functions/v1/health` (expects `"status":"healthy"`) | Every 30 min |
+| Backup ran & is fresh | `restore-verify.yml` — restores the latest B2 snapshot into a scratch DB and **fails if the newest snapshot is older than 48 h** | Mondays 06:00 UTC |
+| Backup heartbeat | `heartbeat-check` edge function via pg_cron | Sundays 05:00 UTC |
+
+GitHub emails the workflow actor on failure. Caveat: GitHub auto-disables
+scheduled workflows in repos with no pushes for 60 days — a quiet repo can
+silently lose its uptime check. If the repo ever goes dormant, re-enable
+schedules under the Actions tab or push a trivial commit.
+
+The `health` edge function (no auth required) checks DB reachability
+(200/503) and reports backup freshness informationally in its JSON body.
+
+---
+
+## 3. What the backups contain
+
+Nightly at 04:00 UTC, pg_cron invokes `nightly-backup`, which writes a
+snapshot to B2 under `xcrol/YYYY-MM-DD/<timestamp>/`:
+
+- `db/*.ndjson.gz` — every public table's rows (67 tables as of writing).
+- `auth/users.ndjson.gz` — all auth users **including `encrypted_password`
+  bcrypt hashes**, merged in via the `backup_export_auth_password_hashes()`
+  SECURITY DEFINER RPC (service-role-only). Verified live: 83/83 users with
+  hashes. **Password resets are NOT needed on revival.**
+- `storage/` — an **object catalog, not bytes** (see §4d for bytes).
+- `manifest.json.gz` — per-table row counts, secret *names* present,
+  storage buckets, and an `errors` array. A good snapshot has `errors: []`.
+
+If a snapshot day ever contains **two** timestamp folders, investigate —
+only one writer (`xcrol-backup-writer` B2 key) should exist. A second
+writer previously came from a stale external cron and was killed by
+deleting its B2 key.
+
+---
+
+## 4. Disaster revival (from B2 + GitHub, ~3 hours)
+
+You need: the B2 credentials + Supabase/Cloudflare/Google/Resend logins from
+the escrow vault, or failing that, fresh accounts and a credit card.
+Without B2 credentials you can still revive the *application* from GitHub
+but you will lose all user data.
+
+### 4.0 Provision a Supabase project
+
+1. Create a new project (free tier fits comfortably).
 2. Note the project ref, anon key, service role key, and DB URL.
 3. Enable the `pg_cron` and `pg_net` extensions (Database → Extensions).
 
-Free-tier fit (checked 2026-08-05): database backup <1 MB and storage ~52 MB
-vs limits of 500 MB / 1 GB — comfortable. Caveat: Supabase pauses free
-projects after ~1 week of zero activity. Live traffic plus the nightly backup
-cron should prevent that, but if the project ever pauses, restore it from the
-dashboard and check whether the crons resumed.
+(Self-hosting Supabase on a VPS also works — the app uses nothing
+Supabase-cloud-specific — but managed free tier is the default path.)
 
-### Path B — self-hosted Supabase
-1. Spin up a Hetzner CPX21 (or larger) running Ubuntu.
-2. Follow https://supabase.com/docs/guides/self-hosting/docker — set strong
-   `POSTGRES_PASSWORD`, `JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY`.
-3. Put it behind Caddy with a TLS cert.
+### 4a. Restore auth users FIRST
 
-## 3. Restore the schema
-From the GitHub mirror:
+Restore auth users **before** applying migrations. Two reasons: every
+table's `user_id` FK references `auth.users`, and one migration hardcodes
+the admin user (next section).
+
+Pull the newest good snapshot (a folder whose `manifest.json.gz` has
+`errors: []`):
 
 ```bash
-git clone <mirror-url> xcrol && cd xcrol
-# Apply migrations in order. Each migration is idempotent w.r.t. its own
-# CREATE statements; run them with the Supabase CLI:
-npx supabase link --project-ref <new-ref>
-npx supabase db push
-```
-
-This recreates every table, RLS policy, function, trigger, and grant.
-
-**Known failure (verified in the 2026-08-06 dry run):** `db push` dies partway
-through at migration `20251206020240_*` with a foreign-key error. That
-migration hardcodes an INSERT into `user_roles` for the admin user id
-`8b7e8511-ac9e-4e49-a759-7f00ce0de42d`, which does not exist in a fresh
-project's `auth.users`. Fix: **before** running `db push`, create that auth
-user via the admin API (`POST /auth/v1/admin/users` with the service role key,
-body `{"id": "8b7e8511-ac9e-4e49-a759-7f00ce0de42d", "email": "<admin email>",
-"email_confirm": true}`) — or restore all auth users first (step 4a can run
-before step 4). If `db push` has already failed, create the user and re-run;
-it resumes from the failed migration.
-
-## 4. Restore the data
-
-Pick the most recent successful backup folder in B2 (look for a folder that
-contains a `manifest.json.gz` with `errors: []`).
-
-```bash
-# Install the B2 CLI and authenticate
 pip install b2
 b2 account authorize <key-id> <application-key>
-
-# Pull the snapshot you want
-b2 sync b2://xcrol-backups/xcrol/2026-06-04/<timestamp> ./snapshot
-gunzip ./snapshot/db/*.gz ./snapshot/auth/*.gz ./snapshot/storage/*.gz
-
-# Load each table. Order matters because of FKs — load parents first.
-# A pragmatic order:
-for t in profiles user_roles user_settings user_invites \
-         friendships friendship_requests custom_friendship_types blocked_users \
-         introduction_requests references messages \
-         brooks brook_posts brook_comments brook_reactions \
-         groups group_members group_join_requests group_posts group_post_comments group_post_reactions group_visits \
-         xcrol_entries xcrol_reactions river_replies river_reply_reactions \
-         scrolls scroll_items scroll_publications scroll_publication_reactions \
-         social_links personal_info profile_widgets \
-         hosting_preferences meetup_preferences hosting_requests meetup_requests \
-         town_listings developer_apps oauth_authorizations rss_feeds \
-         waitlist deletion_requests audit_log user_points; do
-  echo "Loading $t..."
-  # Re-build INSERTs from NDJSON, or use this one-liner with jq + psql:
-  jq -rc --arg t "$t" '[. ] | "INSERT INTO public.\($t) SELECT * FROM jsonb_populate_recordset(NULL::public.\($t), $1::jsonb);"' \
-    ./snapshot/db/$t.ndjson | \
-    while read sql; do psql "$DATABASE_URL" -c "$sql"; done
-done
+b2 sync b2://xcrol-backups/xcrol/<YYYY-MM-DD>/<timestamp> ./snapshot
+gunzip -r ./snapshot
 ```
 
-(Simpler: write a 20-line Node script that reads each NDJSON file and calls
-`supabase.from(table).insert(rows)` in 500-row batches with the service key.)
-
-**Dry-run notes (2026-08-06) — read before loading:**
-
-- The table list above is stale in places (e.g. `friendship_requests`,
-  `blocked_users`, `references`, `user_points` no longer exist; the live names
-  are `friend_requests`, `user_blocks`, `user_references`, …). Don't trust a
-  hardcoded order — instead load **whatever `.ndjson.gz` files the snapshot's
-  `db/` folder actually contains**, using a multi-pass retry loop: attempt
-  every table, collect the ones that fail with FK errors, retry them in
-  another pass, stop when a pass makes no progress. In the dry run all 66
-  tables loaded in 2 passes with upserts
-  (`Prefer: resolution=merge-duplicates`).
-- **Loading over REST re-fires triggers.** In the dry run this inflated
-  `audit_log` (1,572 rows vs 525 in the snapshot) and `notifications` (3,170
-  vs 1,011) with freshly generated rows. If you care about clean audit/
-  notification history, load over a direct SQL connection with
-  `SET session_replication_role = replica;` (disables triggers), then reset
-  it. If you load over REST, expect these two tables to be inflated and
-  consider truncating them and re-loading just those two from the snapshot
-  with triggers off.
-- **Migrations seed some rows** (e.g. a default `layers` row), so a few
-  tables will end up with snapshot rows *plus* seeded rows under different
-  ids. Harmless, but explains small count mismatches when verifying.
-- Verify counts afterwards against `manifest.json.gz` (`tables.<name>.rows`).
-  Note `scroll_ai_usage` has no `id` column (composite key) — count it with
-  `select=*` not `select=id`.
-
-### 4a. Restore auth users
-
-> **CORRECTION (2026-08-06 dry run): the dump does NOT contain
-> `encrypted_password`.** The backup edge function exports users via the
-> admin `listUsers` API, which never returns password hashes — verified: 0 of
-> 83 users in the 2026-08-06 snapshot have one. **Passwords are therefore NOT
-> preserved by the current backup.** On revival:
->
-> - Email/password users must use "Forgot password" to set a new one (which
->   is why step 5a — working auth SMTP — is a hard prerequisite).
-> - Google OAuth users are unaffected: as long as the same OAuth client is
->   configured (creds in escrow), sign-in re-matches by email.
->
-> **Follow-up if password preservation matters:** change the backup function
-> to also dump `auth.users` (including `encrypted_password`) via a direct SQL
-> query with the service role, not via `listUsers`. Until that ships, plan
-> for reset-on-revival.
-
-Restore the users you have (ids, emails, metadata) via the admin API:
+Then create each user via the admin API, **preserving the original `id`
+and the bcrypt hash**:
 
 ```ts
 import { createClient } from "@supabase/supabase-js";
 const admin = createClient(URL, SERVICE_ROLE_KEY);
 for (const u of usersFromDump) {
   await admin.auth.admin.createUser({
-    id: u.id, email: u.email,
+    id: u.id,
+    email: u.email,
     email_confirm: !!u.email_confirmed_at,
-    // password_hash: u.encrypted_password, // only if the backup ever starts
-    //                                       // capturing hashes — see above
+    password_hash: u.encrypted_password, // bcrypt, present in the dump
     user_metadata: u.user_metadata,
     app_metadata: u.app_metadata,
   });
 }
 ```
 
-Preserving the original `id` matters: every table's `user_id` FKs reference
-it. Verify afterwards that the created count equals the dump count — creation
-failures are silent if you don't check each response.
+Creation failures are **silent** unless you check each response — verify
+the created count equals the dump count afterwards. OAuth-only users
+(null hash) re-match by email as long as the same Google client is
+configured (credentials in escrow).
 
-### 4b. Storage
-The backup contains an object catalog, not bytes. If the original Supabase
-project is still reachable, re-download objects directly from there. Otherwise
-storage objects are lost; users will need to re-upload avatars and Xcrol will
-auto-regenerate OG images.
+### 4b. Restore the schema
 
-## 5. Re-create secrets
-The manifest lists every secret name that was set at backup time. You must
-re-provision values yourself:
+```bash
+git clone <repo-url> xcrol && cd xcrol
+npx supabase link --project-ref <new-ref>
+npx supabase db push
+```
 
-| Secret | Where to get a new value |
-| ------ | ------------------------ |
+**Known landmine:** migration `20251206020240_*` hardcodes an INSERT into
+`user_roles` for admin user id `8b7e8511-ac9e-4e49-a759-7f00ce0de42d`. If
+that auth user doesn't exist yet, `db push` dies mid-sequence with an FK
+error. Doing §4a first avoids this. If you skipped it, create just that
+user (`POST /auth/v1/admin/users`, service role key, body
+`{"id": "8b7e8511-ac9e-4e49-a759-7f00ce0de42d", "email": "<admin email>",
+"email_confirm": true}`) and re-run `db push` — it resumes from the failed
+migration.
+
+### 4c. Restore the data
+
+Don't trust any hardcoded table list — load **whatever `.ndjson.gz` files
+the snapshot's `db/` folder actually contains**, using a multi-pass retry
+loop: attempt every table, collect FK failures, retry them in another
+pass, stop when a pass makes no progress. In practice everything loads in
+2 passes.
+
+**Disable triggers while loading**, or the load re-fires them and inflates
+`audit_log` and `notifications` with freshly generated rows.
+`SET session_replication_role = replica` is **superuser-blocked on managed
+Supabase** — use per-table disabling over a direct SQL connection instead:
+
+```sql
+ALTER TABLE public.<t> DISABLE TRIGGER USER;
+-- load the table
+ALTER TABLE public.<t> ENABLE TRIGGER USER;
+```
+
+Load method: direct SQL (`jsonb_populate_recordset`) or REST upserts with
+`Prefer: resolution=merge-duplicates` in ~500-row batches with the service
+key. Notes from verified restores:
+
+- Migrations **seed some rows** (e.g. a default `layers` row), so a few
+  tables end up with snapshot rows *plus* seeded rows — harmless small
+  count mismatches.
+- Verify counts against `manifest.json.gz` (`tables.<name>.rows`).
+- `scroll_ai_usage` has no `id` column (composite key) — count it with
+  `select=*`, not `select=id`.
+- All primary keys are UUIDs; there are no serial sequences to reset.
+
+### 4d. Storage bytes
+
+The B2 snapshot has the object *catalog* only. Both buckets (`avatars`,
+`public-snapshots`) are **public**, so if the original project is still
+reachable, re-download every object via its public URL using the catalog
+paths (object paths are keyed by auth-user UUIDs, which survive restore).
+A byte-verified local copy also exists at
+`~/Projects/xcrol-storage-backup/` (refresh it before any planned
+migration). If neither source exists, storage is lost: users re-upload
+avatars, OG images regenerate automatically.
+
+## 5. Re-create edge function secrets
+
+Set via `npx supabase secrets set` (or dashboard). The manifest lists the
+secret names present at backup time:
+
+| Secret | Where to get a value |
+| ------ | -------------------- |
+| `B2_KEY_ID` / `B2_APPLICATION_KEY` | B2 app key with write access to `xcrol-backups` (mint fresh; name it `xcrol-backup-writer`) |
+| `B2_BUCKET_NAME` | `xcrol-backups` |
+| `CRON_SECRET` | Generate a fresh random string — must ALSO be stored in Vault (§8) |
 | `RESEND_API_KEY` | resend.com → API keys |
-| `MAPBOX_PUBLIC_TOKEN` | mapbox.com → tokens (or switch to MapTiler) |
-| `B2_KEY_ID` | reuse the bucket above |
-| `B2_APPLICATION_KEY` | reuse the bucket above |
-| `B2_BUCKET_NAME` | reuse the bucket above |
-| `CRON_SECRET` | generate a fresh random string, and store it in Vault too |
+| `MAPBOX_PUBLIC_TOKEN` | mapbox.com → tokens |
+| `APP_PUBLIC_URL` | `https://xcrol.com` |
 
-`LOVABLE_API_KEY` is Lovable-managed and has no revival value — Xcrol no longer
-calls Lovable AI at all (Scrolls AI is bring-your-own-key), so leave it unset.
+Also confirm `nightly-backup` and `heartbeat-check` have `verify_jwt =
+false` in `supabase/config.toml` (they do in the repo) — otherwise the
+cron's HTTP calls 401.
 
-### 5a. Auth email (SMTP) — REQUIRED, or resets/confirmations silently fail
-On the original project, Supabase *auth* mail (signup confirmations, password
-resets, email-change confirmations) is sent by Lovable's default shared sender.
-That path dies with Lovable. App mail (invites) already uses our own Resend and
-is unaffected.
+## 6. Auth email (SMTP) — REQUIRED on a new project
 
-On the new project, wire auth mail to our Resend account:
-
+Without it, password resets and signup confirmations silently fail.
 Supabase dashboard → **Authentication → Emails → SMTP settings** → enable
 **Custom SMTP**:
 
@@ -210,85 +240,74 @@ Supabase dashboard → **Authentication → Emails → SMTP settings** → enabl
 | Host | `smtp.resend.com` |
 | Port | `465` |
 | Username | `resend` (literally) |
-| Password | a Resend API key (resend.com → API keys; a dedicated key named `xcrol-auth-smtp` may already exist) |
-| Sender email | `noreply@invites.xcrol.com` (domain already verified in Resend) — or verify a new subdomain like `auth.xcrol.com` in Resend first |
+| Password | a Resend API key (a dedicated key named `xcrol-auth-smtp` may already exist) |
+| Sender email | `noreply@invites.xcrol.com` (domain verified in Resend) |
 | Sender name | `Xcrol` |
 
-Then send yourself a password reset and confirm the From address.
+Then send yourself a password reset and confirm the From address. (Already
+configured on the live project — this section is for revival into a new
+project.)
 
-**Do NOT use any wizard that asks you to add NS records pointing at
-`*.lovable.cloud`.** Lovable's "Emails" domain-connect flow (offered 2026-08-05
-for `auth.xcrol.com`) works by delegating `notify.auth.xcrol.com` to
-`ns5/ns6.lovable.cloud` — a Lovable-controlled DNS zone, i.e. the same
-dependency this runbook exists to remove. It was deliberately rejected; those
-records were never added to xcrol.com's DNS (hosted at WordPress.com).
+## 7. Frontend + DNS
 
-Note: Lovable's dashboard does not expose Supabase's custom-SMTP setting
-anywhere (checked 2026-08-05), so while the app lives on Lovable Cloud this
-dependency is accepted. The management-API route was also attempted via the
-Lovable AI agent (2026-08-06) and is **not** available: Lovable Cloud projects
-have no Supabase personal access token, and `api.supabase.com` rejects every
-credential reachable from the agent sandbox (anon key and `LOVABLE_API_KEY`
-both return 401). The agent's auth-configuration tool exposes only signup /
-anonymous / auto-confirm / HIBP / email rate-limit — no SMTP fields. Therefore
-custom SMTP can only be set **after** migrating to a Supabase project you own
-(step 2 above), where it is a 2-minute dashboard change. Until then, auth mail
-goes out via Lovable's shared sender and dies with Lovable — which is why 5a is
-a REQUIRED revival step, not an optional one.
+**Frontend:** the repo deploys as a Cloudflare Worker (`wrangler.jsonc`,
+assets-only). Either connect the repo to Cloudflare Workers Builds, or run
+`npm run deploy` locally with a `CLOUDFLARE_API_TOKEN`. Set
+`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`,
+`VITE_SUPABASE_PROJECT_ID` (in `.env` at build time) to the new project.
+Any static host (Pages, Vercel) also works with build `npm run build`,
+output `dist/`.
 
+**DNS:** the `xcrol.com` zone lives on Cloudflare; WordPress.com is
+registrar only. Attach the Worker's custom domains (`xcrol.com`, `www`) in
+the Cloudflare dashboard — if it errors that a DNS record already exists
+(error 100117), delete the conflicting A/CNAME first.
 
-## 6. Deploy the frontend
-Cloudflare Pages: connect to the GitHub mirror, set build command `bun run build`,
-output `dist`. Set env vars `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`,
-`VITE_SUPABASE_PROJECT_ID` from the new Supabase project.
+**These three Resend records must survive any zone move** (they were
+dropped once in a zone import and had to be re-added by hand):
 
-Vercel: same idea — framework "Vite", same env vars.
+| Type | Name | Value |
+| ---- | ---- | ----- |
+| TXT | `send.invites` | `v=spf1 include:amazonses.com ~all` |
+| MX | `send.invites` | `10 feedback-smtp.ap-northeast-1.amazonses.com` |
+| TXT | `resend._domainkey.invites` | `p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDU41zLROULtL/QfPrz3rjGjCoK6RzFe9UJwu72uYaKjkekcmYTuiw7zUcyAo26u3/tXLvb0EfBqZ8DBG7P3RUdoMfJIWjCwxAhkTwEOd6DW0yAs/6OtXJwvaV9Nehxg2MAmfcbcberjvJ+rVIaFf2+V/5ZuSnFIwuTpqTiuHQGqwIDAQAB` |
 
-## 7. Point DNS
-Update `xcrol.com` A/CNAME records to the new host. TTL low (300s) for the
-first 24 hours so you can revert quickly.
+**Supabase auth config on a new project:** set the site URL to
+`https://xcrol.com`, add `https://xcrol.com/**`, `https://www.xcrol.com/**`
+and the workers.dev escape pod to the redirect allowlist, and configure the
+Google provider with the `xcrol-web` client credentials from escrow (add
+the new project's callback URI in the Google console).
 
-## 8. Smoke test
-- [ ] Sign in with an existing account → password works
-- [ ] Request a password reset → email arrives, From address is ours (see 5a)
-- [ ] Open the River → entries visible
+## 8. Re-schedule backups
+
+Run the cron SQL in `BACKUP-ARCHITECTURE.md` with the new project ref +
+`CRON_SECRET` (stored in Vault via `vault.create_secret`). Two jobs:
+`nightly-backup` daily 04:00 UTC, `heartbeat-check` Sundays 05:00 UTC.
+
+**Do not omit `timeout_milliseconds := 300000` from the `net.http_post`
+calls.** pg_net's default timeout is 5 seconds, which a cold-starting edge
+function can never beat — this single omission silently blocked every
+nightly backup for 33 days while `cron.job_run_details` kept reporting
+`succeeded`. After scheduling, confirm a real run using the verification
+queries in `BACKUP-ARCHITECTURE.md` (look for a `kind='nightly'`
+`backup_runs` row and a new B2 folder) before trusting the schedule.
+
+Also update the GitHub repo secrets so CI points at the new project:
+`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`
+(backend deploy) and the B2 read credentials used by `restore-verify.yml`.
+
+## 9. Smoke test
+
+- [ ] Sign in with an existing email/password account → **original password
+      works** (hashes restored, no reset needed)
+- [ ] Sign in with Google → account re-matches by email
+- [ ] Request a password reset → email arrives, From is `noreply@invites.xcrol.com`
+- [ ] Open the River → entries visible; scroll loads a second page
 - [ ] Post a new entry
 - [ ] Send a message
-- [ ] View someone else's public profile
-- [ ] Admin dashboard → Backups tab → trigger a run against the new B2 bucket
-
-## 9. Re-schedule backups
-On the new project, re-run the cron SQL in `BACKUP-ARCHITECTURE.md` with the
-new project ref + `CRON_SECRET`.
-
-**Do not omit `timeout_milliseconds := 300000` from the `net.http_post` calls.**
-pg_net's default timeout is 5 seconds, which a cold-starting edge function can
-never beat — this single omission silently blocked every nightly backup on the
-original project for 33 days while `cron.job_run_details` kept reporting
-`succeeded`. After scheduling, confirm a real run using the two verification
-queries in `BACKUP-ARCHITECTURE.md` before trusting the schedule.
-
-## 10. Ongoing maintenance without Lovable (works with any AI tool)
-The codebase is standard open tech (Vite/React, Supabase, SQL migrations, Deno
-edge functions) — nothing proprietary. Any agentic coding tool (GitHub Copilot
-agent mode, Cursor, Claude, etc.) can maintain it. The workflow that replaces
-Lovable's "type a sentence, see it live":
-
-1. AI tool makes the code change and opens a PR
-2. Human merges the PR on GitHub
-3. Frontend deploys automatically (Cloudflare Workers Builds, already live —
-   see `wrangler.jsonc`)
-4. Backend deploys via Supabase CLI: `supabase db push` for migrations,
-   `supabase functions deploy` for edge functions
-
-Step 4 is automated by `.github/workflows/backend-deploy.yml`: on merge to
-main touching `supabase/**` (or manual "Run workflow"), it applies migrations
-and deploys all edge functions to the project named by three repo secrets:
-`SUPABASE_ACCESS_TOKEN` (dashboard → account → access tokens),
-`SUPABASE_PROJECT_REF`, and `SUPABASE_DB_PASSWORD`. While the app lives on
-Lovable these point at the dry-run/staging project (Lovable Cloud exposes no
-access token, so the live project cannot be targeted); at cutover, repoint
-the three secrets at the new production project and this workflow IS the
-production backend deploy.
+- [ ] View someone else's public profile — sensitive fields hidden
+- [ ] `curl https://<ref>.supabase.co/functions/v1/health` → `"status":"healthy"`
+- [ ] Admin dashboard → Backups tab → trigger a run against B2, check
+      `errors: []` in the new manifest
 
 You now have a fully self-contained Xcrol.
