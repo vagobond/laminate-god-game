@@ -68,10 +68,6 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
     a: "Yes. NOSTR identity and auto-publish are opt-in (Settings → NOSTR Identity). Public posts are also exposed via an ActivityPub outbox so Mastodon users can follow you, and rich OpenGraph previews work in Mastodon, Signal, iMessage, etc.",
   },
   {
-    q: "Why don't YouTube / X / Facebook links show previews?",
-    a: "Big Tech link previews are intentionally blocked to avoid handing those platforms tracking signals about XCROL users. Links from PeerTube, Pixelfed, Mastodon, and the open web get full previews.",
-  },
-  {
     q: "Can I install XCROL as an app on my phone?",
     a: <>Yes — XCROL is a Progressive Web App. Visit <code>/install-app</code> for step-by-step instructions on iOS and Android.</>,
   },
