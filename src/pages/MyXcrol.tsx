@@ -177,17 +177,15 @@ const MyXcrol = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
-                        {entry.privacy_level === "public" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
-                            onClick={() => setShareEntryId(entry.id)}
-                            title="Share this post"
-                          >
-                            <Share2 className="w-4 h-4" />
-                          </Button>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                          onClick={() => setShareEntryId(entry.id)}
+                          title="Share this post"
+                        >
+                          <Share2 className="w-4 h-4" />
+                        </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive">

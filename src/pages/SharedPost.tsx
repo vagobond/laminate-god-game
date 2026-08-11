@@ -38,12 +38,12 @@ const SharedPost = () => {
     }
 
     const fetchPost = async () => {
-      // First fetch the public entry
+      // Fetch the entry — RLS decides what this viewer can see (public for
+      // anyone; friends-level entries only for entitled, signed-in viewers).
       const { data: entryData, error: entryError } = await supabase
         .from("xcrol_entries")
         .select("id, content, link, entry_date, privacy_level, user_id")
         .eq("id", postId)
-        .eq("privacy_level", "public")
         .maybeSingle();
 
       if (entryError || !entryData) {
@@ -84,11 +84,17 @@ const SharedPost = () => {
         <Scroll className="h-16 w-16 text-muted-foreground opacity-50" />
         <h1 className="text-2xl font-bold text-foreground">Post not found</h1>
         <p className="text-muted-foreground text-center max-w-md">
-          This post may have been removed, set to private, or doesn't exist.
+          This post may have been removed, doesn't exist, or is only visible to
+          the author's friends. If someone shared it with you, try signing in.
         </p>
-        <Button asChild>
-          <Link to="/">Go to XCROL</Link>
-        </Button>
+        <div className="flex gap-3">
+          <Button asChild>
+            <Link to="/auth">Sign In</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/">Go to XCROL</Link>
+          </Button>
+        </div>
       </div>
     );
   }
