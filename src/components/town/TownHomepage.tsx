@@ -1,6 +1,14 @@
-import { Search } from "lucide-react";
+import { Search, Users, Home, Tag, Wrench, Briefcase, type LucideIcon } from "lucide-react";
 import { TOWN_CATEGORIES } from "./townCategories";
 import { toast } from "@/hooks/use-toast";
+
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  community: Users,
+  housing: Home,
+  "for-sale": Tag,
+  services: Wrench,
+  jobs: Briefcase,
+};
 
 interface TownHomepageProps {
   isAuthenticated: boolean;
@@ -23,12 +31,6 @@ const TownHomepage = ({
   onSearchChange,
   onSearch,
 }: TownHomepageProps) => {
-  // Balanced 2-column layout:
-  // Left: community (15) + housing (9) + for-sale (27) = 51 lines
-  // Right: services (18) + jobs (33) = 51 lines
-  const leftCats = TOWN_CATEGORIES.slice(0, 3);
-  const rightCats = TOWN_CATEGORIES.slice(3);
-
   const handleAuthAction = (action: () => void) => {
     if (!isAuthenticated) {
       toast({ title: "Sign in required", description: "Please sign in to use this feature.", variant: "destructive" });
@@ -36,33 +38,6 @@ const TownHomepage = ({
     }
     action();
   };
-
-  const renderColumn = (cats: typeof TOWN_CATEGORIES) => (
-    <div className="space-y-6">
-      {cats.map((cat) => (
-        <div key={cat.key}>
-          <h3
-            className="font-bold text-primary cursor-pointer hover:underline text-sm uppercase tracking-wider mb-1"
-            onClick={() => onSelectCategory(cat.key)}
-          >
-            {cat.label}
-          </h3>
-          <ul className="space-y-0">
-            {cat.subcategories.map((sub) => (
-              <li key={sub.key}>
-                <button
-                  onClick={() => onSelectSubcategory(cat.key, sub.key)}
-                  className="text-sm text-foreground/80 hover:text-primary hover:underline transition-colors text-left"
-                >
-                  {sub.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </div>
-  );
 
   return (
     <div className="space-y-6">
@@ -100,10 +75,34 @@ const TownHomepage = ({
         </button>
       </div>
 
-      {/* Category grid - balanced 2-column layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 border-t border-border pt-4">
-        {renderColumn(leftCats)}
-        {renderColumn(rightCats)}
+      {/* Category grid — themed cards, link-list homage inside each */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-border pt-4">
+        {TOWN_CATEGORIES.map((cat) => {
+          const Icon = CATEGORY_ICONS[cat.key] ?? Tag;
+          return (
+            <div key={cat.key} className="rounded-lg border border-border/60 bg-card/50 p-4">
+              <h3
+                className="flex items-center gap-2 font-bold text-primary cursor-pointer hover:underline text-sm uppercase tracking-wider mb-2"
+                onClick={() => onSelectCategory(cat.key)}
+              >
+                <Icon className="h-4 w-4 shrink-0" aria-hidden />
+                {cat.label}
+              </h3>
+              <ul className="space-y-0">
+                {cat.subcategories.map((sub) => (
+                  <li key={sub.key}>
+                    <button
+                      onClick={() => onSelectSubcategory(cat.key, sub.key)}
+                      className="text-sm text-foreground/80 hover:text-primary hover:underline transition-colors text-left"
+                    >
+                      {sub.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

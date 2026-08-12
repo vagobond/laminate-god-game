@@ -17,8 +17,8 @@ All colors MUST be HSL.
     --popover: 45 25% 94%;
     --popover-foreground: 220 40% 15%;
 
-    --primary: 45 80% 45%;
-    --primary-foreground: 220 40% 10%;
+    --primary: 45 85% 30%;
+    --primary-foreground: 45 100% 96%;
 
     --secondary: 195 50% 40%;
     --secondary-foreground: 45 100% 95%;
@@ -34,16 +34,19 @@ All colors MUST be HSL.
 
     --border: 45 20% 80%;
     --input: 45 20% 80%;
-    --ring: 45 80% 45%;
+    --ring: 45 85% 30%;
 
     --radius: 0.75rem;
 
+    /* Display typeface for headings — one token, sitewide */
+    --font-display: "Cinzel Variable", ui-serif, Georgia, serif;
+
     /* Mystical gradient colors - light mode */
-    --cosmic-start: 45 35% 90%;
-    --cosmic-mid: 40 30% 85%;
-    --cosmic-end: 35 25% 88%;
-    
-    --glow-gold: 45 80% 45%;
+    --cosmic-start: 43 45% 92%;
+    --cosmic-mid: 40 38% 87%;
+    --cosmic-end: 36 32% 85%;
+
+    --glow-gold: 45 85% 38%;
     --glow-teal: 180 50% 45%;
     --glow-coral: 15 70% 50%;
 
@@ -112,23 +115,39 @@ All colors MUST be HSL.
       min-height: 100vh;
     }
   }
+
+  h1, h2 {
+    font-family: var(--font-display);
+  }
 }
 
 @layer utilities {
-  .mystical-glow {
-    box-shadow: 
+  /* Glows are a dark-mode effect. Light mode gets a soft neutral lift instead. */
+  .mystical-glow,
+  .mystical-glow-teal {
+    box-shadow:
+      0 1px 3px hsl(220 40% 15% / 0.08),
+      0 4px 16px hsl(220 40% 15% / 0.06);
+  }
+
+  .dark .mystical-glow {
+    box-shadow:
       0 0 20px hsl(var(--glow-gold) / 0.3),
       0 0 40px hsl(var(--glow-gold) / 0.1);
   }
 
-  .mystical-glow-teal {
-    box-shadow: 
+  .dark .mystical-glow-teal {
+    box-shadow:
       0 0 20px hsl(var(--glow-teal) / 0.3),
       0 0 40px hsl(var(--glow-teal) / 0.1);
   }
 
   .text-glow {
-    text-shadow: 
+    text-shadow: none;
+  }
+
+  .dark .text-glow {
+    text-shadow:
       0 0 20px hsl(var(--glow-gold) / 0.5),
       0 0 40px hsl(var(--glow-gold) / 0.2);
   }
@@ -142,8 +161,15 @@ All colors MUST be HSL.
     50% { transform: translateY(-20px); }
   }
 
-  .animate-pulse-slow {
-    animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  /* Breathing glow for the hero logo — animates drop-shadow intensity,
+     never dims the artwork itself. */
+  .animate-glow-pulse {
+    animation: glowPulse 4s ease-in-out infinite;
+  }
+
+  @keyframes glowPulse {
+    0%, 100% { filter: drop-shadow(0 0 24px rgba(139, 92, 246, 0.35)); }
+    50% { filter: drop-shadow(0 0 48px rgba(139, 92, 246, 0.65)); }
   }
 
   .animate-fade-in {

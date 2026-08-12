@@ -185,20 +185,14 @@ const SharedPost = () => {
             <Scroll className="h-10 w-10 mx-auto text-primary" />
             <h2 className="text-xl font-bold text-foreground">Join XCROL</h2>
             <p className="text-muted-foreground max-w-sm mx-auto">
-              XCROL is an invite-only social platform built around real friendships and meaningful connections. Write your story, one day at a time.
+              XCROL is a free social network built around real friendships — no ads, no tracking, no algorithms. Write your story, one day at a time.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button asChild size="lg">
-                <Link to="/auth">Sign Up</Link>
+                <Link to="/auth">Sign Up — Free</Link>
               </Button>
               <Button variant="outline" size="lg" asChild>
-                <a
-                  href="https://www.gofundme.com/f/join-us-in-creating-xcrol-a-human-centered-social-space"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  What makes XCROL different?
-                </a>
+                <Link to="/getting-started">What makes XCROL different?</Link>
               </Button>
             </div>
           </CardContent>

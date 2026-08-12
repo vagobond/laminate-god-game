@@ -135,10 +135,10 @@ const WorldMap = () => {
           {[440, 444, 448, 452, 456].map((x) => (
             <rect key={x} x={x} y="132" width="2" height="4" fill="hsl(220, 20%, 45%)" />
           ))}
-          <text x="450" y="240" textAnchor="middle" fill="hsl(0, 0%, 60%)" fontSize="13" fontWeight="600" fontFamily="serif">
+          <text x="450" y="240" textAnchor="middle" fill="hsl(0, 0%, 60%)" fontSize="13" fontWeight="600" fontFamily="Cinzel Variable, serif">
             The Castle
           </text>
-          <text x="450" y="255" textAnchor="middle" fill="hsl(0, 0%, 50%)" fontSize="10" fontFamily="serif" fontStyle="italic">
+          <text x="450" y="255" textAnchor="middle" fill="hsl(0, 0%, 50%)" fontSize="10" fontFamily="Cinzel Variable, serif" fontStyle="italic">
             Coming Soon
           </text>
         </g>
@@ -181,13 +181,13 @@ const WorldMap = () => {
             x="160" y="320"
             textAnchor="middle"
             fill={hovered === "forest" ? "hsl(45, 95%, 70%)" : "hsl(45, 60%, 80%)"}
-            fontSize="14" fontWeight="700" fontFamily="serif"
+            fontSize="14" fontWeight="700" fontFamily="Cinzel Variable, serif"
             style={{ transition: "fill 0.3s" }}
           >
             The Forest
           </text>
           {hovered === "forest" && (
-            <text x="160" y="336" textAnchor="middle" fill="hsl(45, 40%, 65%)" fontSize="10" fontFamily="serif">
+            <text x="160" y="336" textAnchor="middle" fill="hsl(45, 40%, 65%)" fontSize="10" fontFamily="Cinzel Variable, serif">
               {loc("forest").description}
             </text>
           )}
@@ -228,13 +228,13 @@ const WorldMap = () => {
             x="490" y="340"
             textAnchor="middle"
             fill={hovered === "river" ? "hsl(45, 95%, 70%)" : "hsl(195, 60%, 80%)"}
-            fontSize="15" fontWeight="700" fontFamily="serif"
+            fontSize="15" fontWeight="700" fontFamily="Cinzel Variable, serif"
             style={{ transition: "fill 0.3s" }}
           >
             The River
           </text>
           {hovered === "river" && (
-            <text x="490" y="356" textAnchor="middle" fill="hsl(195, 40%, 65%)" fontSize="10" fontFamily="serif">
+            <text x="490" y="356" textAnchor="middle" fill="hsl(195, 40%, 65%)" fontSize="10" fontFamily="Cinzel Variable, serif">
               {loc("river").description}
             </text>
           )}
@@ -261,13 +261,13 @@ const WorldMap = () => {
             x="310" y="400"
             textAnchor="middle"
             fill={hovered === "brooks" ? "hsl(45, 95%, 70%)" : "hsl(195, 50%, 70%)"}
-            fontSize="12" fontWeight="600" fontFamily="serif"
+            fontSize="12" fontWeight="600" fontFamily="Cinzel Variable, serif"
             style={{ transition: "fill 0.3s" }}
           >
             The Brooks
           </text>
           {hovered === "brooks" && (
-            <text x="310" y="414" textAnchor="middle" fill="hsl(195, 35%, 60%)" fontSize="9" fontFamily="serif">
+            <text x="310" y="414" textAnchor="middle" fill="hsl(195, 35%, 60%)" fontSize="9" fontFamily="Cinzel Variable, serif">
               {loc("brooks").description}
             </text>
           )}
@@ -308,13 +308,13 @@ const WorldMap = () => {
             x="145" y="480"
             textAnchor="middle"
             fill={hovered === "village" ? "hsl(45, 95%, 70%)" : "hsl(45, 60%, 80%)"}
-            fontSize="14" fontWeight="700" fontFamily="serif"
+            fontSize="14" fontWeight="700" fontFamily="Cinzel Variable, serif"
             style={{ transition: "fill 0.3s" }}
           >
             The Village
           </text>
           {hovered === "village" && (
-            <text x="145" y="496" textAnchor="middle" fill="hsl(45, 40%, 65%)" fontSize="10" fontFamily="serif">
+            <text x="145" y="496" textAnchor="middle" fill="hsl(45, 40%, 65%)" fontSize="10" fontFamily="Cinzel Variable, serif">
               {loc("village").description}
             </text>
           )}
@@ -353,13 +353,13 @@ const WorldMap = () => {
             x="610" y="480"
             textAnchor="middle"
             fill={hovered === "town" ? "hsl(45, 95%, 70%)" : "hsl(45, 60%, 80%)"}
-            fontSize="14" fontWeight="700" fontFamily="serif"
+            fontSize="14" fontWeight="700" fontFamily="Cinzel Variable, serif"
             style={{ transition: "fill 0.3s" }}
           >
             The Town
           </text>
           {hovered === "town" && (
-            <text x="610" y="496" textAnchor="middle" fill="hsl(45, 40%, 65%)" fontSize="10" fontFamily="serif">
+            <text x="610" y="496" textAnchor="middle" fill="hsl(45, 40%, 65%)" fontSize="10" fontFamily="Cinzel Variable, serif">
               {loc("town").description}
             </text>
           )}
@@ -391,13 +391,13 @@ const WorldMap = () => {
             x="790" y="375"
             textAnchor="middle"
             fill={hovered === "world" ? "hsl(45, 95%, 70%)" : "hsl(45, 60%, 80%)"}
-            fontSize="14" fontWeight="700" fontFamily="serif"
+            fontSize="14" fontWeight="700" fontFamily="Cinzel Variable, serif"
             style={{ transition: "fill 0.3s" }}
           >
             The World
           </text>
           {hovered === "world" && (
-            <text x="790" y="391" textAnchor="middle" fill="hsl(45, 40%, 65%)" fontSize="10" fontFamily="serif">
+            <text x="790" y="391" textAnchor="middle" fill="hsl(45, 40%, 65%)" fontSize="10" fontFamily="Cinzel Variable, serif">
               {loc("world").description}
             </text>
           )}
@@ -434,13 +434,13 @@ const WorldMap = () => {
             x="450" y="570"
             textAnchor="middle"
             fill={hovered === "you" ? "hsl(45, 95%, 75%)" : "hsl(45, 80%, 85%)"}
-            fontSize="16" fontWeight="800" fontFamily="serif"
+            fontSize="16" fontWeight="800" fontFamily="Cinzel Variable, serif"
             style={{ transition: "fill 0.3s" }}
           >
             YOU
           </text>
           {hovered === "you" && (
-            <text x="450" y="586" textAnchor="middle" fill="hsl(45, 40%, 65%)" fontSize="10" fontFamily="serif">
+            <text x="450" y="586" textAnchor="middle" fill="hsl(45, 40%, 65%)" fontSize="10" fontFamily="Cinzel Variable, serif">
               {loc("you").description}
             </text>
           )}
@@ -475,13 +475,13 @@ const WorldMap = () => {
             x="720" y="580"
             textAnchor="middle"
             fill={hovered === "strata" ? "hsl(45, 95%, 70%)" : "hsl(45, 60%, 80%)"}
-            fontSize="13" fontWeight="700" fontFamily="serif"
+            fontSize="13" fontWeight="700" fontFamily="Cinzel Variable, serif"
             style={{ transition: "fill 0.3s" }}
           >
             The Strata
           </text>
           {hovered === "strata" && (
-            <text x="720" y="596" textAnchor="middle" fill="hsl(45, 40%, 65%)" fontSize="10" fontFamily="serif">
+            <text x="720" y="596" textAnchor="middle" fill="hsl(45, 40%, 65%)" fontSize="10" fontFamily="Cinzel Variable, serif">
               {loc("strata").description}
             </text>
           )}

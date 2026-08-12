@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Users, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getFriendshipLabel } from "@/lib/friendship-labels";
+import { getFriendshipShortLabel } from "@/lib/friendship-labels";
 import { useEffect, useMemo } from "react";
 
 const TheVillage = () => {
@@ -135,7 +135,7 @@ const GroupCard = ({
   >
     <CardHeader className="flex flex-row items-center gap-3 pb-2">
       <div className="relative shrink-0">
-        <Avatar className="h-10 w-10">
+        <Avatar className="h-16 w-16 ring-1 ring-border/60 bg-muted">
           {group.avatar_url ? (
             <img src={group.avatar_url} alt={group.name} className="aspect-square h-full w-full object-cover" />
           ) : (
@@ -158,8 +158,8 @@ const GroupCard = ({
         <p className="text-sm text-muted-foreground line-clamp-2">{group.description}</p>
       )}
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="secondary" className="text-xs">
-          {getFriendshipLabel(group.trust_level)}
+        <Badge variant="outline" className="text-xs border-secondary/40 bg-secondary/10 text-secondary">
+          {getFriendshipShortLabel(group.trust_level)}
         </Badge>
         {group.membership_status === "pending" && (
           <Badge variant="outline" className="text-xs">Pending</Badge>

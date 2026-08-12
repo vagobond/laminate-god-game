@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Loader2, Sparkles, HelpCircle } from "lucide-react";
+import { Loader2, Sparkles, HelpCircle, Waves } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useTutorial } from "@/components/onboarding";
 import scrollOpenGif from "@/assets/scroll-paper-open-up.gif";
@@ -105,7 +105,7 @@ const Welcome = () => {
               width={600}
               height={200}
               {...{ fetchpriority: "high" }}
-              className="w-[400px] md:w-[500px] lg:w-[600px] mx-auto drop-shadow-[0_0_40px_rgba(139,92,246,0.4)] animate-pulse-slow"
+              className="w-[400px] md:w-[500px] lg:w-[600px] mx-auto drop-shadow-[0_0_40px_rgba(139,92,246,0.4)] animate-glow-pulse motion-reduce:animate-none"
             />
             <div className="space-y-3 max-w-2xl mx-auto">
               <p className="text-xl md:text-2xl text-foreground/90 font-bold italic">
@@ -117,18 +117,25 @@ const Welcome = () => {
             </div>
           </div>
           
-          <div className={`mt-12 transition-all duration-500 delay-300 ${
-            animationPhase === "complete" ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+          <div className={`mt-10 transition-all duration-500 ${
+            animationPhase !== "gif" ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           }`}>
-            <Button 
-              variant="divine" 
+            <Button
+              variant="divine"
               size="xl"
-              onClick={() => navigate("/powers")}
-              className="animate-float"
+              onClick={() => navigate("/auth")}
+              className="animate-float motion-reduce:animate-none"
             >
               USE YOUR POWERS
             </Button>
+            <p className="mt-3 text-sm text-foreground/60">
+              Free to join. No ads, no tracking, no invite needed.
+            </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Button variant="outline" size="sm" onClick={() => navigate("/the-river")}>
+                <Waves className="h-4 w-4 mr-2" />
+                Peek at The River
+              </Button>
               <Button variant="outline" size="sm" onClick={reopenTutorial}>
                 <Sparkles className="h-4 w-4 mr-2" />
                 Tour Xcrol

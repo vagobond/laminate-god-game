@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Helmet } from "react-helmet-async";
+import xcrolLogo from "@/assets/xcrol-logo.webp";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WelcomeModal } from "@/components/WelcomeModal";
@@ -15,6 +17,7 @@ import { EmailNotConfirmed } from "@/components/auth/EmailNotConfirmed";
 
 const Auth = () => {
   const auth = useAuthPage();
+  const [tab, setTab] = useState("signin");
 
   const renderContent = () => {
     if (auth.authView === "forgot-password") {
@@ -71,7 +74,7 @@ const Auth = () => {
     }
 
     return (
-      <Tabs defaultValue="signin" className="w-full">
+      <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="signin">Sign In</TabsTrigger>
           <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -130,9 +133,12 @@ const Auth = () => {
         <meta property="og:url" content="https://xcrol.com/auth" />
       </Helmet>
       <div className="max-w-md w-full animate-fade-in space-y-8">
-        <h1 className="text-4xl md:text-5xl font-bold text-center text-glow">
-          Join XCROL
-        </h1>
+        <div className="space-y-4">
+          <img src={xcrolLogo} alt="XCROL" className="mx-auto h-16 w-auto" />
+          <h1 className="text-4xl md:text-5xl font-bold text-center text-glow">
+            {tab === "signup" ? "Join XCROL" : "Welcome Back"}
+          </h1>
+        </div>
 
         <Card className="p-8 bg-card/60 backdrop-blur-sm border-primary/30 mystical-glow-teal">
           {renderContent()}

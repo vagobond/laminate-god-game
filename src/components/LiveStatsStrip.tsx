@@ -74,12 +74,16 @@ export const LiveStatsStrip = () => {
 
   return (
     <div className="text-sm md:text-base text-foreground/70 max-w-3xl mx-auto px-4 animate-fade-in">
-      <span className="font-semibold text-primary">{entries}</span> moments shared today
+      {stats.entries_today > 0 && (
+        <>
+          <span className="font-semibold text-primary">{entries}</span> {entries === 1 ? "moment" : "moments"} shared today
+          <span className="mx-2 text-foreground/30">·</span>
+        </>
+      )}
+      <span className="font-semibold text-primary">{hometowns}</span> {hometowns === 1 ? "hometown" : "hometowns"} across{" "}
+      <span className="font-semibold text-primary">{countries}</span> {countries === 1 ? "country" : "countries"}
       <span className="mx-2 text-foreground/30">·</span>
-      <span className="font-semibold text-primary">{hometowns}</span> hometowns across{" "}
-      <span className="font-semibold text-primary">{countries}</span> countries
-      <span className="mx-2 text-foreground/30">·</span>
-      <span className="font-semibold text-primary">{brooks}</span> private streams flowing
+      <span className="font-semibold text-primary">{brooks}</span> private {brooks === 1 ? "stream" : "streams"} flowing
     </div>
   );
 };
