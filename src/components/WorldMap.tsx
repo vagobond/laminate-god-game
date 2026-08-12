@@ -48,24 +48,103 @@ const WorldMap = () => {
         aria-label="Interactive world map navigation"
       >
         <defs>
-          {/* Sky gradient */}
+          {/* Sky — deep night falling to a teal horizon */}
           <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(220, 40%, 12%)" />
-            <stop offset="40%" stopColor="hsl(220, 35%, 18%)" />
-            <stop offset="100%" stopColor="hsl(200, 30%, 22%)" />
+            <stop offset="0%" stopColor="hsl(228, 45%, 8%)" />
+            <stop offset="35%" stopColor="hsl(222, 42%, 14%)" />
+            <stop offset="70%" stopColor="hsl(210, 38%, 20%)" />
+            <stop offset="100%" stopColor="hsl(196, 36%, 26%)" />
           </linearGradient>
-          {/* Ground gradient */}
-          <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(120, 25%, 18%)" />
-            <stop offset="100%" stopColor="hsl(120, 20%, 12%)" />
+          <linearGradient id="horizon-glow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="hsl(185, 50%, 42%)" stopOpacity="0" />
+            <stop offset="100%" stopColor="hsl(180, 55%, 48%)" stopOpacity="0.22" />
           </linearGradient>
-          {/* Water gradient */}
+          <radialGradient id="moon-halo" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="hsl(45, 60%, 85%)" stopOpacity="0.35" />
+            <stop offset="55%" stopColor="hsl(45, 60%, 85%)" stopOpacity="0.08" />
+            <stop offset="100%" stopColor="hsl(45, 60%, 85%)" stopOpacity="0" />
+          </radialGradient>
+          {/* Aerial perspective — ranges fade cooler and lighter with distance */}
+          <linearGradient id="mtn-far" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="hsl(214, 30%, 28%)" />
+            <stop offset="100%" stopColor="hsl(210, 28%, 22%)" />
+          </linearGradient>
+          <linearGradient id="mtn-mid" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="hsl(218, 26%, 23%)" />
+            <stop offset="100%" stopColor="hsl(216, 24%, 17%)" />
+          </linearGradient>
+          <linearGradient id="mtn-castle" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="hsl(220, 20%, 38%)" />
+            <stop offset="100%" stopColor="hsl(222, 22%, 24%)" />
+          </linearGradient>
+          {/* Ground layers */}
+          <linearGradient id="hills-back" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="hsl(150, 22%, 17%)" />
+            <stop offset="100%" stopColor="hsl(142, 20%, 12%)" />
+          </linearGradient>
+          <linearGradient id="hills-mid" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="hsl(135, 25%, 19%)" />
+            <stop offset="100%" stopColor="hsl(128, 22%, 13%)" />
+          </linearGradient>
+          <linearGradient id="ground-front" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="hsl(120, 26%, 17%)" />
+            <stop offset="100%" stopColor="hsl(114, 22%, 10%)" />
+          </linearGradient>
+          {/* Water */}
           <linearGradient id="water" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="hsl(195, 60%, 35%)" />
-            <stop offset="50%" stopColor="hsl(195, 50%, 45%)" />
-            <stop offset="100%" stopColor="hsl(195, 60%, 35%)" />
+            <stop offset="0%" stopColor="hsl(198, 65%, 30%)" />
+            <stop offset="40%" stopColor="hsl(192, 60%, 44%)" />
+            <stop offset="70%" stopColor="hsl(196, 62%, 36%)" />
+            <stop offset="100%" stopColor="hsl(198, 65%, 30%)" />
           </linearGradient>
-          {/* Glow filter */}
+          {/* Foliage shading — each shape gets its own moonlit-top sphere */}
+          <radialGradient id="canopy" cx="40%" cy="28%" r="80%">
+            <stop offset="0%" stopColor="hsl(145, 40%, 33%)" />
+            <stop offset="55%" stopColor="hsl(142, 36%, 25%)" />
+            <stop offset="100%" stopColor="hsl(140, 32%, 17%)" />
+          </radialGradient>
+          <radialGradient id="canopy-you" cx="50%" cy="30%" r="80%">
+            <stop offset="0%" stopColor="hsl(140, 46%, 37%)" />
+            <stop offset="60%" stopColor="hsl(142, 38%, 27%)" />
+            <stop offset="100%" stopColor="hsl(145, 34%, 18%)" />
+          </radialGradient>
+          <linearGradient id="trunk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="hsl(30, 35%, 32%)" />
+            <stop offset="100%" stopColor="hsl(28, 30%, 20%)" />
+          </linearGradient>
+          {/* Warm light pools */}
+          <radialGradient id="window-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="hsl(42, 95%, 65%)" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="hsl(42, 95%, 65%)" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id="orb-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="hsl(45, 95%, 72%)" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="hsl(45, 95%, 72%)" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id="crystal-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="hsl(280, 70%, 65%)" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="hsl(280, 70%, 65%)" stopOpacity="0" />
+          </radialGradient>
+          {/* Globe as a lit sphere */}
+          <radialGradient id="globe-shade" cx="35%" cy="30%" r="85%">
+            <stop offset="0%" stopColor="hsl(200, 48%, 42%)" />
+            <stop offset="60%" stopColor="hsl(202, 44%, 28%)" />
+            <stop offset="100%" stopColor="hsl(206, 46%, 17%)" />
+          </radialGradient>
+          {/* Painted finish */}
+          <radialGradient id="vignette" cx="50%" cy="45%" r="72%">
+            <stop offset="0%" stopColor="hsl(228, 45%, 5%)" stopOpacity="0" />
+            <stop offset="72%" stopColor="hsl(228, 45%, 5%)" stopOpacity="0" />
+            <stop offset="100%" stopColor="hsl(228, 45%, 5%)" stopOpacity="0.45" />
+          </radialGradient>
+          <filter id="grain" x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch" />
+            <feColorMatrix type="saturate" values="0" />
+          </filter>
+          <filter id="soften">
+            <feGaussianBlur stdDeviation="1.4" />
+          </filter>
+          {/* Hover glow */}
           <filter id="glow">
             <feGaussianBlur stdDeviation="4" result="blur" />
             <feMerge>
@@ -80,17 +159,18 @@ const WorldMap = () => {
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          {/* Star shimmer */}
-          <radialGradient id="star-glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="hsl(45, 95%, 80%)" stopOpacity="1" />
-            <stop offset="100%" stopColor="hsl(45, 95%, 80%)" stopOpacity="0" />
-          </radialGradient>
         </defs>
 
         {/* Sky background */}
         <rect x="0" y="0" width="900" height="620" fill="url(#sky)" />
 
-        {/* Stars */}
+        {/* Stars — small static field plus shimmering ones */}
+        {[
+          [90, 95], [210, 110], [310, 85], [380, 55], [520, 90], [590, 60],
+          [660, 100], [730, 35], [850, 95], [40, 40], [480, 120], [280, 130],
+        ].map(([cx, cy], i) => (
+          <circle key={`s${i}`} cx={cx} cy={cy} r={0.9} fill="hsl(45, 70%, 88%)" opacity={0.35 + (i % 4) * 0.1} />
+        ))}
         {[
           [120, 30], [250, 55], [400, 20], [550, 45], [700, 25], [800, 60],
           [60, 70], [340, 40], [620, 15], [780, 50], [180, 15], [460, 65],
@@ -99,15 +179,44 @@ const WorldMap = () => {
             <animate attributeName="opacity" values={`${0.3 + (i % 3) * 0.2};${0.8};${0.3 + (i % 3) * 0.2}`} dur={`${2 + i * 0.4}s`} repeatCount="indefinite" />
           </circle>
         ))}
+        {/* Four-point sparkles */}
+        {[
+          [330, 25], [680, 70], [150, 55],
+        ].map(([x, y], i) => (
+          <path
+            key={`sp${i}`}
+            d={`M ${x},${y - 5} L ${x + 1.2},${y - 1.2} L ${x + 5},${y} L ${x + 1.2},${y + 1.2} L ${x},${y + 5} L ${x - 1.2},${y + 1.2} L ${x - 5},${y} L ${x - 1.2},${y - 1.2} Z`}
+            fill="hsl(45, 90%, 80%)"
+            opacity="0.7"
+          >
+            <animate attributeName="opacity" values="0.3;0.8;0.3" dur={`${3 + i}s`} repeatCount="indefinite" />
+          </path>
+        ))}
 
-        {/* Moon */}
+        {/* Moon with halo */}
+        <circle cx="780" cy="70" r="60" fill="url(#moon-halo)" />
         <circle cx="780" cy="70" r="25" fill="hsl(45, 30%, 85%)" opacity="0.9" />
         <circle cx="790" cy="62" r="22" fill="url(#sky)" />
 
-        {/* Ground / hills base */}
-        <ellipse cx="450" cy="620" rx="550" ry="280" fill="url(#ground)" />
-        <ellipse cx="200" cy="540" rx="280" ry="160" fill="hsl(120, 20%, 16%)" />
-        <ellipse cx="700" cy="560" rx="300" ry="150" fill="hsl(120, 22%, 15%)" />
+        {/* Horizon glow band */}
+        <rect x="0" y="180" width="900" height="140" fill="url(#horizon-glow)" />
+
+        {/* Distant ranges — aerial perspective, softened */}
+        <g filter="url(#soften)">
+          <polygon points="120,270 260,165 400,270" fill="url(#mtn-far)" opacity="0.55" />
+          <polygon points="470,270 610,160 750,270" fill="url(#mtn-far)" opacity="0.55" />
+          <polygon points="20,280 150,195 290,280" fill="url(#mtn-mid)" opacity="0.75" />
+          <polygon points="540,275 690,190 840,275" fill="url(#mtn-mid)" opacity="0.75" />
+          <polygon points="760,280 850,215 900,260 900,280" fill="url(#mtn-mid)" opacity="0.7" />
+        </g>
+
+        {/* Ground — rolling layered hills */}
+        <path d="M 0,362 Q 150,322 310,350 Q 460,375 600,348 Q 750,325 900,356 L 900,620 L 0,620 Z" fill="url(#hills-back)" />
+        <path d="M 0,362 Q 150,322 310,350" fill="none" stroke="hsl(45, 45%, 65%)" strokeWidth="1.5" opacity="0.1" />
+        <path d="M 600,348 Q 750,325 900,356" fill="none" stroke="hsl(45, 45%, 65%)" strokeWidth="1.5" opacity="0.16" />
+        <path d="M 0,425 Q 200,372 430,408 Q 650,440 900,398 L 900,620 L 0,620 Z" fill="url(#hills-mid)" />
+        <path d="M 650,432 Q 780,410 900,398" fill="none" stroke="hsl(45, 45%, 65%)" strokeWidth="1.5" opacity="0.12" />
+        <ellipse cx="450" cy="650" rx="580" ry="260" fill="url(#ground-front)" />
 
         {/* === THE CASTLE (top, disabled) === */}
         <g
@@ -122,11 +231,13 @@ const WorldMap = () => {
           opacity={0.4}
         >
           <title>Unlock by inviting 3 friends who complete their profiles</title>
-          {/* Mountain */}
-          <polygon points="450,90 380,220 520,220" fill="hsl(220, 15%, 30%)" />
-          <polygon points="450,90 420,160 480,160" fill="hsl(220, 15%, 35%)" />
+          {/* Mountain with moonlit east face */}
+          <polygon points="450,90 380,220 520,220" fill="url(#mtn-castle)" />
+          <polygon points="450,90 520,220 462,210" fill="hsl(220, 22%, 44%)" opacity="0.5" />
+          <polygon points="450,90 380,220 438,210" fill="hsl(224, 25%, 18%)" opacity="0.55" />
           {/* Snow cap */}
-          <polygon points="450,90 435,120 465,120" fill="hsl(0, 0%, 85%)" />
+          <polygon points="450,90 435,120 465,120" fill="hsl(210, 20%, 88%)" />
+          <polygon points="450,90 465,120 456,116" fill="hsl(45, 40%, 94%)" opacity="0.8" />
           {/* Castle towers */}
           <rect x="435" y="120" width="8" height="20" fill="hsl(220, 20%, 40%)" />
           <rect x="457" y="115" width="8" height="25" fill="hsl(220, 20%, 40%)" />
@@ -135,6 +246,8 @@ const WorldMap = () => {
           {[440, 444, 448, 452, 456].map((x) => (
             <rect key={x} x={x} y="132" width="2" height="4" fill="hsl(220, 20%, 45%)" />
           ))}
+          {/* One lit window keeps it alive */}
+          <rect x="460" y="122" width="3" height="4" fill="hsl(42, 90%, 65%)" opacity="0.9" rx="0.5" />
           <text x="450" y="240" textAnchor="middle" fill="hsl(0, 0%, 60%)" fontSize="13" fontWeight="600" fontFamily="Cinzel Variable, serif">
             The Castle
           </text>
@@ -156,25 +269,40 @@ const WorldMap = () => {
           filter={hovered === "forest" ? "url(#glow)" : undefined}
         >
           {/* Hill */}
-          <ellipse cx="170" cy="300" rx="130" ry="60" fill="hsl(120, 25%, 20%)" />
-          {/* Trees */}
+          <ellipse cx="170" cy="300" rx="135" ry="62" fill="url(#hills-mid)" />
+          {/* Back row of trees — small, dark, misty */}
+          {[85, 108, 132, 156, 180, 204, 228, 248].map((x, i) => (
+            <polygon
+              key={`bt${i}`}
+              points={`${x},${242 + (i % 3) * 4} ${x - 8},${266 + (i % 3) * 3} ${x + 8},${266 + (i % 3) * 3}`}
+              fill="hsl(150, 24%, 15%)"
+              opacity="0.85"
+            />
+          ))}
+          {/* Front trees with shaded canopies and moonlit edges */}
           {[100, 130, 160, 190, 220].map((x, i) => (
             <g key={i}>
               <polygon
                 points={`${x},${260 - i * 3} ${x - 12},${290 - i * 2} ${x + 12},${290 - i * 2}`}
-                fill={`hsl(${140 + i * 5}, ${30 + i * 3}%, ${22 + i * 2}%)`}
+                fill="url(#canopy)"
               />
               <polygon
                 points={`${x},${248 - i * 3} ${x - 9},${270 - i * 2} ${x + 9},${270 - i * 2}`}
-                fill={`hsl(${140 + i * 5}, ${35 + i * 3}%, ${26 + i * 2}%)`}
+                fill="url(#canopy)"
               />
-              <rect x={x - 2} y={290 - i * 2} width="4" height="8" fill="hsl(30, 30%, 25%)" />
+              {/* Moonlit right edge */}
+              <polygon
+                points={`${x},${248 - i * 3} ${x + 9},${270 - i * 2} ${x + 4},${268 - i * 2}`}
+                fill="hsl(140, 40%, 42%)"
+                opacity="0.5"
+              />
+              <rect x={x - 2} y={290 - i * 2} width="4" height="8" fill="url(#trunk)" />
             </g>
           ))}
           {/* Fireflies */}
-          {[115, 175, 205].map((x, i) => (
-            <circle key={i} cx={x} cy={270 - i * 5} r="2" fill="hsl(60, 90%, 70%)" opacity="0.7">
-              <animate attributeName="opacity" values="0.3;0.9;0.3" dur={`${1.5 + i * 0.5}s`} repeatCount="indefinite" />
+          {[115, 148, 175, 205, 235].map((x, i) => (
+            <circle key={i} cx={x} cy={272 - (i % 3) * 8} r="1.8" fill="hsl(60, 90%, 70%)" opacity="0.7">
+              <animate attributeName="opacity" values="0.2;0.9;0.2" dur={`${1.5 + i * 0.5}s`} repeatCount="indefinite" />
             </circle>
           ))}
           <text
@@ -205,25 +333,53 @@ const WorldMap = () => {
           className="cursor-pointer"
           filter={hovered === "river" ? "url(#glow)" : undefined}
         >
+          {/* Bank shadow */}
           <path
             d="M 300,200 Q 350,260 400,300 Q 460,350 500,380 Q 540,400 580,390 Q 640,370 700,380"
             fill="none"
-            stroke="url(#water)"
-            strokeWidth="16"
+            stroke="hsl(210, 45%, 12%)"
+            strokeWidth="22"
             strokeLinecap="round"
-            opacity="0.85"
+            opacity="0.6"
           />
           <path
             d="M 300,200 Q 350,260 400,300 Q 460,350 500,380 Q 540,400 580,390 Q 640,370 700,380"
             fill="none"
-            stroke="hsl(195, 60%, 55%)"
-            strokeWidth="4"
+            stroke="url(#water)"
+            strokeWidth="15"
+            strokeLinecap="round"
+            opacity="0.9"
+          />
+          {/* Central sheen */}
+          <path
+            d="M 300,200 Q 350,260 400,300 Q 460,350 500,380 Q 540,400 580,390 Q 640,370 700,380"
+            fill="none"
+            stroke="hsl(190, 70%, 60%)"
+            strokeWidth="5"
+            strokeLinecap="round"
+            opacity="0.3"
+          />
+          {/* Flowing sparkle */}
+          <path
+            d="M 300,200 Q 350,260 400,300 Q 460,350 500,380 Q 540,400 580,390 Q 640,370 700,380"
+            fill="none"
+            stroke="hsl(195, 60%, 62%)"
+            strokeWidth="3"
             strokeLinecap="round"
             opacity="0.5"
             strokeDasharray="8 12"
           >
             <animate attributeName="stroke-dashoffset" values="0;-40" dur="3s" repeatCount="indefinite" />
           </path>
+          {/* Moonlight caught on the far bend */}
+          <path
+            d="M 610,383 Q 650,371 690,379"
+            fill="none"
+            stroke="hsl(45, 70%, 78%)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            opacity="0.28"
+          />
           <text
             x="490" y="340"
             textAnchor="middle"
@@ -252,9 +408,10 @@ const WorldMap = () => {
           className="cursor-pointer"
           filter={hovered === "brooks" ? "url(#glow)" : undefined}
         >
-          <path d="M 380,310 Q 350,340 320,360" fill="none" stroke="hsl(195, 50%, 40%)" strokeWidth="6" strokeLinecap="round" opacity="0.7" />
-          <path d="M 370,320 Q 340,355 300,380" fill="none" stroke="hsl(195, 50%, 40%)" strokeWidth="5" strokeLinecap="round" opacity="0.6" />
-          <path d="M 380,310 Q 350,340 320,360" fill="none" stroke="hsl(195, 60%, 55%)" strokeWidth="2" strokeLinecap="round" opacity="0.5" strokeDasharray="4 8">
+          <path d="M 380,310 Q 350,340 320,360" fill="none" stroke="hsl(210, 45%, 14%)" strokeWidth="9" strokeLinecap="round" opacity="0.5" />
+          <path d="M 380,310 Q 350,340 320,360" fill="none" stroke="hsl(196, 55%, 38%)" strokeWidth="6" strokeLinecap="round" opacity="0.75" />
+          <path d="M 370,320 Q 340,355 300,380" fill="none" stroke="hsl(196, 55%, 36%)" strokeWidth="5" strokeLinecap="round" opacity="0.65" />
+          <path d="M 380,310 Q 350,340 320,360" fill="none" stroke="hsl(192, 65%, 58%)" strokeWidth="2" strokeLinecap="round" opacity="0.5" strokeDasharray="4 8">
             <animate attributeName="stroke-dashoffset" values="0;-24" dur="2s" repeatCount="indefinite" />
           </path>
           <text
@@ -285,6 +442,10 @@ const WorldMap = () => {
           className="cursor-pointer"
           filter={hovered === "village" ? "url(#glow)" : undefined}
         >
+          {/* Warm ambient pool of light */}
+          <ellipse cx="145" cy="428" rx="78" ry="42" fill="url(#window-glow)" opacity="0.25" />
+          {/* Dirt lane toward the river */}
+          <path d="M 185,435 Q 240,420 295,392" fill="none" stroke="hsl(35, 25%, 30%)" strokeWidth="5" strokeLinecap="round" opacity="0.45" />
           {/* Houses */}
           {[
             { x: 100, y: 410, w: 28, h: 22 },
@@ -294,9 +455,12 @@ const WorldMap = () => {
           ].map((h, i) => (
             <g key={i}>
               <rect x={h.x} y={h.y} width={h.w} height={h.h} fill={`hsl(30, ${25 + i * 5}%, ${28 + i * 3}%)`} rx="2" />
+              {/* Moonlit roof edge */}
               <polygon points={`${h.x - 4},${h.y} ${h.x + h.w / 2},${h.y - 14} ${h.x + h.w + 4},${h.y}`} fill={`hsl(15, ${30 + i * 5}%, ${25 + i * 2}%)`} />
-              {/* Window */}
-              <rect x={h.x + h.w / 2 - 3} y={h.y + 6} width="6" height="6" fill="hsl(45, 80%, 65%)" rx="1" opacity="0.8" />
+              <path d={`M ${h.x + h.w / 2},${h.y - 14} L ${h.x + h.w + 4},${h.y}`} stroke="hsl(45, 40%, 62%)" strokeWidth="1" opacity="0.35" />
+              {/* Window with light spill */}
+              <circle cx={h.x + h.w / 2} cy={h.y + 9} r="8" fill="url(#window-glow)" opacity="0.6" />
+              <rect x={h.x + h.w / 2 - 3} y={h.y + 6} width="6" height="6" fill="hsl(45, 85%, 68%)" rx="1" opacity="0.95" />
             </g>
           ))}
           {/* Smoke from chimney */}
@@ -332,6 +496,8 @@ const WorldMap = () => {
           className="cursor-pointer"
           filter={hovered === "town" ? "url(#glow)" : undefined}
         >
+          {/* Town glow against the night */}
+          <ellipse cx="614" cy="440" rx="80" ry="46" fill="url(#window-glow)" opacity="0.22" />
           {/* Buildings */}
           {[
             { x: 560, y: 420, w: 22, h: 35 },
@@ -341,9 +507,14 @@ const WorldMap = () => {
           ].map((b, i) => (
             <g key={i}>
               <rect x={b.x} y={b.y} width={b.w} height={b.h} fill={`hsl(220, ${15 + i * 5}%, ${25 + i * 3}%)`} rx="1" />
+              {/* Moonlit rooftop */}
+              <rect x={b.x} y={b.y} width={b.w} height="2" fill="hsl(45, 35%, 55%)" opacity="0.35" />
               {/* Windows */}
               {[0, 1, 2].map((row) => (
-                <rect key={row} x={b.x + 4} y={b.y + 5 + row * 10} width="4" height="4" fill="hsl(45, 70%, 60%)" opacity="0.7" rx="0.5" />
+                <g key={row}>
+                  <circle cx={b.x + 6} cy={b.y + 7 + row * 10} r="5" fill="url(#window-glow)" opacity="0.5" />
+                  <rect x={b.x + 4} y={b.y + 5 + row * 10} width="4" height="4" fill="hsl(45, 75%, 62%)" opacity="0.85" rx="0.5" />
+                </g>
               ))}
             </g>
           ))}
@@ -377,14 +548,18 @@ const WorldMap = () => {
           className="cursor-pointer"
           filter={hovered === "world" ? "url(#glow)" : undefined}
         >
-          {/* Globe */}
-          <circle cx="790" cy="320" r="35" fill="hsl(200, 40%, 25%)" stroke="hsl(45, 60%, 55%)" strokeWidth="2" />
+          {/* Aura */}
+          <circle cx="790" cy="320" r="48" fill="url(#orb-glow)" opacity="0.25" />
+          {/* Globe as shaded sphere */}
+          <circle cx="790" cy="320" r="35" fill="url(#globe-shade)" stroke="hsl(45, 60%, 55%)" strokeWidth="2" />
           <ellipse cx="790" cy="320" rx="35" ry="15" fill="none" stroke="hsl(45, 40%, 45%)" strokeWidth="1" />
           <ellipse cx="790" cy="320" rx="15" ry="35" fill="none" stroke="hsl(45, 40%, 45%)" strokeWidth="1" />
           <line x1="755" y1="320" x2="825" y2="320" stroke="hsl(45, 40%, 45%)" strokeWidth="1" />
           {/* Continents suggestion */}
-          <path d="M 775,305 Q 785,300 795,308 Q 800,315 790,318" fill="hsl(120, 25%, 30%)" opacity="0.6" />
-          <path d="M 800,325 Q 808,330 805,338" fill="hsl(120, 25%, 30%)" opacity="0.6" />
+          <path d="M 775,305 Q 785,300 795,308 Q 800,315 790,318" fill="hsl(120, 28%, 34%)" opacity="0.7" />
+          <path d="M 800,325 Q 808,330 805,338" fill="hsl(120, 28%, 34%)" opacity="0.7" />
+          {/* Specular highlight */}
+          <ellipse cx="778" cy="306" rx="10" ry="6" fill="hsl(45, 60%, 85%)" opacity="0.2" transform="rotate(-25 778 306)" />
           {/* Compass rose */}
           <polygon points="790,278 787,285 793,285" fill="hsl(45, 80%, 60%)" />
           <text
@@ -415,17 +590,24 @@ const WorldMap = () => {
           className="cursor-pointer"
           filter={hovered === "you" ? "url(#glow-strong)" : undefined}
         >
+          {/* Soft ground light beneath the tree */}
+          <ellipse cx="450" cy="528" rx="55" ry="16" fill="url(#orb-glow)" opacity="0.2" />
           {/* Tree trunk */}
-          <rect x="443" y="480" width="14" height="50" fill="hsl(30, 35%, 28%)" rx="3" />
+          <rect x="443" y="480" width="14" height="50" fill="url(#trunk)" rx="3" />
           {/* Roots */}
           <path d="M 443,525 Q 430,540 420,545" fill="none" stroke="hsl(30, 30%, 25%)" strokeWidth="3" strokeLinecap="round" />
           <path d="M 457,525 Q 470,540 480,545" fill="none" stroke="hsl(30, 30%, 25%)" strokeWidth="3" strokeLinecap="round" />
-          {/* Canopy */}
-          <circle cx="450" cy="470" r="30" fill="hsl(140, 35%, 25%)" />
-          <circle cx="435" cy="460" r="20" fill="hsl(140, 30%, 28%)" />
-          <circle cx="465" cy="458" r="22" fill="hsl(140, 32%, 27%)" />
-          <circle cx="450" cy="448" r="18" fill="hsl(140, 38%, 30%)" />
-          {/* Glow orb */}
+          {/* Canopy — shaded spheres */}
+          <circle cx="450" cy="470" r="30" fill="url(#canopy-you)" />
+          <circle cx="435" cy="460" r="20" fill="url(#canopy-you)" />
+          <circle cx="465" cy="458" r="22" fill="url(#canopy-you)" />
+          <circle cx="450" cy="448" r="18" fill="url(#canopy-you)" />
+          {/* Moonlit crown edge */}
+          <path d="M 434,442 Q 450,432 466,444" fill="none" stroke="hsl(140, 45%, 48%)" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+          {/* Glow orb heart */}
+          <circle cx="450" cy="465" r="16" fill="url(#orb-glow)" opacity="0.5">
+            <animate attributeName="opacity" values="0.35;0.65;0.35" dur="3s" repeatCount="indefinite" />
+          </circle>
           <circle cx="450" cy="465" r="8" fill="hsl(45, 90%, 65%)" opacity="0.6">
             <animate attributeName="opacity" values="0.4;0.8;0.4" dur="3s" repeatCount="indefinite" />
             <animate attributeName="r" values="7;9;7" dur="3s" repeatCount="indefinite" />
@@ -458,7 +640,7 @@ const WorldMap = () => {
           className="cursor-pointer"
           filter={hovered === "strata" ? "url(#glow)" : undefined}
         >
-          {/* Layered rock strata */}
+          {/* Layered rock strata with lit top edges */}
           {[
             { y: 510, color: "hsl(30, 20%, 22%)", w: 80 },
             { y: 520, color: "hsl(20, 25%, 25%)", w: 90 },
@@ -466,11 +648,18 @@ const WorldMap = () => {
             { y: 540, color: "hsl(25, 18%, 18%)", w: 95 },
             { y: 550, color: "hsl(10, 20%, 16%)", w: 105 },
           ].map((layer, i) => (
-            <rect key={i} x={720 - layer.w / 2} y={layer.y} width={layer.w} height="12" fill={layer.color} rx="2" />
+            <g key={i}>
+              <rect x={720 - layer.w / 2} y={layer.y} width={layer.w} height="12" fill={layer.color} rx="2" />
+              <rect x={720 - layer.w / 2} y={layer.y} width={layer.w} height="1.5" fill="hsl(40, 30%, 50%)" opacity="0.25" rx="1" />
+            </g>
           ))}
-          {/* Crystal */}
-          <polygon points="720,490 715,510 725,510" fill="hsl(280, 40%, 45%)" opacity="0.7" />
-          <polygon points="730,495 726,512 734,512" fill="hsl(280, 35%, 40%)" opacity="0.6" />
+          {/* Crystals with inner light */}
+          <circle cx="725" cy="502" r="16" fill="url(#crystal-glow)" opacity="0.5">
+            <animate attributeName="opacity" values="0.3;0.6;0.3" dur="4s" repeatCount="indefinite" />
+          </circle>
+          <polygon points="720,490 715,510 725,510" fill="hsl(280, 45%, 52%)" opacity="0.85" />
+          <polygon points="720,490 725,510 721,508" fill="hsl(280, 60%, 70%)" opacity="0.7" />
+          <polygon points="730,495 726,512 734,512" fill="hsl(280, 40%, 45%)" opacity="0.75" />
           <text
             x="720" y="580"
             textAnchor="middle"
@@ -486,6 +675,10 @@ const WorldMap = () => {
             </text>
           )}
         </g>
+
+        {/* Painted finish — vignette and canvas grain (non-interactive) */}
+        <rect x="0" y="0" width="900" height="620" fill="url(#vignette)" pointerEvents="none" />
+        <rect x="0" y="0" width="900" height="620" filter="url(#grain)" opacity="0.05" pointerEvents="none" />
 
         {/* Tooltip overlay for hovered item */}
         {hovered && !["castle"].includes(hovered) && (
