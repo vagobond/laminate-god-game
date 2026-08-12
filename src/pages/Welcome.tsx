@@ -105,7 +105,7 @@ const Welcome = () => {
               width={600}
               height={200}
               {...{ fetchpriority: "high" }}
-              className="w-[400px] md:w-[500px] lg:w-[600px] mx-auto drop-shadow-[0_0_40px_rgba(139,92,246,0.4)] animate-pulse-slow motion-reduce:animate-none"
+              className="w-[400px] md:w-[500px] lg:w-[600px] mx-auto drop-shadow-[0_0_40px_rgba(139,92,246,0.4)] animate-glow-pulse motion-reduce:animate-none"
             />
             <div className="space-y-3 max-w-2xl mx-auto">
               <p className="text-xl md:text-2xl text-foreground/90 font-bold italic">

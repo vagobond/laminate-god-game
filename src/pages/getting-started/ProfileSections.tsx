@@ -113,44 +113,44 @@ export default function ProfileSections() {
           </p>
           <div className="grid gap-3">
             <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
-              <Heart className="w-5 h-5 text-pink-500 mt-0.5" />
+              <Heart className="w-5 h-5 text-accent mt-0.5" />
               <div>
-                <strong className="text-pink-500">Oath Bound (Close Friend)</strong>
+                <strong className="text-accent">Oath Bound (Close Friend)</strong>
                 <p className="text-sm">Your inner circle. Complete access to all your information, including home address, birth year, and private contact details.</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
-              <Users className="w-5 h-5 text-orange-500 mt-0.5" />
+              <Users className="w-5 h-5 text-accent mt-0.5" />
               <div>
-                <strong className="text-orange-500">Blood Bound (Family)</strong>
+                <strong className="text-accent">Blood Bound (Family)</strong>
                 <p className="text-sm">An independent category outside the trust hierarchy. Family members get phone number, private email, and full birthday—but not social links or other friend-tier info unless you choose to share.</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
-              <Star className="w-5 h-5 text-yellow-500 mt-0.5" />
+              <Star className="w-5 h-5 text-primary mt-0.5" />
               <div>
-                <strong className="text-yellow-500">Companion (Buddy)</strong>
+                <strong className="text-primary">Companion (Buddy)</strong>
                 <p className="text-sm">Good friends you hang out with regularly. Access to birthday (without year), mailing address, and most contact info.</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
-              <UserCheck className="w-5 h-5 text-blue-500 mt-0.5" />
+              <UserCheck className="w-5 h-5 text-secondary mt-0.5" />
               <div>
-                <strong className="text-blue-500">Wayfarer (Friendly Acquaintance)</strong>
+                <strong className="text-secondary">Wayfarer (Friendly Acquaintance)</strong>
                 <p className="text-sm">People you know and like, but aren't super close with. Basic contact info and public details. <strong>Wayfarer or above</strong> is the minimum tier required to send meetup/hosting requests and leave references.</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
-              <EyeOff className="w-5 h-5 text-purple-500 mt-0.5" />
+              <EyeOff className="w-5 h-5 text-secondary mt-0.5" />
               <div>
-                <strong className="text-purple-500">Invisible Ally (Secret Friend)</strong>
+                <strong className="text-secondary">Invisible Ally (Secret Friend)</strong>
                 <p className="text-sm">A close connection hidden from public view. Same access as Oath Bound, but the relationship isn't visible to others.</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
-              <Eye className="w-5 h-5 text-red-500 mt-0.5" />
+              <Eye className="w-5 h-5 text-destructive mt-0.5" />
               <div>
-                <strong className="text-red-500">Shadow Friend (Secret Enemy)</strong>
+                <strong className="text-destructive">Shadow Friend (Secret Enemy)</strong>
                 <p className="text-sm">Appears as a friend publicly, but has minimal actual access. For social situations requiring diplomacy. You can optionally give them decoy information.</p>
               </div>
             </div>

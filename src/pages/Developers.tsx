@@ -12,7 +12,7 @@ export default function Developers() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-14">
       <Helmet>
         <title>Xcrol Developers — OAuth & API Documentation</title>
         <meta name="description" content="Build apps on XCROL. OAuth 2.0 flows, API endpoints, and the connection-degree primitive for trust-aware integrations." />

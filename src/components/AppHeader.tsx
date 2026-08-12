@@ -6,6 +6,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/hooks/use-auth";
 import { useTutorial } from "@/components/onboarding";
 import villageIconSrc from "@/assets/village-icon.png";
+import xcrolLogo from "@/assets/xcrol-logo.webp";
 import SurferIcon from "@/components/icons/SurferIcon";
 
 const UserMenu = lazy(() => import("./UserMenu"));
@@ -19,7 +20,14 @@ const AppHeader = () => {
   const { reopenTutorial } = useTutorial();
 
   return (
-    <header className="fixed top-0 right-0 z-50 p-2 sm:p-4 flex items-center gap-1 sm:gap-2">
+    <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center gap-1 sm:gap-2 border-b border-border/40 bg-background/70 px-2 backdrop-blur-md sm:px-4">
+      <button
+        onClick={() => navigate(user ? "/powers" : "/")}
+        className="mr-auto flex items-center"
+        aria-label="XCROL home"
+      >
+        <img src={xcrolLogo} alt="XCROL" className="h-8 w-auto" />
+      </button>
       {authLoading ? null : user ? (
         <>
           <Button variant="ghost" size="icon" onClick={() => navigate("/powers")} className="h-9 w-9" title="Home" aria-label="Home">
