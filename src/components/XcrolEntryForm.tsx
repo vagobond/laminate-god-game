@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { Scroll, Link as LinkIcon, Save, Loader2, AlertTriangle, MapPin } from "lucide-react";
+import { Scroll, Link as LinkIcon, Save, Loader2, AlertTriangle, MapPin, X, Home } from "lucide-react";
 import { useHometownDate } from "@/hooks/use-hometown-date";
 import { UserMentionInput } from "@/components/UserMentionInput";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +15,9 @@ import { isNostrPublishEnabled } from "@/lib/nostr-publish";
 import { useNostrKey } from "@/hooks/use-nostr-key";
 import { finalizeEvent, verifyEvent } from "nostr-tools/pure";
 import { Relay } from "nostr-tools/relay";
+
+// Lazy so mapbox-gl only loads when the location section is opened.
+const EntryLocationPicker = lazy(() => import("@/components/EntryLocationPicker"));
 
 interface XcrolEntryFormProps {
   userId: string;
@@ -43,6 +46,10 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [todayEntry, setTodayEntry] = useState<{ id: string; content: string; link: string | null; privacy_level: string } | null>(null);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [locationLabel, setLocationLabel] = useState("");
+  const [showLocation, setShowLocation] = useState(false);
   const [showPublicWarning, setShowPublicWarning] = useState(false);
   const [pendingPrivacyLevel, setPendingPrivacyLevel] = useState<string | null>(null);
   const [showHometownPrompt, setShowHometownPrompt] = useState(false);
@@ -59,7 +66,7 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
     try {
       const { data, error } = await supabase
         .from("xcrol_entries")
-        .select("id, content, link, privacy_level")
+        .select("id, content, link, privacy_level, latitude, longitude, location_label")
         .eq("user_id", userId)
         .eq("entry_date", todayDate)
         .maybeSingle();
@@ -72,12 +79,19 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
         // Use prefillLink if provided and no existing link, otherwise use existing link
         setLink(data.link || prefillLink);
         setPrivacyLevel(data.privacy_level);
+        setLatitude(data.latitude);
+        setLongitude(data.longitude);
+        setLocationLabel(data.location_label || "");
+        if (data.latitude != null) setShowLocation(true);
       } else {
         setTodayEntry(null);
         setContent(prefillContent.slice(0, 240));
         // Use prefillLink for new entries
         setLink(prefillLink);
         setPrivacyLevel("private");
+        setLatitude(null);
+        setLongitude(null);
+        setLocationLabel("");
       }
     } catch (error) {
       console.error("Error loading today's entry:", error);
@@ -105,6 +119,14 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
 
     setSaving(true);
     try {
+      // Pin travels as a pair; the label only ships alongside a pin.
+      const hasPin = latitude != null && longitude != null;
+      const pinFields = {
+        latitude: hasPin ? latitude : null,
+        longitude: hasPin ? longitude : null,
+        location_label: hasPin ? locationLabel.trim().slice(0, 80) || null : null,
+      };
+
       if (todayEntry) {
         // Update existing entry
         const { error } = await supabase
@@ -113,6 +135,7 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
             content: content.trim(),
             link: link.trim() || null,
             privacy_level: privacyLevel,
+            ...pinFields,
           })
           .eq("id", todayEntry.id);
 
@@ -128,6 +151,7 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
             link: link.trim() || null,
             privacy_level: privacyLevel,
             entry_date: todayDate,
+            ...pinFields,
           });
 
         if (error) throw error;
@@ -175,6 +199,35 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleUseHometown = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("hometown_latitude, hometown_longitude, hometown_city, hometown_country")
+        .eq("id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      if (data?.hometown_latitude == null || data?.hometown_longitude == null) {
+        toast.error("Set your hometown in settings first");
+        return;
+      }
+      setLatitude(data.hometown_latitude);
+      setLongitude(data.hometown_longitude);
+      if (!locationLabel.trim()) {
+        setLocationLabel([data.hometown_city, data.hometown_country].filter(Boolean).join(", ").slice(0, 80));
+      }
+    } catch (error) {
+      console.error("Error loading hometown:", error);
+      toast.error("Could not load your hometown");
+    }
+  };
+
+  const clearPin = () => {
+    setLatitude(null);
+    setLongitude(null);
+    setLocationLabel("");
   };
 
   if (loading) {
@@ -238,6 +291,66 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
             placeholder="Add a link (optional)"
             className="flex-1"
           />
+        </div>
+
+        <div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-muted-foreground"
+            onClick={() => setShowLocation(!showLocation)}
+          >
+            <MapPin className="w-4 h-4 mr-1" />
+            {latitude != null
+              ? locationLabel.trim() || `${latitude.toFixed(2)}, ${longitude?.toFixed(2)}`
+              : "Add location"}
+          </Button>
+
+          {showLocation && (
+            <div className="mt-2 space-y-2">
+              <Suspense
+                fallback={
+                  <div className="h-48 flex items-center justify-center border rounded-md">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  </div>
+                }
+              >
+                <EntryLocationPicker
+                  latitude={latitude}
+                  longitude={longitude}
+                  onPick={(lat, lng) => {
+                    setLatitude(lat);
+                    setLongitude(lng);
+                  }}
+                />
+              </Suspense>
+              <p className="text-xs text-muted-foreground">Click the map to drop a pin.</p>
+              <Input
+                value={locationLabel}
+                onChange={(e) => setLocationLabel(e.target.value.slice(0, 80))}
+                placeholder="Label this place (optional, 80 characters)"
+                maxLength={80}
+              />
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={handleUseHometown}>
+                  <Home className="w-4 h-4 mr-1" />
+                  Use my hometown
+                </Button>
+                {latitude != null && (
+                  <Button type="button" variant="ghost" size="sm" onClick={clearPin}>
+                    <X className="w-4 h-4 mr-1" />
+                    Clear pin
+                  </Button>
+                )}
+              </div>
+              {privacyLevel === "public" && latitude != null && (
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  This entry is public — its location will be public too.
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">

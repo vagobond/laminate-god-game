@@ -13,6 +13,9 @@ verify_jwt = false
 [functions.og-post]
 verify_jwt = false
 
+[functions.embed-profile]
+verify_jwt = false
+
 
 [functions.get-mapbox-token]
 verify_jwt = false

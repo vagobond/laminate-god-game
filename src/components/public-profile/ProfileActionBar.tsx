@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Pencil, Share2, Ban } from "lucide-react";
+import { ArrowLeft, Pencil, Share2, Ban, Code } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -85,6 +85,20 @@ export const ProfileActionBar = ({
           >
             <Share2 className="w-4 h-4 mr-2" />
             Share
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const slug = username ? username.replace(/^@/, "") : resolvedUserId;
+              const name = profile.display_name || username || "Profile";
+              const embedCode = `<iframe src="https://xcrol.com/embed/${slug}" width="340" height="200" style="border:0;border-radius:12px" title="${name.replace(/"/g, "&quot;")} on Xcrol" loading="lazy"></iframe>`;
+              navigator.clipboard.writeText(embedCode);
+              toast.success("Embed code copied! Paste it into any website.");
+            }}
+          >
+            <Code className="w-4 h-4 mr-2" />
+            Embed
           </Button>
           {isOwnProfile && (
             <Button variant="outline" size="sm" onClick={() => navigate("/profile")}>
