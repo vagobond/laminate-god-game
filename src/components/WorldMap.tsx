@@ -223,6 +223,7 @@ const WorldMap = () => {
           role="link"
           aria-label="The Castle — Unlock by inviting 3 friends who complete their profiles"
           tabIndex={0}
+          data-tutorial="castle"
           onMouseEnter={() => setHovered("castle")}
           onMouseLeave={() => setHovered(null)}
           onClick={() => handleClick(loc("castle"))}
@@ -261,6 +262,7 @@ const WorldMap = () => {
           role="link"
           aria-label={loc("forest").description}
           tabIndex={0}
+          data-tutorial="forest"
           onMouseEnter={() => setHovered("forest")}
           onMouseLeave={() => setHovered(null)}
           onClick={() => handleClick(loc("forest"))}
@@ -326,6 +328,7 @@ const WorldMap = () => {
           role="link"
           aria-label={loc("river").description}
           tabIndex={0}
+          data-tutorial="river"
           onMouseEnter={() => setHovered("river")}
           onMouseLeave={() => setHovered(null)}
           onClick={() => handleClick(loc("river"))}
@@ -401,6 +404,7 @@ const WorldMap = () => {
           role="link"
           aria-label={loc("brooks").description}
           tabIndex={0}
+          data-tutorial="brooks"
           onMouseEnter={() => setHovered("brooks")}
           onMouseLeave={() => setHovered(null)}
           onClick={() => handleClick(loc("brooks"))}
@@ -435,6 +439,7 @@ const WorldMap = () => {
           role="link"
           aria-label={loc("village").description}
           tabIndex={0}
+          data-tutorial="village"
           onMouseEnter={() => setHovered("village")}
           onMouseLeave={() => setHovered(null)}
           onClick={() => handleClick(loc("village"))}
@@ -489,6 +494,7 @@ const WorldMap = () => {
           role="link"
           aria-label={loc("town").description}
           tabIndex={0}
+          data-tutorial="town"
           onMouseEnter={() => setHovered("town")}
           onMouseLeave={() => setHovered(null)}
           onClick={() => handleClick(loc("town"))}
@@ -541,6 +547,7 @@ const WorldMap = () => {
           role="link"
           aria-label={loc("world").description}
           tabIndex={0}
+          data-tutorial="world"
           onMouseEnter={() => setHovered("world")}
           onMouseLeave={() => setHovered(null)}
           onClick={() => handleClick(loc("world"))}
@@ -583,6 +590,7 @@ const WorldMap = () => {
           role="link"
           aria-label={loc("you").description}
           tabIndex={0}
+          data-tutorial="you"
           onMouseEnter={() => setHovered("you")}
           onMouseLeave={() => setHovered(null)}
           onClick={() => handleClick(loc("you"))}
@@ -633,6 +641,7 @@ const WorldMap = () => {
           role="link"
           aria-label={loc("strata").description}
           tabIndex={0}
+          data-tutorial="strata"
           onMouseEnter={() => setHovered("strata")}
           onMouseLeave={() => setHovered(null)}
           onClick={() => handleClick(loc("strata"))}

@@ -1,7 +1,8 @@
 // Tutorial context provider for re-opening from settings
 // Completely siloed from main application logic
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { TUTORIAL_STEPS } from "./tutorialSteps";
@@ -37,6 +38,7 @@ const TutorialContext = createContext<TutorialContextType>({
 export function TutorialProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const userId = user?.id;
+  const navigate = useNavigate();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
@@ -123,6 +125,30 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
   const totalSteps = TUTORIAL_STEPS.length;
   const progress = ((currentStepIndex + 1) / totalSteps) * 100;
 
+  // Guests can't visit protected routes — fall back to the painted map and
+  // anchor the card to the corresponding location illustration.
+  const effectiveRoute = !userId
+    ? currentStep?.guestRoute ?? currentStep?.route
+    : currentStep?.route;
+  const effectiveAnchor =
+    !userId && currentStep?.guestAnchor ? currentStep.guestAnchor : currentStep?.anchor;
+
+  const displayStep = useMemo(
+    () => (currentStep ? { ...currentStep, anchor: effectiveAnchor } : currentStep),
+    [currentStep, effectiveAnchor]
+  );
+
+  // Walk the real pages: navigate to each step's page as the tour advances.
+  // Reads window.location directly so this only fires on step changes, not on
+  // unrelated navigation while the tour is open.
+  useEffect(() => {
+    if (isLoading || !isVisible || !effectiveRoute) return;
+    const here = window.location.pathname + window.location.search;
+    if (here !== effectiveRoute) {
+      navigate(effectiveRoute);
+    }
+  }, [isLoading, isVisible, currentStepIndex, effectiveRoute, navigate]);
+
   return (
     <TutorialContext.Provider
       value={{
@@ -131,9 +157,9 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-      {!isLoading && isVisible && currentStep && (
+      {!isLoading && isVisible && displayStep && (
         <ScrollTutorialUI
-          currentStep={currentStep}
+          currentStep={displayStep}
           currentStepIndex={currentStepIndex}
           totalSteps={totalSteps}
           progress={progress}
