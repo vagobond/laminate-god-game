@@ -39,7 +39,14 @@ export function ScrollTutorialUI({
 
   // Calculate card position based on anchor - position card away from the element
   useEffect(() => {
+    let retryTimer: number | undefined;
+    let attempts = 0;
+
     const calculatePosition = () => {
+      const cardWidth = 400;
+      const cardHeight = 280;
+      const margin = 24;
+
       if (currentStep.anchor === "center") {
         setPosition({
           x: window.innerWidth / 2,
@@ -48,13 +55,20 @@ export function ScrollTutorialUI({
         return;
       }
 
+      // "page" anchor: the whole page is the subject — keep the card low so
+      // the page content stays visible above it.
+      if (currentStep.anchor === "page") {
+        setPosition({
+          x: window.innerWidth / 2,
+          y: window.innerHeight - cardHeight / 2 - margin * 2,
+        });
+        return;
+      }
+
       const element = document.querySelector(currentStep.anchor);
       if (element) {
         const rect = element.getBoundingClientRect();
-        const cardWidth = 400;
-        const cardHeight = 280;
-        const margin = 24;
-        
+
         // Try to position card to the side or below, avoiding overlap
         let x = rect.right + margin + cardWidth / 2;
         let y = rect.top + rect.height / 2;
@@ -81,7 +95,13 @@ export function ScrollTutorialUI({
         
         setPosition({ x, y });
       } else {
-        // Fallback to center
+        // Element may not exist yet right after navigating to a lazy-loaded
+        // page — retry briefly before falling back to center.
+        if (attempts < 10) {
+          attempts++;
+          retryTimer = window.setTimeout(calculatePosition, 150);
+          return;
+        }
         setPosition({
           x: window.innerWidth / 2,
           y: window.innerHeight / 2,
@@ -91,10 +111,14 @@ export function ScrollTutorialUI({
 
     calculatePosition();
     window.addEventListener("resize", calculatePosition);
-    return () => window.removeEventListener("resize", calculatePosition);
+    return () => {
+      window.removeEventListener("resize", calculatePosition);
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
+    };
   }, [currentStep]);
 
   const isCentered = currentStep.anchor === "center";
+  const hasSelector = currentStep.anchor !== "center" && currentStep.anchor !== "page";
 
   return (
     <>
@@ -102,7 +126,7 @@ export function ScrollTutorialUI({
       <div className="fixed inset-0 bg-background/30 z-[9997] pointer-events-none" />
 
       {/* Highlight for anchored element */}
-      {!isCentered && <TutorialHighlight selector={currentStep.anchor} />}
+      {hasSelector && <TutorialHighlight selector={currentStep.anchor} />}
 
       {/* Tutorial card */}
       <div
