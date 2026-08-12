@@ -65,7 +65,7 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "Does XCROL work with Mastodon / NOSTR / the Fediverse?",
-    a: "Yes. NOSTR identity and auto-publish are opt-in (Settings → NOSTR Identity). Public posts are also exposed via an ActivityPub outbox so Mastodon users can follow you, and rich OpenGraph previews work in Mastodon, Signal, iMessage, etc.",
+    a: "Partly. NOSTR is live: opt in via Settings → NOSTR Identity to auto-publish public posts and be discoverable as handle@xcrol.com (NIP-05). ActivityPub support — letting Mastodon users follow you directly — is planned but not live yet. Public post links shared on Mastodon, Signal, iMessage, etc. render rich previews.",
   },
   {
     q: "Can I install XCROL as an app on my phone?",

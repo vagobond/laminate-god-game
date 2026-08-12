@@ -69,12 +69,15 @@ export const SignUpForm = ({
         <Input
           id="signup-name"
           type="text"
-          placeholder="username"
+          placeholder="How you'd like to appear (e.g. your first name)"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           className="bg-muted/20 border-primary/30"
           maxLength={50}
         />
+        <p className="text-xs text-muted-foreground">
+          You can change this anytime. You'll pick your permanent @username later.
+        </p>
         {errors.displayName && <p className="text-sm text-destructive">{errors.displayName}</p>}
       </div>
       <div className="space-y-2">
@@ -104,7 +107,7 @@ export const SignUpForm = ({
       </div>
       <div className="space-y-2">
         <Label htmlFor="signup-invite-code">
-          Invite Code <span className="text-muted-foreground text-xs">(enter if you have one)</span>
+          Invite Code <span className="text-muted-foreground text-xs">(optional — you and your inviter both earn points)</span>
         </Label>
         <Input
           id="signup-invite-code"

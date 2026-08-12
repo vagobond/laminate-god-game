@@ -1,8 +1,8 @@
 # XCROL
 
-> XCROL (pronounced "scroll") is an invite-only social platform for taking control of your networks. No ads, no tracking, no algorithms — just real people and meaningful connections.
+> XCROL (pronounced "scroll") is a free-to-join social platform for taking control of your networks. No ads, no tracking, no algorithms — just real people and meaningful connections. Invite codes are optional and earn points for both parties.
 
-XCROL is built around a few core ideas: friendships have tiers of trust, daily one-post-per-day journaling ("The River"), private two-person streams ("The Brook"), real-world meetups and hosting ("Hearth Surf"), and groups ("The Village"). The platform is federated where it can be (NOSTR, ActivityPub) and respects user data sovereignty (export, delete, no third-party tracking).
+XCROL is built around a few core ideas: friendships have tiers of trust, daily one-post-per-day journaling ("The River"), private two-person streams ("The Brook"), real-world meetups and hosting ("Hearth Surf"), and groups ("The Village"). The platform is federated where it can be (NOSTR live today; ActivityPub planned) and respects user data sovereignty (export, delete, no third-party tracking).
 
 ## Pages
 

@@ -52,14 +52,23 @@ const PublicProfile = () => {
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 space-y-4 text-center">
             <User className="w-16 h-16 mx-auto text-muted-foreground" />
-            <h2 className="text-xl font-semibold">Profile Not Found</h2>
+            <h2 className="text-xl font-semibold">Page Not Found</h2>
             <p className="text-muted-foreground">
-              This profile doesn't exist or has been removed.
+              There's no page or member profile at this address. It may have
+              moved, or the link may be mistyped.
             </p>
-            <Button onClick={() => navigate("/")} variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Go Home
-            </Button>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button onClick={() => navigate("/")} variant="outline">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Go Home
+              </Button>
+              <Button onClick={() => navigate("/the-river")} variant="outline">
+                The River
+              </Button>
+              <Button onClick={() => navigate("/getting-started")} variant="outline">
+                Getting Started
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

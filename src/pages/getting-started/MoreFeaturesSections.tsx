@@ -144,7 +144,7 @@ export default function MoreFeaturesSections() {
           <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
             <li><strong>NOSTR:</strong> Auto-publish public Xcrol entries as kind 1 notes and bridge Brooks via NIP-17 DMs (opt-in).</li>
             <li><strong>NIP-05:</strong> Become discoverable as <code>handle@xcrol.com</code> on the NOSTR network.</li>
-            <li><strong>ActivityPub (outbox):</strong> Public posts are exposed for Mastodon and other Fediverse readers to follow.</li>
+            <li><strong>ActivityPub:</strong> Planned — direct Mastodon/Fediverse following isn't live yet.</li>
             <li><strong>Rich link previews:</strong> Public XCROL posts and profiles render OpenGraph cards on Mastodon, Signal, iMessage, etc.</li>
             <li><strong>Data export:</strong> Download a JSON archive of everything XCROL stores about you (Settings → Download My Data).</li>
           </ul>

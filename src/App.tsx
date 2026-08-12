@@ -155,7 +155,7 @@ const App = () => (
                 <Route path="/developers" element={<Developers />} />
                 <Route path="/post/:postId" element={<SharedPost />} />
                 <Route path="/host/:username" element={<PublicHost />} />
-                <Route path="/install-app" element={<ProtectedRoute><InstallApp /></ProtectedRoute>} />
+                <Route path="/install-app" element={<InstallApp />} />
                 <Route path="/map" element={<Map />} />
                 <Route path="/scrolls" element={<ProtectedRoute><Scrolls /></ProtectedRoute>} />
                 <Route path="/scrolls/ai-setup" element={<ProtectedRoute><ScrollAiTutorial /></ProtectedRoute>} />

@@ -5,14 +5,22 @@
   "observability": {
     "enabled": true
   },
-  // Static-assets-only Worker: serves the Vite build output as a SPA
-  // on xcrol.com + www (zone hosted on Cloudflare since 2026-08-09).
+  // Serves the Vite build output as a SPA on xcrol.com + www (zone hosted
+  // on Cloudflare since 2026-08-09). The worker script only intercepts
+  // /post/* for link-preview scrapers (OG meta HTML via the og-post edge
+  // function); everything else is static assets.
+  "main": "worker/index.ts",
   "routes": [
     { "pattern": "xcrol.com", "custom_domain": true },
     { "pattern": "www.xcrol.com", "custom_domain": true }
   ],
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/post/*"]
+  },
+  "vars": {
+    "SUPABASE_URL": "https://wmatvlxehyaufhjljtby.supabase.co"
   }
 }
