@@ -113,6 +113,8 @@ XCROL is an **OAuth 2.0 identity provider** with PKCE support. Other websites ca
 - `profile:email` — Email address
 - `hometown:read` — Hometown location
 - `connections:read` — Friends list
+- `connections:degree` — Degrees of separation to another user (degree only — the people along the path are never revealed)
+- `relationship:read` — The relationship level another user has granted you, so connected apps can friend-gate their own content (secret designations are never revealed)
 - `xcrol:read` — Diary entries
 
 You control which apps get access and can revoke permissions anytime from Settings → Connected Apps.
