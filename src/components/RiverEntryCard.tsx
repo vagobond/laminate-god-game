@@ -1,7 +1,7 @@
 import { format } from "date-fns";
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
-import { Globe, Users, UserCheck, Heart, Lock, ExternalLink, Share2, Rss } from "lucide-react";
+import { Globe, Users, UserCheck, Heart, Lock, ExternalLink, Share2, Rss, MapPin, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +14,10 @@ import { RiverReplies } from "@/components/RiverReplies";
 import type { RiverReply } from "@/components/RiverReplies";
 import type { ReactionData } from "@/pages/TheRiver";
 import { SharePostDialog } from "@/components/SharePostDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+// Lazy so mapbox-gl only loads when someone clicks a pin chip.
+const EntryPinMap = lazy(() => import("@/components/EntryPinMap"));
 
 interface RiverEntryCardProps {
   entry: {
@@ -23,6 +27,9 @@ interface RiverEntryCardProps {
     entry_date: string;
     privacy_level: string;
     user_id: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    location_label?: string | null;
     author: {
       display_name: string | null;
       avatar_url: string | null;
@@ -49,9 +56,14 @@ const PRIVACY_CONFIG: Record<string, { icon: React.ElementType; label: string; c
 export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, replies = [], currentUserId, onRepliesChange }: RiverEntryCardProps) => {
   const navigate = useNavigate();
   const [shareOpen, setShareOpen] = useState(false);
+  const [pinOpen, setPinOpen] = useState(false);
   const config = PRIVACY_CONFIG[entry.privacy_level] || PRIVACY_CONFIG.private;
   const PrivacyIcon = config.icon;
   const isRss = entry.privacy_level === "rss";
+  const hasPin = entry.latitude != null && entry.longitude != null;
+  const pinLabel = hasPin
+    ? entry.location_label || `${entry.latitude!.toFixed(2)}, ${entry.longitude!.toFixed(2)}`
+    : null;
 
   const handleAuthorClick = () => {
     if (isRss) return; // RSS items don't have author profiles
@@ -172,6 +184,17 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, rep
                 <PrivacyIcon className={`h-3 w-3 ${config.color}`} />
                 {config.label}
               </Badge>
+              {hasPin && (
+                <Badge
+                  variant="outline"
+                  className="text-xs gap-1 cursor-pointer hover:bg-accent max-w-[180px]"
+                  onClick={() => setPinOpen(true)}
+                  title={pinLabel!}
+                >
+                  <MapPin className="h-3 w-3 text-primary shrink-0" />
+                  <span className="truncate">{pinLabel}</span>
+                </Badge>
+              )}
               {!isRss && (
                 <>
                   <XcrolReactions 
@@ -223,6 +246,31 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, rep
             )}
           </div>
         </div>
+
+        {/* Geo-pin map dialog — map (and mapbox-gl) loads only when opened */}
+        {hasPin && (
+          <Dialog open={pinOpen} onOpenChange={setPinOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  {pinLabel}
+                </DialogTitle>
+              </DialogHeader>
+              {pinOpen && (
+                <Suspense
+                  fallback={
+                    <div className="h-64 flex items-center justify-center border rounded-md">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                  }
+                >
+                  <EntryPinMap latitude={entry.latitude!} longitude={entry.longitude!} />
+                </Suspense>
+              )}
+            </DialogContent>
+          </Dialog>
+        )}
       </CardContent>
     </Card>
   );

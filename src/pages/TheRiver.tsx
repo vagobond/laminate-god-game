@@ -34,6 +34,9 @@ interface RiverEntry {
   entry_date: string;
   privacy_level: string;
   user_id: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  location_label?: string | null;
   author: {
     display_name: string | null;
     avatar_url: string | null;
@@ -154,6 +157,9 @@ export default function TheRiver() {
             entry_date: newRow.entry_date,
             privacy_level: newRow.privacy_level,
             user_id: newRow.user_id,
+            latitude: newRow.latitude ?? null,
+            longitude: newRow.longitude ?? null,
+            location_label: newRow.location_label ?? null,
             author: {
               display_name: profile?.display_name ?? null,
               avatar_url: profile?.avatar_url ?? null,
@@ -334,6 +340,9 @@ export default function TheRiver() {
         entry_date: e.entry_date,
         privacy_level: e.privacy_level,
         user_id: e.user_id,
+        latitude: e.latitude ?? null,
+        longitude: e.longitude ?? null,
+        location_label: e.location_label ?? null,
         author: {
           display_name: e.author_display_name,
           avatar_url: e.author_avatar_url,

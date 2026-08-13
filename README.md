@@ -31,11 +31,13 @@ You can also create **custom friendship types** (e.g., "Work Colleagues", "Trave
 
 **Connection Degrees**: See how you're connected to non-friends via friend-of-a-friend chains up to 3 degrees (OAuth API partners can query up to 6).
 
+**Embeddable profile card**: put your public XCROL profile on any website with a single iframe — `https://xcrol.com/embed/<username>` serves a small, CDN-cached card (public fields only: name, username, bio, hometown, avatar). Use the "Embed" button on your public profile to copy ready-made embed code.
+
 ---
 
 ### 📜 My Xcrol — Your Daily Diary
 
-A personal micro-journal limited to **one entry per day** and **240 characters**. Each entry can include an optional link.
+A personal micro-journal limited to **one entry per day** and **240 characters**. Each entry can include an optional link and an optional **geo-pin** (drop a pin on a map, add a short label, or quick-fill from your hometown). A pin is just part of the entry, so it's visible to exactly the same people as the entry itself.
 
 **Privacy levels per entry:**
 - Private (only you)

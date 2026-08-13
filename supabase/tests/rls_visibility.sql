@@ -46,12 +46,14 @@ from (values
 ) as u(id, email);
 
 -- One entry per privacy level. one_entry_per_day forces distinct entry_dates.
-insert into public.xcrol_entries (user_id, content, privacy_level, entry_date) values
-  ('00000000-0000-4000-8000-00000000000a', 'public entry',       'public',                current_date),
-  ('00000000-0000-4000-8000-00000000000a', 'private entry',      'private',               current_date - 1),
-  ('00000000-0000-4000-8000-00000000000a', 'buddy entry',        'buddy',                 current_date - 2),
-  ('00000000-0000-4000-8000-00000000000a', 'close friend entry', 'close_friend',          current_date - 3),
-  ('00000000-0000-4000-8000-00000000000a', 'acquaintance entry', 'friendly_acquaintance', current_date - 4);
+-- The close_friend entry carries a geo-pin: pins are columns on the entry row,
+-- so pin visibility must inherit the entry ladder (section 6 asserts this).
+insert into public.xcrol_entries (user_id, content, privacy_level, entry_date, latitude, longitude, location_label) values
+  ('00000000-0000-4000-8000-00000000000a', 'public entry',       'public',                current_date,     null,      null,       null),
+  ('00000000-0000-4000-8000-00000000000a', 'private entry',      'private',               current_date - 1, null,      null,       null),
+  ('00000000-0000-4000-8000-00000000000a', 'buddy entry',        'buddy',                 current_date - 2, null,      null,       null),
+  ('00000000-0000-4000-8000-00000000000a', 'close friend entry', 'close_friend',          current_date - 3, 43.190717, 140.994662, 'Otaru'),
+  ('00000000-0000-4000-8000-00000000000a', 'acquaintance entry', 'friendly_acquaintance', current_date - 4, null,      null,       null);
 
 -- Friendships FROM alice (can_view_xcrol_entry matches user_id -> friend_id
 -- direction). The matview refresh trigger is irrelevant to RLS — skip it.
@@ -362,6 +364,73 @@ begin
   end loop;
   if walked is distinct from expected then
     raise exception 'FAIL: keyset walk % != single page %', walked, expected;
+  end if;
+end $$;
+
+-- ===========================================================================
+-- 6. Geo-pins inherit the entry visibility ladder (they are entry columns,
+--    so this is row-level inheritance — but assert it explicitly so a future
+--    refactor that moves pins elsewhere cannot silently break the promise)
+-- ===========================================================================
+
+\echo '[6a] stranger (frank) sees zero pinned rows (pin rides the close_friend entry)'
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-00000000000f","role":"authenticated"}', true);
+do $$
+declare n int;
+begin
+  select count(*) into n from public.xcrol_entries
+    where user_id = '00000000-0000-4000-8000-00000000000a' and latitude is not null;
+  if n <> 0 then
+    raise exception 'FAIL: stranger can see % pinned entries of alice, expected 0', n;
+  end if;
+end $$;
+reset role;
+
+\echo '[6b] blocked buddy (eve) sees zero pinned rows'
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-00000000000e","role":"authenticated"}', true);
+do $$
+declare n int;
+begin
+  select count(*) into n from public.xcrol_entries
+    where user_id = '00000000-0000-4000-8000-00000000000a' and latitude is not null;
+  if n <> 0 then
+    raise exception 'FAIL: blocked user can see % pinned entries of alice, expected 0', n;
+  end if;
+end $$;
+reset role;
+
+\echo '[6c] get_river_entries returns pin columns to an authorized viewer (dave)'
+do $$
+declare r record; n int := 0;
+begin
+  for r in
+    select * from public.get_river_entries(
+      '00000000-0000-4000-8000-00000000000d', 100, 0, 'all')
+    where user_id = '00000000-0000-4000-8000-00000000000a'
+      and privacy_level = 'close_friend'
+  loop
+    n := n + 1;
+    if r.latitude is null or r.longitude is null or r.location_label is distinct from 'Otaru' then
+      raise exception 'FAIL: river pin columns wrong for close friend: lat=%, lng=%, label=%',
+        r.latitude, r.longitude, r.location_label;
+    end if;
+  end loop;
+  if n <> 1 then
+    raise exception 'FAIL: close friend sees % close_friend river rows, expected 1', n;
+  end if;
+end $$;
+
+\echo '[6d] get_river_entries returns no pinned rows to the stranger'
+do $$
+declare n int;
+begin
+  select count(*) into n
+    from public.get_river_entries('00000000-0000-4000-8000-00000000000f', 100, 0, 'all') r
+    where r.user_id = '00000000-0000-4000-8000-00000000000a' and r.latitude is not null;
+  if n <> 0 then
+    raise exception 'FAIL: get_river_entries leaks % pinned rows to a stranger', n;
   end if;
 end $$;
 

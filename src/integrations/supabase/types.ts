@@ -2646,7 +2646,10 @@ export type Database = {
           created_at: string
           entry_date: string
           id: string
+          latitude: number | null
           link: string | null
+          location_label: string | null
+          longitude: number | null
           privacy_level: string
           user_id: string
         }
@@ -2655,7 +2658,10 @@ export type Database = {
           created_at?: string
           entry_date?: string
           id?: string
+          latitude?: number | null
           link?: string | null
+          location_label?: string | null
+          longitude?: number | null
           privacy_level?: string
           user_id: string
         }
@@ -2664,7 +2670,10 @@ export type Database = {
           created_at?: string
           entry_date?: string
           id?: string
+          latitude?: number | null
           link?: string | null
+          location_label?: string | null
+          longitude?: number | null
           privacy_level?: string
           user_id?: string
         }
@@ -2976,7 +2985,10 @@ export type Database = {
           content: string
           entry_date: string
           id: string
+          latitude: number | null
           link: string
+          location_label: string | null
+          longitude: number | null
           privacy_level: string
           sort_at: string
           user_id: string
