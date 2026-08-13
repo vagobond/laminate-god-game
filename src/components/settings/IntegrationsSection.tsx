@@ -5,7 +5,7 @@ const INTEGRATIONS = [
   { name: "MicroVictoryArmy", url: "https://MicroVictoryArmy.com" },
   { name: "VoiceMarkr", url: "https://VoiceMarkr.com" },
   { name: "Baoism", url: "https://Baoism.org" },
-  { name: "XMap", url: "https://xmap.lovable.app" },
+  { name: "XMap", url: "https://map.vagobond.com" },
   { name: "ZguideZ", url: "https://ZguideZ.com" },
   { name: "Litether", url: "https://Litether.com" },
   { name: "A Very Good Novel", url: "https://AVeryGoodNovel.com" },
