@@ -28,7 +28,7 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     siteName: "W3WU.com",
     description: "Show your W3WU profile on your Xcrol profile",
     icon: "🌐",
-    getEmbedUrl: (username) => `https://w3wu.lovable.app/embed/${username}`,
+    getEmbedUrl: (username) => `https://w3wu.com/embed/${username}`,
     height: 400,
     usernameLabel: "Your W3WU username",
     usernamePlaceholder: "e.g. johndoe",
