@@ -434,6 +434,47 @@ begin
   end if;
 end $$;
 
+-- ===========================================================================
+-- 7. Relationship-ladder API primitives (oauth-relationship edge function)
+--    The edge fn masks secret designations in TS; these assert the SQL layer
+--    it builds on: the scope row, get_friendship_level, and the block signal.
+-- ===========================================================================
+
+\echo '[7a] relationship:read scope row exists'
+do $$
+declare n int;
+begin
+  select count(*) into n from public.oauth_scopes where id = 'relationship:read';
+  if n <> 1 then
+    raise exception 'FAIL: relationship:read scope row missing from oauth_scopes';
+  end if;
+end $$;
+
+\echo '[7b] get_friendship_level returns the rung alice granted each viewer'
+do $$
+begin
+  if public.get_friendship_level('00000000-0000-4000-8000-00000000000b', '00000000-0000-4000-8000-00000000000a') is distinct from 'buddy' then
+    raise exception 'FAIL: bob''s rung from alice should be buddy';
+  end if;
+  if public.get_friendship_level('00000000-0000-4000-8000-00000000000c', '00000000-0000-4000-8000-00000000000a') is distinct from 'secret_friend' then
+    raise exception 'FAIL: carol''s raw rung from alice should be secret_friend (edge fn masks to close_friend)';
+  end if;
+  if public.get_friendship_level('00000000-0000-4000-8000-00000000000d', '00000000-0000-4000-8000-00000000000a') is distinct from 'close_friend' then
+    raise exception 'FAIL: dave''s rung from alice should be close_friend';
+  end if;
+  if public.get_friendship_level('00000000-0000-4000-8000-00000000000f', '00000000-0000-4000-8000-00000000000a') is not null then
+    raise exception 'FAIL: stranger frank should have no rung from alice';
+  end if;
+end $$;
+
+\echo '[7c] is_blocked reports alice''s block of eve (edge fn nulls the level on this signal)'
+do $$
+begin
+  if not public.is_blocked('00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-00000000000e') then
+    raise exception 'FAIL: is_blocked(alice, eve) should be true';
+  end if;
+end $$;
+
 rollback;
 
 \echo ''

@@ -1,3 +1,19 @@
+// Relationship-ladder API for "Login with Xcrol" satellite apps.
+//
+// GET with a Bearer access token carrying the relationship:read scope and
+// ?target_user_id= or ?target_username=. Returns the relationship level the
+// TARGET has granted the token's user — the same rung that gates content
+// visibility inside Xcrol — so satellites can friend-gate their own content
+// (e.g. victories for buddies+, private notes for close friends) without
+// owning a social graph.
+//
+// Privacy rules:
+//  - secret_friend is reported as close_friend (its effective visibility
+//    tier); the secrecy of the designation is never exposed.
+//  - secret_enemy / fake_friend / not_friend are secret negative
+//    designations and are reported as no relationship (level: null).
+//  - Blocks (either direction) also read as level: null — indistinguishable
+//    from "no relationship".
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enforceRateLimit } from "../_shared/ratelimit.ts";
 
@@ -12,12 +28,20 @@ async function sha256Hex(input: string): Promise<string> {
   return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+// Collapse secret designations to what the token's user is allowed to know.
+function maskLevel(level: string | null): string | null {
+  if (!level) return null;
+  if (level === "secret_friend") return "close_friend";
+  if (level === "secret_enemy" || level === "fake_friend" || level === "not_friend") return null;
+  return level;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const limited = await enforceRateLimit(req, "oauth-connection-degree", { limit: 30 }, corsHeaders);
+  const limited = await enforceRateLimit(req, "oauth-relationship", { limit: 30 }, corsHeaders);
   if (limited) return limited;
 
   if (req.method !== "GET") {
@@ -68,9 +92,9 @@ Deno.serve(async (req) => {
 
     // Check scope
     const scopes = token.scopes as string[];
-    if (!scopes.includes("connections:degree")) {
+    if (!scopes.includes("relationship:read")) {
       return new Response(
-        JSON.stringify({ error: "insufficient_scope", error_description: "connections:degree scope required" }),
+        JSON.stringify({ error: "insufficient_scope", error_description: "relationship:read scope required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -103,47 +127,42 @@ Deno.serve(async (req) => {
       resolvedTargetId = resolvedId;
     }
 
-    // Get connection degree
-    const { data: connectionResult, error: connectionError } = await supabase
-      .rpc("get_connection_degree", {
-        from_user_id: token.user_id,
-        to_user_id: resolvedTargetId,
-        max_depth: 6,
-      });
+    // A block in either direction reads as no relationship — never reveal it.
+    const [{ data: blockedByTarget }, { data: blockedByUser }] = await Promise.all([
+      supabase.rpc("is_blocked", { blocker_id: resolvedTargetId, blocked_id: token.user_id }),
+      supabase.rpc("is_blocked", { blocker_id: token.user_id, blocked_id: resolvedTargetId }),
+    ]);
 
-    if (connectionError) {
-      console.error("Connection degree error:", connectionError);
-      return new Response(
-        JSON.stringify({ error: "server_error", error_description: "Failed to compute connection degree" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    let level: string | null = null;
+    if (!blockedByTarget && !blockedByUser) {
+      // The rung the target granted the token's user — same primitive that
+      // gates content visibility inside Xcrol.
+      const { data: rawLevel, error: levelError } = await supabase
+        .rpc("get_friendship_level", {
+          viewer_id: token.user_id,
+          profile_id: resolvedTargetId,
+        });
+
+      if (levelError) {
+        console.error("get_friendship_level error:", levelError);
+        return new Response(
+          JSON.stringify({ error: "server_error", error_description: "Failed to look up relationship level" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      level = maskLevel(rawLevel as string | null);
     }
 
-    if (!connectionResult || connectionResult.length === 0) {
-      return new Response(
-        JSON.stringify({
-          connected: false,
-          degree: null,
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const result = connectionResult[0];
-
-    // Degree only — no path. The BFS walks secret_friend edges so degrees
-    // stay accurate, but returning the intermediate users (ids or names)
-    // would let a caller infer a secret friendship from a one-hop link.
-    // Decision 2026-08-13: collapse the response to degree-only.
     return new Response(
       JSON.stringify({
-        connected: true,
-        degree: result.degree,
+        sub: token.user_id,
+        target_id: resolvedTargetId,
+        level,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("OAuth connection-degree error:", error);
+    console.error("OAuth relationship error:", error);
     return new Response(
       JSON.stringify({ error: "server_error", error_description: String(error) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
