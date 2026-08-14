@@ -1,6 +1,7 @@
 // Dead-man's switch (DISABLED by default).
-// When DEADMAN_ENABLED=1, checks the last admin login and emails the trustee
-// if no activity has been recorded in DEADMAN_DAYS days.
+// When DEADMAN_ENABLED=1, checks admin_heartbeats for recent admin activity
+// (falls back to last_sign_in_at if no heartbeat rows exist yet) and emails
+// the trustee if no activity has been recorded in DEADMAN_DAYS days.
 // Always records a heartbeat row in backup_runs.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -41,18 +42,33 @@ Deno.serve(async (req) => {
   let alerted = false;
 
   if (enabled && trustee && resend) {
-    // Find the most recent sign-in among admin users
-    const { data: admins } = await admin
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "admin");
-    let mostRecent = 0;
-    for (const r of admins ?? []) {
-      const { data: u } = await admin.auth.admin.getUserById(r.user_id);
-      const t = u?.user?.last_sign_in_at ? new Date(u.user.last_sign_in_at).getTime() : 0;
-      if (t > mostRecent) mostRecent = t;
+    // Find the most recent admin activity from the heartbeats table,
+    // falling back to last_sign_in_at for admins who haven't triggered
+    // a heartbeat row yet (backwards-compatible).
+    const { data: heartbeat } = await admin
+      .from("admin_heartbeats")
+      .select("last_seen_at")
+      .order("last_seen_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let mostRecent = heartbeat?.last_seen_at
+      ? new Date(heartbeat.last_seen_at).getTime()
+      : 0;
+
+    // Fallback: if no heartbeat rows exist yet, check last_sign_in_at
+    if (!mostRecent) {
+      const { data: admins } = await admin
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+      for (const r of admins ?? []) {
+        const { data: u } = await admin.auth.admin.getUserById(r.user_id);
+        const t = u?.user?.last_sign_in_at ? new Date(u.user.last_sign_in_at).getTime() : 0;
+        if (t > mostRecent) mostRecent = t;
+      }
     }
-    notes.most_recent_admin_sign_in = mostRecent ? new Date(mostRecent).toISOString() : null;
+    notes.most_recent_admin_activity = mostRecent ? new Date(mostRecent).toISOString() : null;
     const ageMs = Date.now() - mostRecent;
     if (mostRecent && ageMs > days * 86400 * 1000) {
       try {
@@ -64,7 +80,7 @@ Deno.serve(async (req) => {
             to: [trustee],
             subject: "Xcrol heartbeat overdue — revival packet attached",
             text: [
-              `No admin sign-in has been recorded on Xcrol for over ${days} days.`,
+              `No admin activity has been recorded on Xcrol for over ${days} days.`,
               "",
               "Backups: see your Backblaze B2 bucket (xcrol-backups).",
               "Revival instructions: docs/RUNBOOK.md in the GitHub mirror.",

@@ -65,6 +65,13 @@ export function useAdminData() {
 
     setCurrentUserId(user.id);
     setIsAdmin(true);
+
+    // Record admin activity for the dead-man's switch.
+    supabase
+      .from("admin_heartbeats")
+      .upsert({ user_id: user.id, last_seen_at: new Date().toISOString() })
+      .then(); // fire-and-forget — failure here is non-critical
+
     loadDashboardData();
   };
 

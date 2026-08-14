@@ -104,6 +104,21 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_heartbeats: {
+        Row: {
+          user_id: string
+          last_seen_at: string
+        }
+        Insert: {
+          user_id: string
+          last_seen_at?: string
+        }
+        Update: {
+          user_id?: string
+          last_seen_at?: string
+        }
+        Relationships: []
+      }
       backup_runs: {
         Row: {
           bytes_uploaded: number

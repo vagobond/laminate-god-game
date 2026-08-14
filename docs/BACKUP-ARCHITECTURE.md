@@ -118,9 +118,12 @@ Cross-check that the matching `xcrol/YYYY-MM-DD/` prefix exists in B2.
 
 ## Dead-man's switch
 `heartbeat-check` runs weekly. When `DEADMAN_ENABLED=1` and `TRUSTEE_EMAIL` is
-set, it checks the most recent admin sign-in and emails the trustee with a
-revival packet if no admin has signed in for `DEADMAN_DAYS` (default 90).
-Off by default.
+set, it checks the `admin_heartbeats` table for the most recent admin activity
+(falls back to `last_sign_in_at` if no heartbeat rows exist yet) and emails the
+trustee with a revival packet if no admin activity has occurred for
+`DEADMAN_DAYS` (default 90). The admin dashboard upserts a heartbeat row on
+every load, so staying signed in with regular dashboard visits keeps the clock
+reset. Off by default.
 
 ## Required secrets
 | Secret                  | Required | Purpose                          |
