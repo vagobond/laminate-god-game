@@ -8,6 +8,7 @@ import { ProfileActionBar } from "@/components/public-profile/ProfileActionBar";
 import { ProfileInfoCard } from "@/components/public-profile/ProfileInfoCard";
 import { MeetupHostingSection } from "@/components/public-profile/MeetupHostingSection";
 import ProfileFriendsList from "@/components/ProfileFriendsList";
+import { ProfileConstellation } from "@/components/friends/ProfileConstellation";
 
 import { UserReferences } from "@/components/UserReferences";
 import { LeaveReferenceDialog } from "@/components/LeaveReferenceDialog";
@@ -168,6 +169,17 @@ const PublicProfile = () => {
                 />
               )}
             </div>
+          )}
+
+          {/* Constellation (anonymous — no names, no links) */}
+          {resolvedUserId && (
+            <ProfileConstellation
+              userId={resolvedUserId}
+              viewerId={currentUser?.id || null}
+              displayName={displayName}
+              isOwnProfile={isOwnProfile}
+              friendshipLevel={friendshipLevel}
+            />
           )}
 
           {/* Friends List */}
