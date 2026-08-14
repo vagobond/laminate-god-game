@@ -1695,6 +1695,7 @@ export type Database = {
           birthday_no_year_visibility: string | null
           birthday_year: number | null
           birthday_year_visibility: string | null
+          constellation_visibility: string
           contact_email: string | null
           created_at: string
           display_name: string | null
@@ -1732,6 +1733,7 @@ export type Database = {
           birthday_no_year_visibility?: string | null
           birthday_year?: number | null
           birthday_year_visibility?: string | null
+          constellation_visibility?: string
           contact_email?: string | null
           created_at?: string
           display_name?: string | null
@@ -1769,6 +1771,7 @@ export type Database = {
           birthday_no_year_visibility?: string | null
           birthday_year?: number | null
           birthday_year_visibility?: string | null
+          constellation_visibility?: string
           contact_email?: string | null
           created_at?: string
           display_name?: string | null

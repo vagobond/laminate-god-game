@@ -8,12 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Search, UserPlus, Users, Clock, Inbox, ArrowLeft } from "lucide-react";
+import { Search, UserPlus, Users, Clock, Inbox, ArrowLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import FriendsList from "@/components/FriendsList";
 import IntroductionRequestsManager from "@/components/IntroductionRequestsManager";
 import { BrookList } from "@/components/BrookList";
 import FriendsTripsCard from "@/components/FriendsTripsCard";
+import { ConstellationView } from "@/components/friends/ConstellationView";
+import { useFriendsData } from "@/components/friends/useFriendsData";
 
 interface FriendRequest {
   id: string;
@@ -52,6 +54,7 @@ const TheForest = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
+  const { friends: constellationFriends } = useFriendsData({ userId: user?.id ?? "", viewerId: user?.id ?? "" });
 
   useEffect(() => {
     if (authLoading) return;
@@ -316,7 +319,11 @@ const TheForest = () => {
 
         {/* Tabs for different sections */}
         <Tabs defaultValue={initialTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 h-auto">
+          <TabsList className="grid w-full grid-cols-6 h-auto">
+            <TabsTrigger value="constellation" className="flex items-center gap-1">
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">Stars</span>
+            </TabsTrigger>
             <TabsTrigger value="friends" className="flex items-center gap-1">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Friends</span>
@@ -348,6 +355,10 @@ const TheForest = () => {
               <span className="hidden sm:inline">Intros</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="constellation" className="mt-4">
+            <ConstellationView friends={constellationFriends.filter(f => !["secret_enemy"].includes(f.level))} />
+          </TabsContent>
 
           <TabsContent value="friends" className="mt-4">
             <FriendsTripsCard />

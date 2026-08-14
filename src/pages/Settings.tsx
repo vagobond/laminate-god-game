@@ -18,6 +18,7 @@ import { AccountDeletionSection } from "@/components/settings/AccountDeletionSec
 import { NostrIdentitySection } from "@/components/settings/NostrIdentitySection";
 import { AiAssistanceSection } from "@/components/settings/AiAssistanceSection";
 import { EmergencyContactSection } from "@/components/settings/EmergencyContactSection";
+import { ConstellationVisibilitySection } from "@/components/settings/ConstellationVisibilitySection";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -75,6 +76,7 @@ const Settings = () => {
             </Card>
 
             <DataPrivacySection settings={settings} onSettingChange={handleSettingChange} />
+            {user && <ConstellationVisibilitySection userId={user.id} />}
             <NotificationsPrivacySection settings={settings} onSettingChange={handleSettingChange} />
             <EmergencyContactSection settings={settings} onSettingChange={handleSettingChange} />
             <PasswordSection />
