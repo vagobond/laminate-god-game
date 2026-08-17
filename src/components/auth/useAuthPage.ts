@@ -69,6 +69,10 @@ export const useAuthPage = () => {
       // Don't bounce if URL has recovery hash — let the recovery handler run first
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       if (hashParams.get("type") === "recovery") return;
+      // Same for a PKCE recovery link (?code=) and for error links: an
+      // already-signed-in user must still reach the reset form, not be bounced home.
+      if (new URLSearchParams(window.location.search).get("code")) return;
+      if (hashParams.get("error")) return;
       if (returnUrl) {
         redirectTo(returnUrl);
       } else {
@@ -81,8 +85,50 @@ export const useAuthPage = () => {
     const accessToken = hashParams.get("access_token");
     const refreshToken = hashParams.get("refresh_token");
 
+    // Supabase reports dead links (expired/already-used tokens) as an error in
+    // the hash, not as a thrown error. Without this branch the user lands on a
+    // normal sign-in screen with no explanation of why their link did nothing.
+    const hashError = hashParams.get("error");
+    if (hashError) {
+      const code = hashParams.get("error_code");
+      const description = hashParams.get("error_description")?.replace(/\+/g, " ");
+      const message =
+        code === "otp_expired"
+          ? "That password reset link has expired. Request a new one below."
+          : description || "That link is no longer valid. Please request a new one.";
+      window.history.replaceState(null, "", window.location.pathname);
+      // Show it in the form itself: the toaster mounts lazily and drops a toast
+      // fired during this first effect pass, so a toast alone can go unseen.
+      setErrors({ email: message });
+      // Fire the toast once the toaster is mounted.
+      setTimeout(() => toast.error(message), 0);
+      setAuthView("forgot-password");
+      return;
+    }
+
     if (type === "recovery") {
       setAuthView("update-password");
+      return;
+    }
+
+    // PKCE recovery links arrive as ?code=... instead of a hash fragment. The
+    // client currently defaults to the implicit (hash) flow, so this branch is
+    // inert today — it exists so that switching flowType to "pkce", or a future
+    // supabase-js default flip, cannot silently break password reset again.
+    const codeParam = new URLSearchParams(window.location.search).get("code");
+    if (codeParam) {
+      supabase.auth.exchangeCodeForSession(codeParam).then(({ error }) => {
+        // Strip the code from the URL either way so a refresh can't replay it.
+        window.history.replaceState(null, "", window.location.pathname);
+        if (error) {
+          const message = "That password reset link has expired. Request a new one below.";
+          setErrors({ email: message });
+          toast.error(message);
+          setAuthView("forgot-password");
+          return;
+        }
+        setAuthView("update-password");
+      });
       return;
     }
 
