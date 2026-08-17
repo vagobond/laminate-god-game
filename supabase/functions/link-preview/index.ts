@@ -32,6 +32,129 @@ function isBlockedUrl(url: string): boolean {
   }
 }
 
+// ─── Host detection helpers ─────────────────────────────────────────
+
+function getHost(url: string): string {
+  try { return new URL(url).hostname.toLowerCase().replace(/^www\./, ''); } catch { return ''; }
+}
+
+function isYouTube(host: string): boolean {
+  return ['youtube.com', 'youtu.be', 'm.youtube.com'].includes(host);
+}
+
+function isVimeo(host: string): boolean {
+  return host === 'vimeo.com' || host === 'player.vimeo.com';
+}
+
+function isTikTok(host: string): boolean {
+  return host === 'tiktok.com' || host.endsWith('.tiktok.com');
+}
+
+function isSpotify(host: string): boolean {
+  return host === 'open.spotify.com';
+}
+
+function isSoundCloud(host: string): boolean {
+  return host === 'soundcloud.com' || host === 'm.soundcloud.com';
+}
+
+function isInstagram(host: string): boolean {
+  return host === 'instagram.com' || host.endsWith('.instagram.com');
+}
+
+function isTwitter(host: string): boolean {
+  return ['twitter.com', 'x.com', 'mobile.twitter.com'].includes(host);
+}
+
+function isLinkedIn(host: string): boolean {
+  return host === 'linkedin.com' || host.endsWith('.linkedin.com');
+}
+
+// ─── oEmbed helper ──────────────────────────────────────────────────
+
+async function fetchOEmbed(
+  oembedUrl: string,
+  originalUrl: string,
+  siteName: string,
+): Promise<LinkPreviewResult | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(oembedUrl, {
+      headers: { 'Accept': 'application/json' },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const d = await res.json();
+
+    // Video embed (YouTube, Vimeo, TikTok)
+    const embedMatch = typeof d.html === 'string'
+      ? d.html.match(/src=["']([^"']+)["']/)
+      : null;
+    const embedUrl = embedMatch?.[1];
+
+    return {
+      type: embedUrl ? 'peertube' : 'generic', // reuse peertube renderer for play-button cards
+      title: d.title,
+      description: d.description?.substring(0, 200),
+      image_url: d.thumbnail_url,
+      video_embed_url: embedUrl,
+      duration: typeof d.duration === 'number' ? d.duration : undefined,
+      site_name: siteName,
+      favicon_url: undefined,
+      original_url: originalUrl,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ─── YouTube privacy-enhanced embed ─────────────────────────────────
+
+function sanitizeYouTubeEmbed(embedUrl: string | undefined): string | undefined {
+  if (!embedUrl) return undefined;
+  // Replace youtube.com with youtube-nocookie.com for privacy
+  return embedUrl.replace('youtube.com', 'youtube-nocookie.com');
+}
+
+// ─── Twitter via fxtwitter ──────────────────────────────────────────
+
+async function probeTwitter(url: string): Promise<LinkPreviewResult> {
+  // fxtwitter.com returns proper OG tags for tweets without requiring auth
+  const fxUrl = url
+    .replace('twitter.com', 'fxtwitter.com')
+    .replace('x.com', 'fxtwitter.com');
+  return fetchOgPreview(fxUrl, 'generic', 'X');
+}
+
+// ─── Instagram via browser-UA OG scrape ─────────────────────────────
+// Meta locked oEmbed behind full business verification + app review.
+// Instagram does serve og:image to browser-like UAs (same way iMessage/
+// Signal/Slack get previews). Use that instead.
+
+async function probeInstagram(url: string): Promise<LinkPreviewResult> {
+  const result = await fetchOgPreview(url, 'generic', 'Instagram', true);
+  // If we got an image, promote to pixelfed-style inline image render
+  if (result.type !== 'unknown' && result.image_url) {
+    return {
+      type: 'pixelfed',
+      title: result.title,
+      image_url: result.image_url,
+      original_url: url,
+    };
+  }
+  return result;
+}
+
+// ─── LinkedIn via browser-like UA OG scrape ─────────────────────────
+
+async function probeLinkedIn(url: string): Promise<LinkPreviewResult> {
+  return fetchOgPreview(url, 'generic', 'LinkedIn', true);
+}
+
+// ─── Existing helpers (unchanged) ───────────────────────────────────
+
 // Extract PeerTube video ID from path patterns
 function extractPeerTubeVideoId(url: string): string | null {
   try {
@@ -128,13 +251,22 @@ async function probePixelFed(url: string): Promise<LinkPreviewResult> {
 }
 
 // OG fallback with 50KB limit
-async function fetchOgPreview(url: string, type: 'pixelfed' | 'peertube' | 'generic'): Promise<LinkPreviewResult> {
+async function fetchOgPreview(
+  url: string,
+  type: 'pixelfed' | 'peertube' | 'generic',
+  forceSiteName?: string,
+  browserUa = false,
+): Promise<LinkPreviewResult> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+    const timeout = setTimeout(() => controller.abort(), 4000);
+
+    const ua = browserUa
+      ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
+      : 'Mozilla/5.0 (compatible; XcrolBot/1.0)';
 
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; XcrolBot/1.0)' },
+      headers: { 'User-Agent': ua },
       redirect: 'follow',
       signal: controller.signal,
     });
@@ -188,7 +320,7 @@ async function fetchOgPreview(url: string, type: 'pixelfed' | 'peertube' | 'gene
     const ogDescription = getOg('description') || getMeta('description');
     const ogVideo = getOg('video:url') || getOg('video');
     const ogDuration = getOg('video:duration');
-    const ogSiteName = getOg('site_name');
+    const ogSiteName = forceSiteName || getOg('site_name');
 
     if (!ogImage && !ogTitle && !ogVideo && !ogDescription) {
       return { type: 'unknown', original_url: url };
@@ -215,6 +347,8 @@ async function fetchOgPreview(url: string, type: 'pixelfed' | 'peertube' | 'gene
     return { type: 'unknown', original_url: url };
   }
 }
+
+// ─── Main handler ───────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -262,19 +396,59 @@ Deno.serve(async (req) => {
     }
 
     let result: LinkPreviewResult;
+    const host = getHost(url);
 
-    // 2. PeerTube path pattern? -> probe API
-    const peerTubeVideoId = extractPeerTubeVideoId(url);
-    if (peerTubeVideoId) {
-      result = await probePeerTube(url, peerTubeVideoId);
+    // 2. Walled garden handlers (oEmbed / proxy / browser-UA)
+    if (isYouTube(host)) {
+      const oembed = await fetchOEmbed(
+        `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+        url, 'YouTube',
+      );
+      if (oembed) {
+        oembed.video_embed_url = sanitizeYouTubeEmbed(oembed.video_embed_url);
+        result = oembed;
+      } else {
+        result = await fetchOgPreview(url, 'generic', 'YouTube');
+      }
+    } else if (isVimeo(host)) {
+      result = await fetchOEmbed(
+        `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`,
+        url, 'Vimeo',
+      ) ?? await fetchOgPreview(url, 'generic', 'Vimeo');
+    } else if (isTikTok(host)) {
+      result = await fetchOEmbed(
+        `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`,
+        url, 'TikTok',
+      ) ?? await fetchOgPreview(url, 'generic', 'TikTok');
+    } else if (isSpotify(host)) {
+      result = await fetchOEmbed(
+        `https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`,
+        url, 'Spotify',
+      ) ?? await fetchOgPreview(url, 'generic', 'Spotify');
+    } else if (isSoundCloud(host)) {
+      result = await fetchOEmbed(
+        `https://soundcloud.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+        url, 'SoundCloud',
+      ) ?? await fetchOgPreview(url, 'generic', 'SoundCloud');
+    } else if (isInstagram(host)) {
+      result = await probeInstagram(url);
+    } else if (isTwitter(host)) {
+      result = await probeTwitter(url);
+    } else if (isLinkedIn(host)) {
+      result = await probeLinkedIn(url);
     }
-    // 3. PixelFed path pattern? -> probe oEmbed
-    else if (hasPixelFedPath(url)) {
-      result = await probePixelFed(url);
-    }
-    // 4. Generic OG preview
+    // 3. Fediverse handlers (existing)
     else {
-      result = await fetchOgPreview(url, 'generic');
+      const peerTubeVideoId = extractPeerTubeVideoId(url);
+      if (peerTubeVideoId) {
+        result = await probePeerTube(url, peerTubeVideoId);
+      } else if (hasPixelFedPath(url)) {
+        result = await probePixelFed(url);
+      }
+      // 4. Generic OG preview
+      else {
+        result = await fetchOgPreview(url, 'generic');
+      }
     }
 
     return new Response(JSON.stringify(result), {
