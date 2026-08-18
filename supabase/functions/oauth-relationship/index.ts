@@ -128,10 +128,17 @@ Deno.serve(async (req) => {
     }
 
     // A block in either direction reads as no relationship — never reveal it.
-    const [{ data: blockedByTarget }, { data: blockedByUser }] = await Promise.all([
+    // FAIL CLOSED: if either block lookup errors, treat as blocked (level null)
+    // rather than leaking a rung past a block we couldn't verify.
+    const [blockA, blockB] = await Promise.all([
       supabase.rpc("is_blocked", { blocker_id: resolvedTargetId, blocked_id: token.user_id }),
       supabase.rpc("is_blocked", { blocker_id: token.user_id, blocked_id: resolvedTargetId }),
     ]);
+    const blockedByTarget = blockA.error ? true : !!blockA.data;
+    const blockedByUser = blockB.error ? true : !!blockB.data;
+    if (blockA.error || blockB.error) {
+      console.error("oauth-relationship: is_blocked errored, failing closed", blockA.error?.message ?? blockB.error?.message);
+    }
 
     let level: string | null = null;
     if (!blockedByTarget && !blockedByUser) {

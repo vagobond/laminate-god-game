@@ -35,9 +35,30 @@ export default {
         ? `userId=${encodeURIComponent(id)}`
         : `username=${encodeURIComponent(id)}`;
       const embedUrl = `${env.SUPABASE_URL}/functions/v1/embed-profile?${param}`;
-      return fetch(embedUrl, {
-        cf: { cacheTtl: 21600, cacheEverything: true },
-      } as RequestInit);
+      try {
+        const res = await fetch(embedUrl, {
+          headers: {
+            // Forward the visitor IP so the edge function's per-IP rate limit
+            // buckets per visitor instead of one shared bucket for Cloudflare's
+            // egress IP (which would 429 everyone on a burst of cache misses).
+            "x-forwarded-for": request.headers.get("cf-connecting-ip") || "",
+            "user-agent": request.headers.get("user-agent") || "",
+          },
+          cf: {
+            cacheEverything: true,
+            // Cache only successful cards; never pin a 429/5xx to the slug for 6h.
+            cacheTtlByStatus: { "200-299": 21600, "404": 300, "400-499": 0, "500-599": 0 },
+          },
+        } as RequestInit);
+        if (res.ok || res.status === 404) return res;
+      } catch {
+        // fall through to a graceful card below
+      }
+      return new Response(
+        "<!doctype html><meta charset=utf-8><meta name=robots content=noindex>" +
+          "<body style=\"margin:0;font:14px system-ui;color:#666;padding:16px\">Profile card temporarily unavailable.</body>",
+        { status: 503, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } },
+      );
     }
 
     const match = url.pathname.match(POST_PATH);

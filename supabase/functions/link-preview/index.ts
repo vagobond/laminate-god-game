@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { enforceRateLimit } from "../_shared/ratelimit.ts";
+import { assertPublicUrl, safeFetch, readJsonLimited, readTextLimited } from "../_shared/safefetch.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,20 +19,30 @@ interface LinkPreviewResult {
   original_url: string;
 }
 
-// Block private/internal IP ranges and localhost (unchanged SSRF protection)
-function isBlockedUrl(url: string): boolean {
+// SSRF guard: scheme + blocked hosts + IP-literal ranges + DNS resolution
+// (see _shared/safefetch.ts). Every outbound fetch to a user-controlled host
+// goes through safeFetch(), which re-validates each redirect hop.
+async function isBlockedUrl(url: string): Promise<boolean> {
   try {
-    const parsed = new URL(url);
-    const hostname = parsed.hostname.toLowerCase();
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return true;
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]') return true;
-    if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.|0\.)/.test(hostname)) return true;
-    if (hostname === '169.254.169.254' || hostname === 'metadata.google.internal') return true;
+    await assertPublicUrl(url);
     return false;
   } catch {
     return true;
   }
 }
+
+// Only accept http(s) URLs as embed/iframe sources handed to the client.
+function httpUrlOrUndefined(v: unknown): string | undefined {
+  if (typeof v !== 'string') return undefined;
+  try {
+    const u = new URL(v);
+    return u.protocol === 'https:' || u.protocol === 'http:' ? u.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+const MAX_JSON_BYTES = 256 * 1024;
 
 // ─── Host detection helpers ─────────────────────────────────────────
 
@@ -78,33 +90,40 @@ async function fetchOEmbed(
   siteName: string,
 ): Promise<LinkPreviewResult | null> {
   try {
+    // Provider endpoints are hardcoded (not user hosts), so plain fetch is
+    // fine — but keep the deadline across the body read and cap the size.
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(oembedUrl, {
-      headers: { 'Accept': 'application/json' },
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    if (!res.ok) return null;
-    const d = await res.json();
+    try {
+      const res = await fetch(oembedUrl, {
+        headers: { 'Accept': 'application/json' },
+        signal: controller.signal,
+      });
+      if (!res.ok) return null;
+      const d = (await readJsonLimited(res, MAX_JSON_BYTES)) as Record<string, unknown>;
 
-    // Video embed (YouTube, Vimeo, TikTok)
-    const embedMatch = typeof d.html === 'string'
-      ? d.html.match(/src=["']([^"']+)["']/)
-      : null;
-    const embedUrl = embedMatch?.[1];
+      // Video embed: ONLY an <iframe src>. TikTok's oEmbed html is a
+      // <blockquote> + <script src="…/embed.js"> — matching any src= there
+      // handed the client a JS file as an iframe URL.
+      const embedMatch = typeof d.html === 'string'
+        ? d.html.match(/<iframe[^>]+src=["']([^"']+)["']/i)
+        : null;
+      const embedUrl = httpUrlOrUndefined(embedMatch?.[1]);
 
-    return {
-      type: embedUrl ? 'peertube' : 'generic', // reuse peertube renderer for play-button cards
-      title: d.title,
-      description: d.description?.substring(0, 200),
-      image_url: d.thumbnail_url,
-      video_embed_url: embedUrl,
-      duration: typeof d.duration === 'number' ? d.duration : undefined,
-      site_name: siteName,
-      favicon_url: undefined,
-      original_url: originalUrl,
-    };
+      return {
+        type: embedUrl ? 'peertube' : 'generic', // reuse peertube renderer for play-button cards
+        title: typeof d.title === 'string' ? d.title : undefined,
+        description: typeof d.description === 'string' ? d.description.substring(0, 200) : undefined,
+        image_url: httpUrlOrUndefined(d.thumbnail_url),
+        video_embed_url: embedUrl,
+        duration: typeof d.duration === 'number' ? d.duration : undefined,
+        site_name: siteName,
+        favicon_url: undefined,
+        original_url: originalUrl,
+      };
+    } finally {
+      clearTimeout(timeout);
+    }
   } catch {
     return null;
   }
@@ -114,17 +133,26 @@ async function fetchOEmbed(
 
 function sanitizeYouTubeEmbed(embedUrl: string | undefined): string | undefined {
   if (!embedUrl) return undefined;
-  // Replace youtube.com with youtube-nocookie.com for privacy
-  return embedUrl.replace('youtube.com', 'youtube-nocookie.com');
+  // Replace the youtube.com HOST with youtube-nocookie.com for privacy
+  try {
+    const u = new URL(embedUrl);
+    if (u.hostname === 'www.youtube.com' || u.hostname === 'youtube.com') u.hostname = 'www.youtube-nocookie.com';
+    return u.toString();
+  } catch {
+    return undefined;
+  }
 }
 
 // ─── Twitter via fxtwitter ──────────────────────────────────────────
 
 async function probeTwitter(url: string): Promise<LinkPreviewResult> {
   // fxtwitter.com returns proper OG tags for tweets without requiring auth
-  const fxUrl = url
-    .replace('twitter.com', 'fxtwitter.com')
-    .replace('x.com', 'fxtwitter.com');
+  let fxUrl = url;
+  try {
+    const u = new URL(url);
+    u.hostname = 'fxtwitter.com'; // host already validated as twitter.com / x.com / mobile.twitter.com
+    fxUrl = u.toString();
+  } catch { /* fall through with the original */ }
   return fetchOgPreview(fxUrl, 'generic', 'X');
 }
 
@@ -183,31 +211,29 @@ async function probePeerTube(url: string, videoId: string): Promise<LinkPreviewR
   const apiUrl = `${parsed.origin}/api/v1/videos/${videoId}`;
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
-
-    const res = await fetch(apiUrl, {
-      headers: { 'Accept': 'application/json' },
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    if (res.ok) {
-      const data = await res.json();
-      // Validate it's actually PeerTube JSON
-      if (data.name && (data.uuid || data.id)) {
-        return {
-          type: 'peertube',
-          title: data.name,
-          description: data.description?.substring(0, 200),
-          image_url: data.previewPath
-            ? `${parsed.origin}${data.previewPath}`
-            : (data.thumbnailPath ? `${parsed.origin}${data.thumbnailPath}` : undefined),
-          video_embed_url: `${parsed.origin}/videos/embed/${data.uuid || videoId}`,
-          duration: data.duration,
-          original_url: url,
-        };
+    const { res, timer } = await safeFetch(apiUrl, { timeoutMs: 3000, headers: { 'Accept': 'application/json' } });
+    try {
+      if (res.ok) {
+        const data = (await readJsonLimited(res, MAX_JSON_BYTES)) as Record<string, unknown>;
+        // Validate it's actually PeerTube JSON
+        if (typeof data.name === 'string' && (data.uuid || data.id)) {
+          const previewPath = typeof data.previewPath === 'string' ? data.previewPath
+            : (typeof data.thumbnailPath === 'string' ? data.thumbnailPath : undefined);
+          return {
+            type: 'peertube',
+            title: data.name,
+            description: typeof data.description === 'string' ? data.description.substring(0, 200) : undefined,
+            image_url: previewPath ? httpUrlOrUndefined(`${parsed.origin}${previewPath}`) : undefined,
+            video_embed_url: `${parsed.origin}/videos/embed/${data.uuid || videoId}`,
+            duration: typeof data.duration === 'number' ? data.duration : undefined,
+            original_url: url,
+          };
+        }
+      } else {
+        try { await res.body?.cancel(); } catch { /* ignore */ }
       }
+    } finally {
+      clearTimeout(timer);
     }
   } catch (e) {
     console.error('PeerTube API probe failed:', e);
@@ -223,25 +249,24 @@ async function probePixelFed(url: string): Promise<LinkPreviewResult> {
   const oembedUrl = `${parsed.origin}/api/v1/oembed?url=${encodeURIComponent(url)}`;
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
-
-    const res = await fetch(oembedUrl, {
-      headers: { 'Accept': 'application/json' },
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    if (res.ok) {
-      const data = await res.json();
-      if (data.url || data.thumbnail_url) {
-        return {
-          type: 'pixelfed',
-          title: data.title || data.author_name,
-          image_url: data.url || data.thumbnail_url,
-          original_url: url,
-        };
+    const { res, timer } = await safeFetch(oembedUrl, { timeoutMs: 3000, headers: { 'Accept': 'application/json' } });
+    try {
+      if (res.ok) {
+        const data = (await readJsonLimited(res, MAX_JSON_BYTES)) as Record<string, unknown>;
+        const img = httpUrlOrUndefined(data.url) ?? httpUrlOrUndefined(data.thumbnail_url);
+        if (img) {
+          return {
+            type: 'pixelfed',
+            title: typeof data.title === 'string' ? data.title : (typeof data.author_name === 'string' ? data.author_name : undefined),
+            image_url: img,
+            original_url: url,
+          };
+        }
+      } else {
+        try { await res.body?.cancel(); } catch { /* ignore */ }
       }
+    } finally {
+      clearTimeout(timer);
     }
   } catch (e) {
     console.error('PixelFed oEmbed probe failed:', e);
@@ -258,36 +283,19 @@ async function fetchOgPreview(
   browserUa = false,
 ): Promise<LinkPreviewResult> {
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-
     const ua = browserUa
       ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
       : 'Mozilla/5.0 (compatible; XcrolBot/1.0)';
 
-    const res = await fetch(url, {
-      headers: { 'User-Agent': ua },
-      redirect: 'follow',
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    const reader = res.body?.getReader();
-    if (!reader) return { type: 'unknown', original_url: url };
-
+    // Manual, re-validated redirects; 4s deadline covers the body read too.
+    const { res, timer } = await safeFetch(url, { timeoutMs: 4000, headers: { 'User-Agent': ua } });
     let html = '';
-    const decoder = new TextDecoder();
-    const MAX_BYTES = 50 * 1024;
-    let totalBytes = 0;
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      totalBytes += value.length;
-      html += decoder.decode(value, { stream: true });
-      if (totalBytes >= MAX_BYTES) break;
+    try {
+      html = await readTextLimited(res, 50 * 1024);
+    } finally {
+      clearTimeout(timer);
     }
-    reader.cancel();
+    if (!html) return { type: 'unknown', original_url: url };
 
     const getOg = (property: string): string | undefined => {
       const match = html.match(new RegExp(`<meta[^>]*property=["']og:${property}["'][^>]*content=["']([^"']*)["']`, 'i'))
@@ -335,8 +343,8 @@ async function fetchOgPreview(
       type,
       title: ogTitle,
       description: ogDescription?.substring(0, 200),
-      image_url: ogImage,
-      video_embed_url: type === 'peertube' ? ogVideo : undefined,
+      image_url: httpUrlOrUndefined(ogImage),
+      video_embed_url: type === 'peertube' ? httpUrlOrUndefined(ogVideo) : undefined,
       duration: ogDuration ? parseInt(ogDuration) : undefined,
       site_name: type === 'generic' ? siteName : undefined,
       favicon_url: type === 'generic' ? getFavicon() : undefined,
@@ -380,6 +388,11 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Per-IP rate limit (fail-open, like every other public function). Each
+    // preview is up to four outbound fetches, so this is cost + abuse control.
+    const limited = await enforceRateLimit(req, "link-preview", { limit: 30 }, corsHeaders);
+    if (limited) return limited;
+
     const { url } = await req.json();
     if (!url || typeof url !== 'string') {
       return new Response(JSON.stringify({ error: 'URL required' }), {
@@ -389,7 +402,7 @@ Deno.serve(async (req) => {
     }
 
     // 1. SSRF check
-    if (isBlockedUrl(url)) {
+    if (await isBlockedUrl(url)) {
       return new Response(JSON.stringify({ type: 'unknown', original_url: url }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
