@@ -1,7 +1,7 @@
 // Dead-man's switch (DISABLED by default).
-// When DEADMAN_ENABLED=1, checks admin_heartbeats for recent admin activity
-// (falls back to last_sign_in_at if no heartbeat rows exist yet) and emails
-// the trustee if no activity has been recorded in DEADMAN_DAYS days.
+// When DEADMAN_ENABLED=1, asks admin_last_activity() (heartbeat table, last
+// sign-in, session refresh, latest admin post — greatest of) and emails the
+// trustee if no admin activity has been recorded in DEADMAN_DAYS days.
 // Always records a heartbeat row in backup_runs.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -42,22 +42,25 @@ Deno.serve(async (req) => {
   let alerted = false;
 
   if (enabled && trustee && resend) {
-    // Find the most recent admin activity from the heartbeats table,
-    // falling back to last_sign_in_at for admins who haven't triggered
-    // a heartbeat row yet (backwards-compatible).
-    const { data: heartbeat } = await admin
-      .from("admin_heartbeats")
-      .select("last_seen_at")
-      .order("last_seen_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    let mostRecent = heartbeat?.last_seen_at
-      ? new Date(heartbeat.last_seen_at).getTime()
-      : 0;
-
-    // Fallback: if no heartbeat rows exist yet, check last_sign_in_at
-    if (!mostRecent) {
+    // Most recent admin activity = greatest of dashboard heartbeat, fresh
+    // sign-in, session token refresh (app used while staying signed in) and
+    // latest admin post — see migration 20260818100000_admin_last_activity.
+    let mostRecent = 0;
+    const { data: lastActivity, error: rpcErr } = await admin.rpc("admin_last_activity");
+    if (!rpcErr && lastActivity) {
+      mostRecent = new Date(lastActivity as string).getTime();
+      notes.activity_source = "admin_last_activity()";
+    } else {
+      // Fallback (RPC missing / errored): heartbeat table, then last_sign_in_at.
+      notes.activity_source = "fallback";
+      if (rpcErr) notes.rpc_error = rpcErr.message;
+      const { data: heartbeat } = await admin
+        .from("admin_heartbeats")
+        .select("last_seen_at")
+        .order("last_seen_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (heartbeat?.last_seen_at) mostRecent = new Date(heartbeat.last_seen_at).getTime();
       const { data: admins } = await admin
         .from("user_roles")
         .select("user_id")
@@ -72,11 +75,13 @@ Deno.serve(async (req) => {
     const ageMs = Date.now() - mostRecent;
     if (mostRecent && ageMs > days * 86400 * 1000) {
       try {
-        await fetch("https://api.resend.com/emails", {
+        // Sender MUST be on the Resend-verified domain (invites.xcrol.com);
+        // trustee@xcrol.com was never verified, so sends silently 403'd.
+        const res = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            from: "Xcrol Trustee <trustee@xcrol.com>",
+            from: "Xcrol Trustee <noreply@invites.xcrol.com>",
             to: [trustee],
             subject: "Xcrol heartbeat overdue — revival packet attached",
             text: [
@@ -85,11 +90,15 @@ Deno.serve(async (req) => {
               "Backups: see your Backblaze B2 bucket (xcrol-backups).",
               "Revival instructions: docs/RUNBOOK.md in the GitHub mirror.",
               "",
-              "If this is a false alarm, sign in to dismiss.",
+              "If this is a false alarm: sign in to xcrol.com and post or open the admin dashboard — any admin activity resets the switch.",
             ].join("\n"),
           }),
         });
-        alerted = true;
+        if (!res.ok) {
+          notes.alert_error = `resend ${res.status}: ${(await res.text()).slice(0, 300)}`;
+        } else {
+          alerted = true;
+        }
       } catch (e) {
         notes.alert_error = e instanceof Error ? e.message : String(e);
       }

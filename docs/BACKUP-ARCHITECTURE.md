@@ -118,12 +118,16 @@ Cross-check that the matching `xcrol/YYYY-MM-DD/` prefix exists in B2.
 
 ## Dead-man's switch
 `heartbeat-check` runs weekly. When `DEADMAN_ENABLED=1` and `TRUSTEE_EMAIL` is
-set, it checks the `admin_heartbeats` table for the most recent admin activity
-(falls back to `last_sign_in_at` if no heartbeat rows exist yet) and emails the
-trustee with a revival packet if no admin activity has occurred for
-`DEADMAN_DAYS` (default 90). The admin dashboard upserts a heartbeat row on
-every load, so staying signed in with regular dashboard visits keeps the clock
-reset. Off by default.
+set, it calls `admin_last_activity()` (service-role-only RPC, migration
+`20260818100000`) which returns the most recent of: an `/admin` dashboard load
+(`admin_heartbeats`), a fresh sign-in (`auth.users.last_sign_in_at`), a session
+token refresh (`auth.sessions.refreshed_at` — i.e. the app was used while
+staying signed in), or the latest post by an admin (`xcrol_entries`). If that is
+older than `DEADMAN_DAYS` (default 90) it emails the trustee a revival packet
+from `noreply@invites.xcrol.com` (the Resend-verified domain — the sender must
+stay on a verified domain or Resend rejects the send; the function records
+`alert_error` in `backup_runs.notes` if that happens). Any ordinary use of
+Xcrol by an admin resets the clock. Off by default.
 
 ## Required secrets
 | Secret                  | Required | Purpose                          |

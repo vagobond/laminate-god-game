@@ -6,7 +6,7 @@
 // Required secrets: B2_KEY_ID, B2_APPLICATION_KEY, B2_BUCKET_NAME, CRON_SECRET (optional).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { b2Authorize, b2GetUploadUrl, b2UploadFile, gzipString } from "../_shared/b2.ts";
+import { b2Authorize, b2UploadWithRetry, gzipString } from "../_shared/b2.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -137,9 +137,8 @@ Deno.serve(async (req) => {
           from += PAGE;
         }
         const gz = await gzipString(lines.join("\n") + (lines.length ? "\n" : ""));
-        const target = await b2GetUploadUrl(auth);
         const key = `${prefix}/db/${t}.ndjson.gz`;
-        const res = await b2UploadFile(target, key, gz, "application/gzip");
+        const res = await b2UploadWithRetry(auth, key, gz, "application/gzip");
         bytesUploaded += res.size;
         filesUploaded += 1;
         tablesDumped += 1;
@@ -188,9 +187,8 @@ Deno.serve(async (req) => {
         errors.push(`auth.users password hashes: ${errMsg(e)}`);
       }
       const gz = await gzipString(users.map((u) => JSON.stringify(u)).join("\n"));
-      const target = await b2GetUploadUrl(auth);
       const key = `${prefix}/auth/users.ndjson.gz`;
-      const res = await b2UploadFile(target, key, gz, "application/gzip");
+      const res = await b2UploadWithRetry(auth, key, gz, "application/gzip");
       bytesUploaded += res.size;
       filesUploaded += 1;
       tableSummary["auth.users"] = { rows: users.length, bytes: res.size };
@@ -208,9 +206,8 @@ Deno.serve(async (req) => {
         storageCatalog[b.name] = list;
       }
       const gz = await gzipString(JSON.stringify(storageCatalog));
-      const target = await b2GetUploadUrl(auth);
       const key = `${prefix}/storage/catalog.json.gz`;
-      const res = await b2UploadFile(target, key, gz, "application/gzip");
+      const res = await b2UploadWithRetry(auth, key, gz, "application/gzip");
       bytesUploaded += res.size;
       filesUploaded += 1;
     } catch (e) {
@@ -256,8 +253,7 @@ Deno.serve(async (req) => {
     };
     const manifestGz = await gzipString(JSON.stringify(manifest, null, 2));
     const manifestKey = `${prefix}/manifest.json.gz`;
-    const mt = await b2GetUploadUrl(auth);
-    const mRes = await b2UploadFile(mt, manifestKey, manifestGz, "application/gzip");
+    const mRes = await b2UploadWithRetry(auth, manifestKey, manifestGz, "application/gzip");
     bytesUploaded += mRes.size;
     filesUploaded += 1;
 
