@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AddFriendButton from "@/components/AddFriendButton";
 import SendMessageDialog from "@/components/SendMessageDialog";
 import type { PublicProfileData, FriendshipLevel } from "./usePublicProfileData";
+import { EmbedProfileDialog } from "./EmbedProfileDialog";
 
 interface ProfileActionBarProps {
   profile: PublicProfileData;
@@ -38,6 +39,9 @@ export const ProfileActionBar = ({
   const navigate = useNavigate();
   const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [blocking, setBlocking] = useState(false);
+  const [showEmbed, setShowEmbed] = useState(false);
+  const slug = username ? username.replace(/^@/, "") : resolvedUserId;
+  const profileUrl = username ? `https://xcrol.com/@${slug}` : `https://xcrol.com/u/${resolvedUserId}`;
 
   const handleBlockUser = async () => {
     if (!currentUserId || !resolvedUserId) return;
@@ -76,10 +80,10 @@ export const ProfileActionBar = ({
             variant="outline"
             size="sm"
             onClick={() => {
-              const ogUrl = username
-                ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/og-profile?username=${username.replace(/^@/, "")}`
-                : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/og-profile?userId=${resolvedUserId}`;
-              navigator.clipboard.writeText(ogUrl);
+              // Clean xcrol.com link. Link-preview bots hitting /@user or /u/<id>
+              // are served og-profile by the Worker, so this unfurls as a card
+              // on Facebook / X / LinkedIn / Bluesky / Slack / Discord.
+              navigator.clipboard.writeText(profileUrl);
               toast.success("Profile link copied! Share it anywhere for a nice preview.");
             }}
           >
@@ -89,13 +93,7 @@ export const ProfileActionBar = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              const slug = username ? username.replace(/^@/, "") : resolvedUserId;
-              const name = profile.display_name || username || "Profile";
-              const embedCode = `<iframe src="https://xcrol.com/embed/${slug}" width="340" height="200" style="border:0;border-radius:12px" title="${name.replace(/"/g, "&quot;")} on Xcrol" loading="lazy"></iframe>`;
-              navigator.clipboard.writeText(embedCode);
-              toast.success("Embed code copied! Paste it into any website.");
-            }}
+            onClick={() => setShowEmbed(true)}
           >
             <Code className="w-4 h-4 mr-2" />
             Embed
@@ -136,6 +134,13 @@ export const ProfileActionBar = ({
       </div>
 
       {/* Block User Confirmation Dialog */}
+      <EmbedProfileDialog
+        open={showEmbed}
+        onOpenChange={setShowEmbed}
+        slug={slug}
+        displayName={profile.display_name || username || "Profile"}
+      />
+
       <AlertDialog open={showBlockDialog} onOpenChange={setShowBlockDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

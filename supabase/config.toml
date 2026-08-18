@@ -16,6 +16,10 @@ verify_jwt = false
 [functions.embed-profile]
 verify_jwt = false
 
+[functions.profile-card]
+verify_jwt = false
+static_files = ["./functions/profile-card/fonts/*.ttf"]
+
 
 [functions.get-mapbox-token]
 verify_jwt = false

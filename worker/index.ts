@@ -22,6 +22,13 @@ const BOT_UA =
 const POST_PATH = /^\/post\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
 
 const EMBED_PATH = /^\/embed\/@?([A-Za-z0-9_.-]{1,40})$/;
+// /card/<username|uuid>.png|.svg → profile-card edge function (PNG/SVG image)
+const CARD_PATH = /^\/card\/@?([A-Za-z0-9_.-]{1,40})\.(png|svg)$/;
+// Profile pages: /@<username> and /u/<uuid>. For link-preview bots we serve
+// og-profile's HTML (meta tags + redirect) so a pasted profile link unfurls
+// as a real card on social networks; humans get the SPA as usual.
+const PROFILE_AT_PATH = /^\/@([A-Za-z0-9_.-]{1,40})$/;
+const PROFILE_U_PATH = /^\/u\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default {
@@ -61,8 +68,53 @@ export default {
       );
     }
 
+    const cardMatch = url.pathname.match(CARD_PATH);
+    if (cardMatch) {
+      const id = cardMatch[1];
+      const fmt = cardMatch[2];
+      const size = url.searchParams.get("size") === "badge" ? "badge" : "og";
+      const param = UUID_RE.test(id)
+        ? `userId=${encodeURIComponent(id)}`
+        : `username=${encodeURIComponent(id.toLowerCase())}`;
+      const cardUrl = `${env.SUPABASE_URL}/functions/v1/profile-card?${param}&size=${size}&format=${fmt}`;
+      try {
+        const res = await fetch(cardUrl, {
+          headers: {
+            "x-forwarded-for": request.headers.get("cf-connecting-ip") || "",
+            "user-agent": request.headers.get("user-agent") || "",
+          },
+          cf: {
+            cacheEverything: true,
+            cacheTtlByStatus: { "200-299": 21600, "400-499": 60, "500-599": 0 },
+          },
+        } as RequestInit);
+        if (res.ok) return res;
+      } catch {
+        // fall through
+      }
+      return new Response("card unavailable", { status: 503, headers: { "cache-control": "no-store" } });
+    }
+
     const match = url.pathname.match(POST_PATH);
     const ua = request.headers.get("user-agent") || "";
+
+    const atMatch = url.pathname.match(PROFILE_AT_PATH);
+    const uMatch = url.pathname.match(PROFILE_U_PATH);
+    if ((atMatch || uMatch) && BOT_UA.test(ua)) {
+      try {
+        const param = atMatch
+          ? `username=${encodeURIComponent(atMatch[1].toLowerCase())}`
+          : `userId=${encodeURIComponent(uMatch![1])}`;
+        const ogUrl = `${env.SUPABASE_URL}/functions/v1/og-profile?${param}`;
+        const ogRes = await fetch(ogUrl, {
+          headers: { "user-agent": ua },
+          cf: { cacheTtl: 3600, cacheEverything: true },
+        } as RequestInit);
+        if (ogRes.ok) return ogRes;
+      } catch {
+        // fall through to the SPA on any failure
+      }
+    }
 
     if (match && BOT_UA.test(ua)) {
       try {
