@@ -475,6 +475,126 @@ begin
   end if;
 end $$;
 
+-- ===========================================================================
+-- 8. get_visible_friends / get_constellation ignore the client's viewer_id
+--    (migration 20260818110000). Before it, viewer_id=profile_id from anon
+--    returned the secret rows.
+-- ===========================================================================
+
+\echo '[8a] anon with SPOOFED viewer_id=profile_id gets no secret rows and no owner view'
+set local role anon;
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+do $$
+declare n int; secret int;
+begin
+  select count(*), count(*) filter (where level in ('secret_friend','secret_enemy','fake_friend'))
+    into n, secret
+    from public.get_visible_friends('00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-00000000000a');
+  if secret <> 0 then
+    raise exception 'FAIL: spoofed viewer_id leaked % secret friendship(s) to anon', secret;
+  end if;
+  if n <> 3 then
+    raise exception 'FAIL: anon sees % of alice''s friendships via RPC, expected 3', n;
+  end if;
+end $$;
+reset role;
+
+\echo '[8b] owner (alice) still sees her secret friendship through the RPC'
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-00000000000a","role":"authenticated"}', true);
+do $$
+declare n int;
+begin
+  select count(*) into n from public.get_visible_friends('00000000-0000-4000-8000-00000000000a', null) where level = 'secret_friend';
+  if n <> 1 then
+    raise exception 'FAIL: owner should see her 1 secret friendship, saw %', n;
+  end if;
+end $$;
+reset role;
+
+\echo '[8c] blocked viewer (eve) gets an EMPTY friend list for alice'
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-00000000000e","role":"authenticated"}', true);
+do $$
+declare n int;
+begin
+  select count(*) into n from public.get_visible_friends('00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-00000000000a');
+  if n <> 0 then
+    raise exception 'FAIL: blocked eve sees % of alice''s friends, expected 0', n;
+  end if;
+  select count(*) into n from public.get_constellation('00000000-0000-4000-8000-00000000000a');
+  if n <> 0 then
+    raise exception 'FAIL: blocked eve sees % constellation rows, expected 0', n;
+  end if;
+end $$;
+reset role;
+
+\echo '[8d] constellation: anon gets anonymous dots (no ids/names), never the secret friend'
+set local role anon;
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+do $$
+declare n int; n_named int; ids int; secret int;
+begin
+  select count(*), count(*) filter (where named), count(friend_id) + count(display_name) + count(id),
+         count(*) filter (where level = 'secret_friend')
+    into n, n_named, ids, secret
+    from public.get_constellation('00000000-0000-4000-8000-00000000000a');
+  if n <> 3 or n_named <> 0 or ids <> 0 or secret <> 0 then
+    raise exception 'FAIL: anon constellation rows=% named=% ids=% secret=% (expected 3/0/0/0)', n, n_named, ids, secret;
+  end if;
+end $$;
+reset role;
+
+\echo '[8e] constellation: threshold is applied server-side (close_friend sees names once alice opts in)'
+update public.profiles set constellation_visibility = 'close_friend' where id = '00000000-0000-4000-8000-00000000000a';
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-00000000000d","role":"authenticated"}', true);
+do $$
+declare n_named int; n int;
+begin
+  select count(*), count(*) filter (where named and friend_id is not null) into n, n_named from public.get_constellation('00000000-0000-4000-8000-00000000000a');
+  if n <> 3 or n_named <> 3 then
+    raise exception 'FAIL: close friend dave should see 3 named rows, got n=% named=%', n, n_named;
+  end if;
+end $$;
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-00000000000f","role":"authenticated"}', true);
+do $$
+declare n_named int;
+begin
+  select count(*) filter (where named) into n_named from public.get_constellation('00000000-0000-4000-8000-00000000000a');
+  if n_named <> 0 then
+    raise exception 'FAIL: stranger frank should not get names at close_friend threshold';
+  end if;
+end $$;
+reset role;
+
+\echo '[8f] constellation: hidden returns nothing to non-owners, everything to the owner'
+update public.profiles set constellation_visibility = 'hidden' where id = '00000000-0000-4000-8000-00000000000a';
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-00000000000d","role":"authenticated"}', true);
+do $$
+declare n int;
+begin
+  select count(*) into n from public.get_constellation('00000000-0000-4000-8000-00000000000a');
+  if n <> 0 then
+    raise exception 'FAIL: hidden constellation returned % rows to a friend', n;
+  end if;
+end $$;
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-00000000000a","role":"authenticated"}', true);
+do $$
+declare n int;
+begin
+  select count(*) into n from public.get_constellation('00000000-0000-4000-8000-00000000000a') where named and friend_id is not null;
+  if n <> 4 then
+    raise exception 'FAIL: owner should see all 4 (incl. secret friend) named, got %', n;
+  end if;
+end $$;
+reset role;
+
 rollback;
 
 \echo ''

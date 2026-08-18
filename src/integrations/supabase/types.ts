@@ -3055,6 +3055,17 @@ export type Database = {
             }
             Returns: Json
           }
+      get_constellation: {
+        Args: { profile_id: string }
+        Returns: {
+          avatar_url: string | null
+          display_name: string | null
+          friend_id: string | null
+          id: string | null
+          level: Database["public"]["Enums"]["friendship_level"]
+          named: boolean
+        }[]
+      }
       get_visible_friends: {
         Args: { profile_id: string; viewer_id: string }
         Returns: {
