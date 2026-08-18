@@ -99,3 +99,34 @@ export async function gzipString(s: string): Promise<Uint8Array> {
   const buf = await new Response(stream).arrayBuffer();
   return new Uint8Array(buf);
 }
+
+/**
+ * Upload with retry. B2 returns transient 5xx / 503 / 408 (and 401 for an
+ * expired upload URL) — the documented remedy is to fetch a fresh upload URL
+ * and try again. Two consecutive nightlies (2026-08-14/15) failed on a single
+ * B2 500 because there was no retry; this makes one flaky PUT no longer fail
+ * the whole snapshot.
+ */
+export async function b2UploadWithRetry(
+  auth: B2Auth,
+  fileName: string,
+  data: Uint8Array,
+  contentType = "application/octet-stream",
+  attempts = 4,
+): Promise<{ fileId: string; size: number }> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const target = await b2GetUploadUrl(auth);
+      return await b2UploadFile(target, fileName, data, contentType);
+    } catch (e) {
+      lastErr = e;
+      const msg = e instanceof Error ? e.message : String(e);
+      // Retry on network errors, 5xx, 408, 429 and expired-upload-url 401.
+      const retryable = /: (5\d\d|408|429|401) /.test(msg) || !/: \d{3} /.test(msg);
+      if (!retryable || i === attempts - 1) break;
+      await new Promise((r) => setTimeout(r, 1000 * 2 ** i));
+    }
+  }
+  throw lastErr;
+}
