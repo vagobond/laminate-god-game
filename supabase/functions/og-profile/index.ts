@@ -78,13 +78,16 @@ Deno.serve(async (req) => {
       description = description.substring(0, 152) + "...";
     }
 
-    // Use a proper OG image - avatar or a default branded image
-    const avatarUrl = profile.avatar_url || "https://xcrol.com/placeholder.svg";
-    
     // Build canonical URL
     const profilePath = profile.username ? `@${profile.username}` : `u/${profile.id}`;
     const siteUrl = "https://xcrol.com";
     const canonicalUrl = `${siteUrl}/${profilePath}`;
+
+    // OG image = the rendered 1200×630 profile card (profile-card fn via the
+    // Worker), so shared profile links unfurl as a proper card everywhere.
+    // Falls back to the raw avatar only if there is no username and no id.
+    const cardSlug = profile.username || profile.id;
+    const avatarUrl = cardSlug ? `${siteUrl}/card/${cardSlug}.png` : (profile.avatar_url || "https://xcrol.com/placeholder.svg");
 
     // Generate title with username if available
     const title = usernameDisplay 
@@ -108,13 +111,14 @@ Deno.serve(async (req) => {
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:image" content="${escapeHtml(avatarUrl)}">
-  <meta property="og:image:width" content="400">
-  <meta property="og:image:height" content="400">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type" content="image/png">
   <meta property="og:site_name" content="XCROL">
   ${usernameDisplay ? `<meta property="profile:username" content="${escapeHtml(usernameDisplay)}">` : ""}
   
   <!-- Twitter -->
-  <meta name="twitter:card" content="summary">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="${escapeHtml(canonicalUrl)}">
   <meta name="twitter:title" content="${title}">
   <meta name="twitter:description" content="${escapeHtml(description)}">

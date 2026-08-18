@@ -31,7 +31,7 @@ You can also create **custom friendship types** (e.g., "Work Colleagues", "Trave
 
 **Connection Degrees**: See how you're connected to non-friends via friend-of-a-friend chains up to 3 degrees (OAuth API partners can query up to 6).
 
-**Embeddable profile card**: put your public XCROL profile on any website with a single iframe — `https://xcrol.com/embed/<username>` serves a small, CDN-cached card (public fields only: name, username, bio, hometown, avatar). Use the "Embed" button on your public profile to copy ready-made embed code.
+**Embeddable profile card**: put your public XCROL profile on any website. `https://xcrol.com/card/<username>.png` (add `?size=badge` for a 600×150 strip) is a CDN-cached PNG card that works anywhere an image is allowed — WordPress, Substack, Medium, GitHub READMEs, forums, email — and is also the `og:image` for `https://xcrol.com/@<username>`, so pasting a profile link on social networks unfurls as a card. `https://xcrol.com/embed/<username>` still serves the iframe version for sites you control. Public fields only (name, username, bio, hometown, avatar). Use the "Embed" button on any public profile for ready-made HTML / Markdown / BBCode snippets.
 
 ---
 
