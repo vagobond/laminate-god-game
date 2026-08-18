@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const OPTIONS = [
+  { value: "hidden", label: "Hidden", description: "Don't show my constellation to anyone" },
   { value: "nobody", label: "Nobody", description: "Everyone sees anonymous dots" },
   { value: "close_friend", label: "Oath Bound (Close Friends)", description: "Only close friends see names" },
   { value: "family", label: "Blood Bound (Family)", description: "Family and above see names" },
