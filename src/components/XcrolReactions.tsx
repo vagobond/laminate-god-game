@@ -82,14 +82,11 @@ export const XcrolReactions = ({ entryId, compact = false, authorId, authorName,
   const loadFriendshipLevel = async () => {
     if (!userId || !authorId) return;
     try {
-      const { data } = await supabase
-        .from("friendships")
-        .select("level")
-        .eq("user_id", authorId)
-        .eq("friend_id", userId)
-        .maybeSingle();
-      
-      setFriendshipLevel(data?.level || null);
+      // Masked: the rung the author granted me, with secret tiers hidden
+      // (secret_friend→close_friend, secret_enemy/fake_friend→null). The raw
+      // level is no longer readable by the friend via RLS.
+      const { data } = await supabase.rpc("get_my_level_from", { other: authorId });
+      setFriendshipLevel((data as string) || null);
     } catch (error) {
       console.error("Error loading friendship level:", error);
     }

@@ -65,6 +65,12 @@ insert into public.friendships (user_id, friend_id, level) values
   ('00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-00000000000e', 'buddy');
 alter table public.friendships enable trigger refresh_friendship_pairs_trigger;
 
+-- Extra fixtures for section 9 (friendships RLS tighten): incoming edges to alice.
+insert into public.friendships (user_id, friend_id, level) values
+  ('00000000-0000-4000-8000-00000000000f'::uuid, '00000000-0000-4000-8000-00000000000a'::uuid, 'secret_enemy'),   -- frank secretly marks alice his enemy
+  ('00000000-0000-4000-8000-00000000000b'::uuid, '00000000-0000-4000-8000-00000000000a'::uuid, 'buddy')  -- bob has alice as buddy (visible incoming)
+on conflict do nothing;
+
 -- Alice blocks eve. The block must beat eve's buddy friendship.
 insert into public.user_blocks (blocker_id, blocked_id) values
   ('00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-00000000000e');
@@ -591,6 +597,85 @@ begin
   select count(*) into n from public.get_constellation('00000000-0000-4000-8000-00000000000a') where named and friend_id is not null;
   if n <> 4 then
     raise exception 'FAIL: owner should see all 4 (incl. secret friend) named, got %', n;
+  end if;
+end $$;
+reset role;
+
+-- ===========================================================================
+-- 9. friendships RLS tighten (migration 20260819100000): the FRIEND side of an
+--    edge can no longer read the concealed tier; anon can't read the table;
+--    the owner still sees everything they set; get_my_level_from masks.
+-- ===========================================================================
+
+\echo '[9a] alice (the friend) cannot see that frank marked her secret_enemy'
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-00000000000a","role":"authenticated"}', true);
+do $$
+declare secret_in int; visible_in int;
+begin
+  select count(*) into secret_in from public.friendships
+    where friend_id = '00000000-0000-4000-8000-00000000000a' and level in ('secret_friend','secret_enemy','fake_friend');
+  if secret_in <> 0 then
+    raise exception 'FAIL: alice can read % concealed edge(s) pointed at her', secret_in;
+  end if;
+  select count(*) into visible_in from public.friendships where friend_id = '00000000-0000-4000-8000-00000000000a';
+  if visible_in < 1 then
+    raise exception 'FAIL: alice should still see her visible incoming edges (bob buddy), saw %', visible_in;
+  end if;
+end $$;
+reset role;
+
+\echo '[9b] get_my_level_from masks: frank''s secret_enemy of alice reads as null to alice; bob''s buddy reads as buddy'
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-00000000000a","role":"authenticated"}', true);
+do $$
+begin
+  if public.get_my_level_from('00000000-0000-4000-8000-00000000000f') is not null then
+    raise exception 'FAIL: secret_enemy from frank should mask to null for alice';
+  end if;
+  if public.get_my_level_from('00000000-0000-4000-8000-00000000000b') is distinct from 'buddy' then
+    raise exception 'FAIL: bob''s buddy rung should read as buddy';
+  end if;
+  -- carol marked alice? no; alice marked carol secret_friend (outgoing). get_my_level_from is the INCOMING direction, so alice->carol does not appear here.
+end $$;
+reset role;
+
+\echo '[9c] the owner still sees the concealed tiers they set (outgoing)'
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-00000000000a","role":"authenticated"}', true);
+do $$
+declare own_secret int;
+begin
+  select count(*) into own_secret from public.friendships
+    where user_id = '00000000-0000-4000-8000-00000000000a' and level = 'secret_friend';   -- alice->carol
+  if own_secret <> 1 then
+    raise exception 'FAIL: owner alice should see the 1 secret_friend she set, saw %', own_secret;
+  end if;
+end $$;
+reset role;
+
+\echo '[9d] anon cannot read the friendships table at all'
+set local role anon;
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+do $$
+declare n int;
+begin
+  select count(*) into n from public.friendships;
+  if n <> 0 then
+    raise exception 'FAIL: anon can read % friendship rows (expected 0; use get_constellation)', n;
+  end if;
+end $$;
+reset role;
+
+\echo '[9e] get_constellation still serves anon (SECURITY DEFINER, unaffected by the anon policy change)'
+set local role anon;
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+do $$
+declare n int;
+begin
+  select count(*) into n from public.get_constellation('00000000-0000-4000-8000-00000000000a');
+  if n < 1 then
+    raise exception 'FAIL: anon get_constellation returned no rows for alice';
   end if;
 end $$;
 reset role;

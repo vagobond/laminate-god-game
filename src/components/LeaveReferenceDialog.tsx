@@ -57,13 +57,10 @@ export const LeaveReferenceDialog = ({ recipientId, recipientName }: LeaveRefere
         return;
       }
 
-      const [recipientToUser, userToRecipient] = await Promise.all([
-        supabase
-          .from("friendships")
-          .select("level, uses_custom_type")
-          .eq("user_id", recipientId)
-          .eq("friend_id", user.id)
-          .maybeSingle(),
+      // recipient→me: masked level via RPC (raw secret tiers are not readable
+      // by the friend). me→recipient: my own row, direct select is fine.
+      const [recipientLevelRes, userToRecipient] = await Promise.all([
+        supabase.rpc("get_my_level_from", { other: recipientId }),
         supabase
           .from("friendships")
           .select("level, uses_custom_type")
@@ -72,10 +69,13 @@ export const LeaveReferenceDialog = ({ recipientId, recipientName }: LeaveRefere
           .maybeSingle()
       ]);
 
-      const friendship = recipientToUser.data || userToRecipient.data;
-
-      const isFriend = friendship?.level && 
-        ['family', 'close_friend', 'buddy', 'friendly_acquaintance', 'secret_friend'].includes(friendship.level);
+      const recipientGrantedLevel = (recipientLevelRes.data as string) || null;
+      const myLevelToThem = userToRecipient.data?.level || null;
+      // A reference is allowed if either side is a (visible) friendship. The
+      // masked recipient level already collapses secret_friend → close_friend.
+      const isFriend =
+        ['family', 'close_friend', 'buddy', 'friendly_acquaintance'].includes(recipientGrantedLevel || '') ||
+        ['family', 'close_friend', 'buddy', 'friendly_acquaintance', 'secret_friend'].includes(myLevelToThem || '');
 
       if (isFriend) {
         setCanLeaveReference(true);
@@ -83,7 +83,10 @@ export const LeaveReferenceDialog = ({ recipientId, recipientName }: LeaveRefere
         return;
       }
 
-      if (friendship?.uses_custom_type) {
+      // The recipient may have granted me a CUSTOM friendship type whose policy
+      // allows references. We can't see their raw level, so just consult their
+      // custom-type policy directly (keyed by the recipient).
+      {
         const { data: customType } = await supabase
           .from("custom_friendship_types")
           .select("can_leave_reference")
