@@ -3055,6 +3055,10 @@ export type Database = {
             }
             Returns: Json
           }
+      get_my_level_from: {
+        Args: { other: string }
+        Returns: Database["public"]["Enums"]["friendship_level"]
+      }
       get_constellation: {
         Args: { profile_id: string }
         Returns: {
