@@ -23,15 +23,19 @@
 --      users — an anonymous visitor has no need to read the raw edge table
 --      (get_constellation, itself SECURITY DEFINER, still serves anon).
 
--- 1) friend-side policy: hide concealed tiers from the friend --------------
+-- 1) friend-side policy: hide only adversarial concealed tiers from the friend --------------
 DROP POLICY IF EXISTS "Users can view friendships where they are the friend" ON public.friendships;
-CREATE POLICY "Friends see non-secret edges pointed at them"
+CREATE POLICY "Friends see non-adversarial edges pointed at them"
   ON public.friendships
   FOR SELECT
   TO authenticated
   USING (
     auth.uid() = friend_id
-    AND level NOT IN ('secret_friend', 'secret_enemy', 'fake_friend')
+    -- Hide only the ADVERSARIAL concealed tiers from the person they point at.
+    -- secret_friend is not adversarial concealment (the product lets a secret
+    -- friend see they are one — RLS test 2b), so it stays visible to the friend.
+    -- secret_enemy / fake_friend must never be readable by the target.
+    AND level NOT IN ('secret_enemy', 'fake_friend')
   );
 
 -- 2) masked self-referential helper ---------------------------------------

@@ -668,6 +668,8 @@ end $$;
 reset role;
 
 \echo '[9e] get_constellation still serves anon (SECURITY DEFINER, unaffected by the anon policy change)'
+-- [8f] left alice on 'hidden'; reset so this test does not depend on prior order.
+update public.profiles set constellation_visibility = 'nobody' where id = '00000000-0000-4000-8000-00000000000a';
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 do $$
