@@ -319,13 +319,18 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
                 <EntryLocationPicker
                   latitude={latitude}
                   longitude={longitude}
-                  onPick={(lat, lng) => {
+                  onPick={(lat, lng, label) => {
                     setLatitude(lat);
                     setLongitude(lng);
+                    // Auto-fill the label from geocoding, but never clobber a label
+                    // the user has already typed.
+                    if (label && !locationLabel.trim()) {
+                      setLocationLabel(label.slice(0, 80));
+                    }
                   }}
                 />
               </Suspense>
-              <p className="text-xs text-muted-foreground">Click the map to drop a pin.</p>
+              <p className="text-xs text-muted-foreground">Use your current location, search a place, or click the map to drop a pin.</p>
               <Input
                 value={locationLabel}
                 onChange={(e) => setLocationLabel(e.target.value.slice(0, 80))}
