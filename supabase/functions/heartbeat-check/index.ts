@@ -73,7 +73,13 @@ Deno.serve(async (req) => {
     }
     notes.most_recent_admin_activity = mostRecent ? new Date(mostRecent).toISOString() : null;
     const ageMs = Date.now() - mostRecent;
-    if (mostRecent && ageMs > days * 86400 * 1000) {
+    // 2026-08-21 audit, item 4: "no activity data at all" must NOT read as
+    // "assume alive" — for a dead-man switch that inverts the failure mode.
+    // A broken RPC + empty heartbeat table + no admin sign-in data now sends
+    // its own alert instead of silently disarming the switch.
+    const dataMissing = !mostRecent;
+    if (dataMissing) notes.alert_reason = "activity_data_missing";
+    if (dataMissing || ageMs > days * 86400 * 1000) {
       try {
         // Sender MUST be on the Resend-verified domain (invites.xcrol.com);
         // trustee@xcrol.com was never verified, so sends silently 403'd.
@@ -83,9 +89,13 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             from: "Xcrol Trustee <noreply@invites.xcrol.com>",
             to: [trustee],
-            subject: "Xcrol heartbeat overdue — revival packet attached",
+            subject: dataMissing
+              ? "Xcrol heartbeat: activity signal MISSING — check the system"
+              : "Xcrol heartbeat overdue — revival packet attached",
             text: [
-              `No admin activity has been recorded on Xcrol for over ${days} days.`,
+              dataMissing
+                ? "Xcrol's heartbeat check could not find ANY admin activity signal (RPC, heartbeat table, and sign-in data all empty or erroring). The dead-man switch cannot tell if the admin is active — someone should check the system."
+                : `No admin activity has been recorded on Xcrol for over ${days} days.`,
               "",
               "Backups: see your Backblaze B2 bucket (xcrol-backups).",
               "Revival instructions: docs/RUNBOOK.md in the GitHub mirror.",

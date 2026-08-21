@@ -14,6 +14,9 @@
 interface Env {
   ASSETS: Fetcher;
   SUPABASE_URL: string;
+  /** Optional shared secret (wrangler secret put WORKER_TRUST_SECRET) letting
+   *  the edge functions trust our x-forwarded-for as the real visitor IP. */
+  WORKER_TRUST_SECRET?: string;
 }
 
 const BOT_UA =
@@ -49,6 +52,7 @@ export default {
             // buckets per visitor instead of one shared bucket for Cloudflare's
             // egress IP (which would 429 everyone on a burst of cache misses).
             "x-forwarded-for": request.headers.get("cf-connecting-ip") || "",
+            ...(env.WORKER_TRUST_SECRET ? { "x-worker-secret": env.WORKER_TRUST_SECRET } : {}),
             "user-agent": request.headers.get("user-agent") || "",
           },
           cf: {
@@ -81,6 +85,7 @@ export default {
         const res = await fetch(cardUrl, {
           headers: {
             "x-forwarded-for": request.headers.get("cf-connecting-ip") || "",
+            ...(env.WORKER_TRUST_SECRET ? { "x-worker-secret": env.WORKER_TRUST_SECRET } : {}),
             "user-agent": request.headers.get("user-agent") || "",
           },
           cf: {

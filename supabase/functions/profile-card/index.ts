@@ -19,6 +19,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { initWasm, Resvg } from "https://esm.sh/@resvg/resvg-wasm@2.6.2";
 import { enforceRateLimit } from "../_shared/ratelimit.ts";
+import { safeFetch } from "../_shared/safefetch.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -109,18 +110,23 @@ function b64(bytes: Uint8Array): string {
 }
 
 async function fetchAvatarDataUri(url: string | null): Promise<string | null> {
+  // avatar_url is user-controlled (profiles are self-writable), so this is a
+  // server-side fetch of an attacker-suppliable URL. Route it through the same
+  // SSRF guard as link-preview (2026-08-21 audit, item 2): scheme/host/IP
+  // checks, DNS resolution, and per-hop redirect re-validation.
   if (!url || !/^https:\/\//.test(url)) return null;
   try {
-    const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), 3000);
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(t);
-    if (!res.ok) return null;
-    const ct = (res.headers.get("content-type") || "").split(";")[0].trim();
-    if (!/^image\/(png|jpeg|jpg|gif|webp)$/.test(ct)) return null;
-    const buf = new Uint8Array(await res.arrayBuffer());
-    if (buf.length > 4 * 1024 * 1024) return null; // resvg would still cope, but keep CPU bounded
-    return `data:${ct};base64,${b64(buf)}`;
+    const { res, timer } = await safeFetch(url, { timeoutMs: 3000 });
+    try {
+      if (!res.ok) return null;
+      const ct = (res.headers.get("content-type") || "").split(";")[0].trim();
+      if (!/^image\/(png|jpeg|jpg|gif|webp)$/.test(ct)) return null;
+      const buf = new Uint8Array(await res.arrayBuffer());
+      if (buf.length > 4 * 1024 * 1024) return null; // resvg would still cope, but keep CPU bounded
+      return `data:${ct};base64,${b64(buf)}`;
+    } finally {
+      clearTimeout(timer);
+    }
   } catch {
     return null;
   }

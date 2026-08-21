@@ -7,9 +7,28 @@ export interface RateLimitOptions {
   windowSeconds?: number;
 }
 
-/** Best-effort client IP. Supabase's edge gateway sets x-forwarded-for. */
+/**
+ * Best-effort client IP for rate-limit bucketing (2026-08-21 audit, item 3).
+ *
+ * The FIRST x-forwarded-for entry is client-suppliable (a direct caller can
+ * send its own XFF header and rotate buckets), so it is only trusted when the
+ * request carries the shared worker secret — i.e. it came from our Cloudflare
+ * worker, which sets XFF to the real visitor IP (cf-connecting-ip).
+ * Otherwise prefer cf-connecting-ip (set by the edge, not spoofable), then the
+ * LAST XFF entry (appended by the nearest trusted proxy), then "unknown".
+ *
+ * WORKER_TRUST_SECRET is optional: when unset, worker-path requests bucket by
+ * the worker's egress IP — coarser, but cards are edge-cached 6h so misses are
+ * rare, and rate limiting here is cost protection (fail-open) not security.
+ */
 export function clientIp(req: Request): string {
-  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const xff = (req.headers.get("x-forwarded-for") || "")
+    .split(",").map((s) => s.trim()).filter(Boolean);
+  const secret = Deno.env.get("WORKER_TRUST_SECRET");
+  if (secret && req.headers.get("x-worker-secret") === secret && xff[0]) {
+    return xff[0];
+  }
+  return req.headers.get("cf-connecting-ip") || xff[xff.length - 1] || "unknown";
 }
 
 /**
