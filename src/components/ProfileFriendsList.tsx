@@ -78,6 +78,10 @@ const ProfileFriendsList = ({ userId, viewerId }: ProfileFriendsListProps) => {
   }
 
   if (friends.length === 0) {
+    // Non-owners below the owner's visibility threshold get an empty list from
+    // the server (20260821130000); showing "No friends yet" there would be
+    // misleading, so render nothing unless the viewer IS the owner.
+    if (viewerId !== userId) return null;
     return (
       <Card>
         <CardHeader className="pb-3">

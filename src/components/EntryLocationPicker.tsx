@@ -42,6 +42,10 @@ const EntryLocationPicker = ({ latitude, longitude, onPick }: EntryLocationPicke
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
   const tokenRef = useRef<string | null>(null);
+  // Monotonic sequence: every pin placement bumps it; late async geocode
+  // responses check it and drop themselves instead of snapping the pin back
+  // to an earlier location (2026-08-21 audit, item 5).
+  const pinSeqRef = useRef(0);
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState(false);
 
@@ -72,6 +76,7 @@ const EntryLocationPicker = ({ latitude, longitude, onPick }: EntryLocationPicke
 
   // Drop/move the marker and recentre. Optionally reverse-geocode a label.
   const placePin = (lat: number, lng: number, opts?: { reverse?: boolean; label?: string }) => {
+    const seq = ++pinSeqRef.current;
     const map = mapRef.current;
     if (map) {
       if (markerRef.current) markerRef.current.setLngLat([lng, lat]);
@@ -90,6 +95,8 @@ const EntryLocationPicker = ({ latitude, longitude, onPick }: EntryLocationPicke
       )
         .then((r) => r.json())
         .then((d) => {
+          // A newer pin placement superseded this geocode — drop it.
+          if (seq !== pinSeqRef.current) return;
           const label = labelFromFeatures(d.features);
           if (label) onPick(Number(lat.toFixed(6)), Number(lng.toFixed(6)), label);
         })
@@ -178,12 +185,16 @@ const EntryLocationPicker = ({ latitude, longitude, onPick }: EntryLocationPicke
     if (!q || !tokenRef.current) return;
     setNotice(null);
     setSearching(true);
+    const seqAtStart = pinSeqRef.current;
     try {
       const res = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?types=place,locality,region,country,poi,address&limit=1&access_token=${tokenRef.current}`,
       );
       const data = await res.json();
-      if (data.features?.length) {
+      if (pinSeqRef.current !== seqAtStart) {
+        // The user placed a pin while the search was in flight — keep theirs.
+        setNotice(null);
+      } else if (data.features?.length) {
         const [lng, lat] = data.features[0].center;
         placePin(lat, lng, { label: labelFromFeatures(data.features) ?? q.slice(0, 80) });
       } else {
