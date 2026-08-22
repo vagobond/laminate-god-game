@@ -102,8 +102,9 @@ export function PublishScrollDialog({ scrollId, meta, onPublished }: Props) {
             </RadioGroup>
 
             <p className="text-xs text-muted-foreground italic">
-              Publishing creates an immutable snapshot. Edits to this Scroll won't change the published copy.
-              You can publish again to create a newer version.
+              Publishing creates a snapshot at a stable link. Edits to this Scroll won't appear
+              until you publish again — republishing updates the same link, so
+              everyone you've shared it with sees the newest version.
             </p>
 
             <DialogFooter>

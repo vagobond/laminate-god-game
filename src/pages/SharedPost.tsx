@@ -29,6 +29,9 @@ const SharedPost = () => {
   const [entry, setEntry] = useState<SharedEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  // Transport/auth failures are not "post not found" — they get a retry.
+  const [loadError, setLoadError] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     if (!postId) {
@@ -36,6 +39,11 @@ const SharedPost = () => {
       setLoading(false);
       return;
     }
+
+    let cancelled = false;
+    setNotFound(false);
+    setLoadError(false);
+    setLoading(true);
 
     const fetchPost = async () => {
       // Fetch the entry — RLS decides what this viewer can see (public for
@@ -46,20 +54,29 @@ const SharedPost = () => {
         .eq("id", postId)
         .maybeSingle();
 
-      if (entryError || !entryData) {
+      if (cancelled) return;
+      if (entryError) {
+        setLoadError(true);
+        setLoading(false);
+        return;
+      }
+      if (!entryData) {
         setNotFound(true);
         setLoading(false);
         return;
       }
 
       // Then fetch the author profile separately
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("display_name, avatar_url, username")
         .eq("id", entryData.user_id)
         .maybeSingle();
 
-      if (!profileData) {
+      if (cancelled) return;
+      if (profileError) {
+        setLoadError(true);
+      } else if (!profileData) {
         setNotFound(true);
       } else {
         setEntry({ ...entryData, profiles: profileData } as SharedEntry);
@@ -68,12 +85,34 @@ const SharedPost = () => {
     };
 
     fetchPost();
-  }, [postId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [postId, reloadTick]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (loadError && !entry) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 gap-6">
+        <Scroll className="h-16 w-16 text-muted-foreground opacity-50" />
+        <h1 className="text-2xl font-bold text-foreground">Couldn't load this post</h1>
+        <p className="text-muted-foreground text-center max-w-md">
+          Something went wrong loading it — probably a connection blip. The
+          post may be fine; try again.
+        </p>
+        <div className="flex gap-3">
+          <Button onClick={() => setReloadTick((t) => t + 1)}>Try Again</Button>
+          <Button variant="outline" asChild>
+            <Link to="/">Go to XCROL</Link>
+          </Button>
+        </div>
       </div>
     );
   }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { isReservedUsername } from "@/lib/reserved-usernames";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { VisibilityLevel } from "@/components/PersonalInfoManager";
@@ -187,6 +188,7 @@ export function useProfileData() {
     if (value.length < 2) return "Username must be at least 2 characters";
     if (value.length > 30) return "Username must be less than 30 characters";
     if (!/^[a-z0-9_]+$/.test(value)) return "Only lowercase letters, numbers, and underscores allowed";
+    if (isReservedUsername(value)) return "That name is reserved — please choose another";
     return null;
   };
 

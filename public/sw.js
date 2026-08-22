@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xcrol-v5-health-fix';
+const CACHE_NAME = 'xcrol-v6-no-skipwaiting';
 const STATIC_ASSETS = [
   '/',
   '/favicon.png',
@@ -12,7 +12,6 @@ const STATIC_ASSETS = [
 // This prevents mid-session cache swaps that cause unexpected page reloads
 // (especially on mobile PWA tab-switch).
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   );

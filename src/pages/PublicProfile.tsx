@@ -23,6 +23,8 @@ const PublicProfile = () => {
     profile,
     loading,
     notFound,
+    loadError,
+    retry,
     friendshipLevel,
     resolvedUserId,
     meetupPrefs,
@@ -43,6 +45,31 @@ const PublicProfile = () => {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center">
         <div className="text-muted-foreground">Loading profile...</div>
+      </div>
+    );
+  }
+
+  // A failed request gets an honest error + retry — never the 404 card.
+  if (loadError && !profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 space-y-4 text-center">
+            <User className="w-16 h-16 mx-auto text-muted-foreground" />
+            <h2 className="text-xl font-semibold">Couldn't Load This Page</h2>
+            <p className="text-muted-foreground">
+              Something went wrong loading it — probably a connection blip.
+              The page may be fine; try again.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button onClick={retry}>Try Again</Button>
+              <Button onClick={() => navigate("/")} variant="outline">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Go Home
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -138,7 +165,11 @@ const PublicProfile = () => {
 
           {/* Public Xcrol Entries */}
           {resolvedUserId && (
-            <PublicXcrolEntries userId={resolvedUserId} username={displayName} />
+            <PublicXcrolEntries
+              userId={resolvedUserId}
+              username={displayName}
+              profileHandle={username ? `@${username.replace(/^@+/, "")}` : resolvedUserId}
+            />
           )}
 
           {/* Published Scrolls */}

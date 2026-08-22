@@ -18,10 +18,17 @@ interface XcrolEntry {
 interface PublicXcrolEntriesProps {
   userId: string;
   username: string;
+  // Stable navigation handle for /xcrol/:username. `username` above is a
+  // DISPLAY name (for the card title); navigating with it breaks whenever a
+  // user's username differs from their display name. Callers pass "@<username>"
+  // when the real username is known, or fall back to the user id (UserXcrol
+  // accepts both).
+  profileHandle?: string;
 }
 
-export const PublicXcrolEntries = ({ userId, username }: PublicXcrolEntriesProps) => {
+export const PublicXcrolEntries = ({ userId, username, profileHandle }: PublicXcrolEntriesProps) => {
   const navigate = useNavigate();
+  const xcrolPath = `/xcrol/${profileHandle || userId}`;
   const [entries, setEntries] = useState<XcrolEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -67,7 +74,7 @@ export const PublicXcrolEntries = ({ userId, username }: PublicXcrolEntriesProps
         <CardTitle className="flex items-center gap-2 text-lg">
           <Scroll className="w-5 h-5 text-primary" />
           <button
-            onClick={() => navigate(`/xcrol/${username}`)}
+            onClick={() => navigate(xcrolPath)}
             className="hover:text-primary hover:underline transition-colors text-left"
           >
             {username}'s Xcrol
@@ -108,7 +115,7 @@ export const PublicXcrolEntries = ({ userId, username }: PublicXcrolEntriesProps
         ))}
         {entries.length === 3 && (
           <button
-            onClick={() => navigate(`/xcrol/${username}`)}
+            onClick={() => navigate(xcrolPath)}
             className="w-full text-center text-sm text-primary hover:underline mt-2"
           >
             See more entries →

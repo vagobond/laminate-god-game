@@ -44,39 +44,69 @@ const UserXcrol = () => {
   const [loading, setLoading] = useState(true);
   const [profileInfo, setProfileInfo] = useState<ProfileInfo | null>(null);
   const [notFound, setNotFound] = useState(false);
+  // Transport/auth failures are not "xcrol not found" — they get a retry.
+  const [loadError, setLoadError] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     if (username) {
+      setNotFound(false);
+      setLoadError(false);
+      // Reset per-target state: without this, navigating between two users'
+      // xcrols kept the previous profileInfo (skipping the new fetch and
+      // pointing Back-to-Profile at the wrong user).
+      setProfileInfo(null);
+      setEntries([]);
       loadUserXcrol();
     }
-  }, [username, currentUser]);
+    // Key on the viewer's id, not the user object: supabase-js emits a fresh
+    // object on TOKEN_REFRESHED, which would re-run this hourly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [username, currentUser?.id, reloadTick]);
 
   const loadUserXcrol = async () => {
     try {
       setLoading(true);
 
-      // First resolve the username to get user ID
+      // First resolve the handle to a user ID. Accepted forms, most specific
+      // first: a raw user id (stable — what profile pages now link with),
+      // "@username", or a display name (legacy links; ambiguous, last resort).
       const handle = username?.trim() || "";
       let targetUserId: string | null = null;
+      let resolvedProfile: ProfileInfo | null = null;
       let displayName = handle;
 
-      // Check if it's a username format (starts with @) or display name
-      if (handle.startsWith("@")) {
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (UUID_RE.test(handle)) {
+        targetUserId = handle;
+      } else if (handle.startsWith("@")) {
         const normalizedUsername = handle.slice(1).toLowerCase();
-        const { data: resolvedId } = await supabase.rpc("resolve_username_to_id", {
+        const { data: resolvedId, error: resolveError } = await supabase.rpc("resolve_username_to_id", {
           target_username: normalizedUsername,
         });
+        if (resolveError) {
+          // We don't know whether the name exists — don't claim not-found.
+          setLoadError(true);
+          setLoading(false);
+          return;
+        }
         targetUserId = resolvedId;
       } else {
         // Try to find by display name
-        const { data: profiles } = await supabase
+        const { data: profiles, error: profilesError } = await supabase
           .from("profiles")
           .select("id, display_name, avatar_url")
           .ilike("display_name", handle)
           .limit(1);
 
+        if (profilesError) {
+          setLoadError(true);
+          setLoading(false);
+          return;
+        }
         if (profiles && profiles.length > 0) {
           targetUserId = profiles[0].id;
+          resolvedProfile = profiles[0];
           setProfileInfo(profiles[0]);
         }
       }
@@ -87,8 +117,9 @@ const UserXcrol = () => {
         return;
       }
 
-      // Get profile info if not already set
-      if (!profileInfo) {
+      // Get profile info if not already resolved this run (never trust the
+      // profileInfo STATE here — it may belong to the previous target)
+      if (!resolvedProfile) {
         const { data: profile } = await supabase
           .from("profiles")
           .select("id, display_name, avatar_url")
@@ -113,7 +144,8 @@ const UserXcrol = () => {
       setEntries(entriesData || []);
     } catch (error) {
       console.error("Error loading user xcrol:", error);
-      setNotFound(true);
+      // A failed request is not a missing xcrol.
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -123,6 +155,23 @@ const UserXcrol = () => {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (loadError && !notFound) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 space-y-4 text-center">
+            <Scroll className="w-16 h-16 mx-auto text-muted-foreground" />
+            <h2 className="text-xl font-semibold">Couldn't Load This Xcrol</h2>
+            <p className="text-muted-foreground">
+              Something went wrong — probably a connection blip. Try again.
+            </p>
+            <Button onClick={() => setReloadTick((t) => t + 1)}>Try Again</Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -149,13 +198,21 @@ const UserXcrol = () => {
 
   const displayName = profileInfo?.display_name || username || "User";
 
-  // Extract the clean username for linking back to profile
-  const cleanUsername = username?.startsWith("@") ? username.slice(1) : username;
+  // Back to Profile must be deterministic. The URL param may be a display
+  // name (legacy links), which is NOT routable as /@<param> — that broke the
+  // back button for every user whose username differs from their display
+  // name. Prefer the resolved user id (/u/:id always works); keep the
+  // @username form only when that's literally what the URL carried.
+  const backPath = username?.startsWith("@")
+    ? `/${username}`
+    : profileInfo
+      ? `/u/${profileInfo.id}`
+      : "/";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 p-4 pt-20">
       <div className="max-w-2xl mx-auto space-y-6">
-        <Button variant="ghost" onClick={() => navigate(`/@${cleanUsername}`)}>
+        <Button variant="ghost" onClick={() => navigate(backPath)}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Profile
         </Button>
