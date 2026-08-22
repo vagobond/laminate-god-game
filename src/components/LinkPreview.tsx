@@ -38,13 +38,16 @@ function isPreviewableUrl(url: string): boolean {
 }
 
 export const LinkPreview = ({ url }: LinkPreviewProps) => {
-  const { user, loading: authLoading } = useAuth();
+  // Wait for the session to load so logged-in requests carry the user's
+  // token, but fetch either way: the edge function serves anonymous viewers
+  // previews for links that appear in public entries.
+  const { loading: authLoading } = useAuth();
   const [data, setData] = useState<LinkPreviewData | null>(null);
   const [loading, setLoading] = useState(false);
   const [showEmbed, setShowEmbed] = useState(false);
 
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading) return;
     if (!url || !isPreviewableUrl(url)) return;
 
     let cancelled = false;
@@ -64,7 +67,7 @@ export const LinkPreview = ({ url }: LinkPreviewProps) => {
       });
 
     return () => { cancelled = true; };
-  }, [url, user, authLoading]);
+  }, [url, authLoading]);
 
   if (!isPreviewableUrl(url) || loading || !data) {
     return null;
