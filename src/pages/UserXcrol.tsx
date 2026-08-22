@@ -44,12 +44,20 @@ const UserXcrol = () => {
   const [loading, setLoading] = useState(true);
   const [profileInfo, setProfileInfo] = useState<ProfileInfo | null>(null);
   const [notFound, setNotFound] = useState(false);
+  // Transport/auth failures are not "xcrol not found" — they get a retry.
+  const [loadError, setLoadError] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     if (username) {
+      setNotFound(false);
+      setLoadError(false);
       loadUserXcrol();
     }
-  }, [username, currentUser]);
+    // Key on the viewer's id, not the user object: supabase-js emits a fresh
+    // object on TOKEN_REFRESHED, which would re-run this hourly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [username, currentUser?.id, reloadTick]);
 
   const loadUserXcrol = async () => {
     try {
@@ -67,18 +75,29 @@ const UserXcrol = () => {
         targetUserId = handle;
       } else if (handle.startsWith("@")) {
         const normalizedUsername = handle.slice(1).toLowerCase();
-        const { data: resolvedId } = await supabase.rpc("resolve_username_to_id", {
+        const { data: resolvedId, error: resolveError } = await supabase.rpc("resolve_username_to_id", {
           target_username: normalizedUsername,
         });
+        if (resolveError) {
+          // We don't know whether the name exists — don't claim not-found.
+          setLoadError(true);
+          setLoading(false);
+          return;
+        }
         targetUserId = resolvedId;
       } else {
         // Try to find by display name
-        const { data: profiles } = await supabase
+        const { data: profiles, error: profilesError } = await supabase
           .from("profiles")
           .select("id, display_name, avatar_url")
           .ilike("display_name", handle)
           .limit(1);
 
+        if (profilesError) {
+          setLoadError(true);
+          setLoading(false);
+          return;
+        }
         if (profiles && profiles.length > 0) {
           targetUserId = profiles[0].id;
           setProfileInfo(profiles[0]);
@@ -117,7 +136,8 @@ const UserXcrol = () => {
       setEntries(entriesData || []);
     } catch (error) {
       console.error("Error loading user xcrol:", error);
-      setNotFound(true);
+      // A failed request is not a missing xcrol.
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -127,6 +147,23 @@ const UserXcrol = () => {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (loadError && !notFound) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 space-y-4 text-center">
+            <Scroll className="w-16 h-16 mx-auto text-muted-foreground" />
+            <h2 className="text-xl font-semibold">Couldn't Load This Xcrol</h2>
+            <p className="text-muted-foreground">
+              Something went wrong — probably a connection blip. Try again.
+            </p>
+            <Button onClick={() => setReloadTick((t) => t + 1)}>Try Again</Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }

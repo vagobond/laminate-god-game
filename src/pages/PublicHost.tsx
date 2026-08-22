@@ -36,34 +36,56 @@ export default function PublicHost() {
   const [host, setHost] = useState<HostData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  // Transport/auth failures are not "host not found" — they get a retry.
+  const [loadError, setLoadError] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     if (!username) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const handle = username.startsWith("@") ? username.slice(1) : username;
-      const { data: profile } = await supabase
+      setNotFound(false);
+      setLoadError(false);
+      // og-host emits /host/<uuid> for username-less profiles, and shared
+      // links may carry mixed case — accept a raw user id, and match
+      // usernames lowercased (they're stored lowercase).
+      const handle = (username.startsWith("@") ? username.slice(1) : username).trim();
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const baseQuery = supabase
         .from("profiles")
-        .select("id, display_name, username, avatar_url, bio, hometown_city, hometown_country")
-        .eq("username", handle)
-        .maybeSingle();
+        .select("id, display_name, username, avatar_url, bio, hometown_city, hometown_country");
+      const { data: profile, error: profileError } = await (UUID_RE.test(handle)
+        ? baseQuery.eq("id", handle)
+        : baseQuery.eq("username", handle.toLowerCase())
+      ).maybeSingle();
 
+      if (cancelled) return;
+      if (profileError) {
+        setLoadError(true);
+        setLoading(false);
+        return;
+      }
       if (!profile) {
-        if (!cancelled) {
-          setNotFound(true);
-          setLoading(false);
-        }
+        setNotFound(true);
+        setLoading(false);
         return;
       }
 
-      const { data: prefs } = await supabase
+      const { data: prefs, error: prefsError } = await supabase
         .from("hosting_preferences")
         .select(
           "is_open_to_hosting, is_hosting_paused, hosting_description, accommodation_type, max_guests, min_friendship_level, compensation_type_preferred"
         )
         .eq("user_id", profile.id)
         .maybeSingle();
+
+      if (cancelled) return;
+      if (prefsError) {
+        setLoadError(true);
+        setLoading(false);
+        return;
+      }
 
       if (!prefs || !prefs.is_open_to_hosting || prefs.is_hosting_paused) {
         if (!cancelled) {
@@ -94,12 +116,24 @@ export default function PublicHost() {
     return () => {
       cancelled = true;
     };
-  }, [username]);
+  }, [username, reloadTick]);
 
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (loadError && !host) {
+    return (
+      <div className="container max-w-xl mx-auto py-16 px-4 text-center">
+        <h1 className="text-2xl font-bold mb-2">Couldn't load this host</h1>
+        <p className="text-muted-foreground mb-6">
+          Something went wrong — probably a connection blip. Try again.
+        </p>
+        <Button onClick={() => setReloadTick((t) => t + 1)}>Try Again</Button>
       </div>
     );
   }

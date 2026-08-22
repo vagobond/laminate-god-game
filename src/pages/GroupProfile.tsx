@@ -32,7 +32,7 @@ const GroupProfile = () => {
   const focusPostId = searchParams.get("post");
   const focusCommentId = searchParams.get("comment");
   const { user } = useAuth();
-  const { data: group, isLoading } = useGroupBySlug(slug);
+  const { data: group, isLoading, isError, refetch } = useGroupBySlug(slug);
   const { data: members } = useGroupMembers(group?.id);
   // Load posts whenever the viewer can see them: members OR anyone (incl. guests)
   // when the group is publicly readable.
@@ -97,6 +97,16 @@ const GroupProfile = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // A failed request (network blip, expired token) is not a missing group.
+  if (isError && !group) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 gap-4">
+        <p className="text-muted-foreground">Couldn't load this group — probably a connection blip.</p>
+        <Button onClick={() => refetch()}>Try Again</Button>
       </div>
     );
   }

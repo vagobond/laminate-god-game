@@ -30,14 +30,21 @@ const PublicationReader = () => {
   const [more, setMore] = useState<Publication[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  // Transport/auth failures are not "scroll not found" — they get a retry.
+  const [loadError, setLoadError] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
+    let cancelled = false;
     (async () => {
       setLoading(true);
+      setNotFound(false);
+      setLoadError(false);
       try {
         const p = await getPublicationBySlug(slug);
+        if (cancelled) return;
         if (!p) { setNotFound(true); return; }
         setPub(p);
         incrementView(p.id).catch(() => {});
@@ -46,17 +53,23 @@ const PublicationReader = () => {
           .select("display_name, username, avatar_url")
           .eq("id", p.user_id)
           .maybeSingle();
+        if (cancelled) return;
         setAuthor((prof as AuthorInfo) ?? null);
         const others = await listAuthorPublications(p.user_id);
+        if (cancelled) return;
         setMore(others.filter((o) => o.id !== p.id).slice(0, 6));
       } catch (e) {
+        if (cancelled) return;
         toast({ title: "Couldn't load", description: e instanceof Error ? e.message : "", variant: "destructive" });
-        setNotFound(true);
+        setLoadError(true);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, [slug]);
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, reloadTick]);
 
   const copyLink = async () => {
     if (!pub) return;
@@ -67,6 +80,15 @@ const PublicationReader = () => {
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+  if (loadError && !pub) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4 text-center">
+        <h1 className="text-2xl font-serif">Couldn't load this scroll</h1>
+        <p className="text-muted-foreground">Something went wrong — probably a connection blip. Try again.</p>
+        <Button onClick={() => setReloadTick((t) => t + 1)}>Try Again</Button>
+      </div>
+    );
   }
   if (notFound || !pub) {
     return (
