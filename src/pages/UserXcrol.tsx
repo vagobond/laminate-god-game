@@ -52,6 +52,11 @@ const UserXcrol = () => {
     if (username) {
       setNotFound(false);
       setLoadError(false);
+      // Reset per-target state: without this, navigating between two users'
+      // xcrols kept the previous profileInfo (skipping the new fetch and
+      // pointing Back-to-Profile at the wrong user).
+      setProfileInfo(null);
+      setEntries([]);
       loadUserXcrol();
     }
     // Key on the viewer's id, not the user object: supabase-js emits a fresh
@@ -68,6 +73,7 @@ const UserXcrol = () => {
       // "@username", or a display name (legacy links; ambiguous, last resort).
       const handle = username?.trim() || "";
       let targetUserId: string | null = null;
+      let resolvedProfile: ProfileInfo | null = null;
       let displayName = handle;
 
       const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -100,6 +106,7 @@ const UserXcrol = () => {
         }
         if (profiles && profiles.length > 0) {
           targetUserId = profiles[0].id;
+          resolvedProfile = profiles[0];
           setProfileInfo(profiles[0]);
         }
       }
@@ -110,8 +117,9 @@ const UserXcrol = () => {
         return;
       }
 
-      // Get profile info if not already set
-      if (!profileInfo) {
+      // Get profile info if not already resolved this run (never trust the
+      // profileInfo STATE here — it may belong to the previous target)
+      if (!resolvedProfile) {
         const { data: profile } = await supabase
           .from("profiles")
           .select("id, display_name, avatar_url")
