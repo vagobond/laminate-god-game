@@ -18,4 +18,4 @@ XCROL is built around a few core ideas: friendships have tiers of trust, daily o
 - [Shared posts](/post/): Public posts shared by individual users (dynamic; one URL per post).
 - [Public profiles](/u/): Public user profiles (dynamic; one URL per user).
 - [Your Scrolls](/scrolls): Bundle your own Xcrol entries and group posts into a personal archive you can export.
-- [The Castle](/castle): Upcoming library where finished Scrolls will be published (60/40 revenue split).
+- [The Castle](/the-castle): Upcoming library where finished Scrolls will be published (60/40 revenue split).
