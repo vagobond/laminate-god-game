@@ -21,10 +21,13 @@ const MENTION_REGEX = /(^|[^A-Za-z0-9._-])@([a-z0-9_]{2,30})(?![A-Za-z0-9_])/gi;
 // results are cached for the session; lookups from all mounted MentionTexts
 // are batched into one query per tick-window.
 const knownUsernames = new Map<string, boolean>();
+
+export const isKnownMention = (name: string) => knownUsernames.get(name.toLowerCase()) === true;
+
 let pendingLookups: Set<string> | null = null;
 let pendingFlush: Promise<void> | null = null;
 
-function ensureChecked(names: string[]): Promise<void> | null {
+export function ensureMentionsChecked(names: string[]): Promise<void> | null {
   const unknown = names.filter((n) => !knownUsernames.has(n));
   if (unknown.length === 0) return null;
   if (!pendingLookups) pendingLookups = new Set();
@@ -67,7 +70,7 @@ export const MentionText = ({ content, className }: MentionTextProps) => {
 
   useEffect(() => {
     let cancelled = false;
-    const flush = ensureChecked(candidates);
+    const flush = ensureMentionsChecked(candidates);
     if (flush) {
       flush.then(() => {
         if (!cancelled) setCheckTick((t) => t + 1);
