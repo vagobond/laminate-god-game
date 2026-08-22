@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -35,17 +35,38 @@ export function usePublicProfileData() {
   const [profile, setProfile] = useState<PublicProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  // Transient failures (network blip, 401 during token refresh) are NOT
+  // "not found" — they get their own state so the page can offer a retry
+  // instead of claiming the profile doesn't exist.
+  const [loadError, setLoadError] = useState(false);
   const [friendshipLevel, setFriendshipLevel] = useState<FriendshipLevel>(null);
   const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
   const [meetupPrefs, setMeetupPrefs] = useState<any>(null);
   const [hostingPrefs, setHostingPrefs] = useState<any>(null);
   const [prefsLoading, setPrefsLoading] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
+  // Mirrors `profile` so async callbacks can tell a first load from a
+  // background refetch without stale-closure issues.
+  const profileRef = useRef<PublicProfileData | null>(null);
 
-  // Resolve username to userId if needed
+  const retry = () => setReloadTick((t) => t + 1);
+
+  // Resolve username to userId if needed. All target-dependent state resets
+  // here: without the reset, a notFound latched on one profile kept showing
+  // over the NEXT profile the user navigated to.
   useEffect(() => {
+    let cancelled = false;
+    setProfile(null);
+    profileRef.current = null;
+    setNotFound(false);
+    setLoadError(false);
+    setFriendshipLevel(null);
+    setResolvedUserId(null);
+    setLoading(true);
+
     const resolveUser = async () => {
       if (userId) {
-        setResolvedUserId(userId);
+        if (!cancelled) setResolvedUserId(userId);
         return;
       }
 
@@ -53,17 +74,26 @@ export function usePublicProfileData() {
 
       const normalizedUsername = username.trim().replace(/^@+/, "").toLowerCase();
       if (!normalizedUsername) {
-        setNotFound(true);
-        setLoading(false);
+        if (!cancelled) {
+          setNotFound(true);
+          setLoading(false);
+        }
         return;
       }
 
       const { data, error } = await supabase.rpc("resolve_username_to_id", {
         target_username: normalizedUsername,
       });
+      if (cancelled) return;
 
-      if (error || !data) {
+      if (error) {
+        // Transport/auth failure — we don't know whether the name exists.
         console.error("Username resolution failed:", error);
+        setLoadError(true);
+        setLoading(false);
+        return;
+      }
+      if (!data) {
         setNotFound(true);
         setLoading(false);
         return;
@@ -71,15 +101,25 @@ export function usePublicProfileData() {
       setResolvedUserId(data);
     };
     resolveUser();
-  }, [userId, username]);
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, username, reloadTick]);
 
-  // Load profile with secure function when we have user context
+  // Load profile with secure function when we have user context. Depends on
+  // currentUser?.id (not the user object): supabase-js emits a fresh user
+  // object on every TOKEN_REFRESHED, which used to trigger a hidden hourly
+  // refetch whose failure could replace a profile mid-read.
   useEffect(() => {
-    if (resolvedUserId) {
-      loadSecureProfile(resolvedUserId, currentUser?.id);
-      loadMeetupHostingPrefs(resolvedUserId);
-    }
-  }, [resolvedUserId, currentUser]);
+    if (!resolvedUserId) return;
+    let cancelled = false;
+    loadSecureProfile(resolvedUserId, currentUser?.id ?? null, () => cancelled);
+    loadMeetupHostingPrefs(resolvedUserId);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolvedUserId, currentUser?.id, reloadTick]);
 
   const loadMeetupHostingPrefs = async (profileId: string) => {
     setPrefsLoading(true);
@@ -99,19 +139,29 @@ export function usePublicProfileData() {
     }
   };
 
-  const loadSecureProfile = async (profileId: string, viewerId: string | null) => {
+  const loadSecureProfile = async (
+    profileId: string,
+    viewerId: string | null,
+    isCancelled: () => boolean = () => false
+  ) => {
+    // A background refetch (viewer id changed, retry) of an already-loaded
+    // profile must not blank the page with a loading screen.
+    const isRefetch = profileRef.current?.id === profileId;
     try {
-      setLoading(true);
+      if (!isRefetch) setLoading(true);
 
       const { data, error } = await supabase.rpc("get_visible_profile", {
         viewer_id: viewerId ?? null,
         profile_id: profileId,
       });
 
+      if (isCancelled()) return;
       if (error) throw error;
 
       if (data && data.length > 0) {
         const p = data[0];
+        setLoadError(false);
+        setNotFound(false);
         setProfile({
           id: p.id,
           display_name: p.display_name,
@@ -133,15 +183,21 @@ export function usePublicProfileData() {
           mailing_address: p.mailing_address,
           nicknames: p.nicknames,
         });
+        profileRef.current = { id: p.id } as PublicProfileData;
         setFriendshipLevel(p.friendship_level as FriendshipLevel);
       } else {
+        // Zero rows is the RPC's genuine "no visible profile" answer.
         setNotFound(true);
       }
     } catch (error) {
       console.error("Error loading profile:", error);
-      setNotFound(true);
+      if (isCancelled()) return;
+      // A failed REQUEST is not a missing PROFILE. Keep showing an
+      // already-loaded profile; only surface the error state when there is
+      // nothing on screen yet.
+      if (!isRefetch) setLoadError(true);
     } finally {
-      setLoading(false);
+      if (!isCancelled()) setLoading(false);
     }
   };
 
@@ -198,6 +254,8 @@ export function usePublicProfileData() {
     profile,
     loading,
     notFound,
+    loadError,
+    retry,
     friendshipLevel,
     resolvedUserId,
     meetupPrefs,
