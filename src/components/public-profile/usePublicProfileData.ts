@@ -62,6 +62,8 @@ export function usePublicProfileData() {
     setLoadError(false);
     setFriendshipLevel(null);
     setResolvedUserId(null);
+    setMeetupPrefs(null);
+    setHostingPrefs(null);
     setLoading(true);
 
     const resolveUser = async () => {

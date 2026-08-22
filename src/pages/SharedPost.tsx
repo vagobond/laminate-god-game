@@ -43,6 +43,9 @@ const SharedPost = () => {
     let cancelled = false;
     setNotFound(false);
     setLoadError(false);
+    // Reset content per target so a failed load never renders the previous
+    // post under the new URL.
+    setEntry(null);
     setLoading(true);
 
     const fetchPost = async () => {
