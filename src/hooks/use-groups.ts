@@ -112,13 +112,17 @@ export const useGroupBySlug = (slug: string | undefined) => {
     queryFn: async () => {
       if (!slug) throw new Error("No slug");
 
+      // maybeSingle: a missing group is a successful null result, not an
+      // error — .single() threw PGRST116 on zero rows, which made
+      // GroupProfile's error/retry card fire for genuinely absent groups.
       const { data: group, error } = await supabase
         .from("groups")
         .select("id, name, slug, description, avatar_url, trust_level, require_approval, creator_id, created_at, updated_at")
         .eq("slug", slug)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!group) return null;
 
       // Use SECURITY DEFINER RPC so anon visitors can read member counts too
       const { data: countData } = await supabase.rpc("get_group_member_count", {

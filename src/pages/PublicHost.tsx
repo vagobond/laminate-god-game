@@ -47,6 +47,9 @@ export default function PublicHost() {
       setLoading(true);
       setNotFound(false);
       setLoadError(false);
+      // Reset content per target so a failed load never renders the
+      // previous host under the new URL.
+      setHost(null);
       // og-host emits /host/<uuid> for username-less profiles, and shared
       // links may carry mixed case — accept a raw user id, and match
       // usernames lowercased (they're stored lowercase).

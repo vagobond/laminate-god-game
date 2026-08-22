@@ -42,6 +42,11 @@ const PublicationReader = () => {
       setLoading(true);
       setNotFound(false);
       setLoadError(false);
+      // Reset content per target: without this, a failed load of scroll B
+      // silently kept rendering scroll A under B's URL.
+      setPub(null);
+      setAuthor(null);
+      setMore([]);
       try {
         const p = await getPublicationBySlug(slug);
         if (cancelled) return;
