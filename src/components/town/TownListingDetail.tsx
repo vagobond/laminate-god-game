@@ -112,10 +112,11 @@ const TownListingDetail = ({ listingId, onBack }: TownListingDetailProps) => {
           <p>
             by{" "}
             <button
-              onClick={() => navigate(`/${author.username}`)}
+              // username is nullable — fall back to the always-valid /u/:id
+              onClick={() => navigate(author.username ? `/${author.username}` : `/u/${listing.user_id}`)}
               className="text-primary hover:underline"
             >
-              {author.display_name || author.username}
+              {author.display_name || author.username || "member"}
             </button>
           </p>
         )}
