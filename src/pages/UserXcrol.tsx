@@ -49,22 +49,25 @@ const UserXcrol = () => {
   const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
-    if (username) {
-      setNotFound(false);
-      setLoadError(false);
-      // Reset per-target state: without this, navigating between two users'
-      // xcrols kept the previous profileInfo (skipping the new fetch and
-      // pointing Back-to-Profile at the wrong user).
-      setProfileInfo(null);
-      setEntries([]);
-      loadUserXcrol();
-    }
+    if (!username) return;
+    let cancelled = false;
+    setNotFound(false);
+    setLoadError(false);
+    // Reset per-target state: without this, navigating between two users'
+    // xcrols kept the previous profileInfo (skipping the new fetch and
+    // pointing Back-to-Profile at the wrong user).
+    setProfileInfo(null);
+    setEntries([]);
+    loadUserXcrol(() => cancelled);
     // Key on the viewer's id, not the user object: supabase-js emits a fresh
     // object on TOKEN_REFRESHED, which would re-run this hourly.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+    };
   }, [username, currentUser?.id, reloadTick]);
 
-  const loadUserXcrol = async () => {
+  const loadUserXcrol = async (isCancelled: () => boolean) => {
     try {
       setLoading(true);
 
@@ -84,6 +87,7 @@ const UserXcrol = () => {
         const { data: resolvedId, error: resolveError } = await supabase.rpc("resolve_username_to_id", {
           target_username: normalizedUsername,
         });
+        if (isCancelled()) return;
         if (resolveError) {
           // We don't know whether the name exists — don't claim not-found.
           setLoadError(true);
@@ -99,6 +103,7 @@ const UserXcrol = () => {
           .ilike("display_name", handle)
           .limit(1);
 
+        if (isCancelled()) return;
         if (profilesError) {
           setLoadError(true);
           setLoading(false);
@@ -118,18 +123,30 @@ const UserXcrol = () => {
       }
 
       // Get profile info if not already resolved this run (never trust the
-      // profileInfo STATE here — it may belong to the previous target)
+      // profileInfo STATE here — it may belong to the previous target).
+      // This doubles as existence validation for the uuid path: a deleted
+      // or nonexistent id is not-found, a failed lookup is an error.
       if (!resolvedProfile) {
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("id, display_name, avatar_url")
           .eq("id", targetUserId)
-          .single();
-        
-        if (profile) {
-          setProfileInfo(profile);
-          displayName = profile.display_name || displayName;
+          .maybeSingle();
+
+        if (isCancelled()) return;
+        if (profileError) {
+          setLoadError(true);
+          setLoading(false);
+          return;
         }
+        if (!profile) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
+        resolvedProfile = profile;
+        setProfileInfo(profile);
+        displayName = profile.display_name || displayName;
       }
 
       // Fetch entries - RLS will filter based on friendship level
@@ -140,14 +157,15 @@ const UserXcrol = () => {
         .order("entry_date", { ascending: false })
         .limit(500);
 
+      if (isCancelled()) return;
       if (error) throw error;
       setEntries(entriesData || []);
     } catch (error) {
       console.error("Error loading user xcrol:", error);
       // A failed request is not a missing xcrol.
-      setLoadError(true);
+      if (!isCancelled()) setLoadError(true);
     } finally {
-      setLoading(false);
+      if (!isCancelled()) setLoading(false);
     }
   };
 
