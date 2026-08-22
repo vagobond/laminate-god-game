@@ -47,46 +47,70 @@ class ErrorBoundary extends React.Component<
   }
 }
 
+// A deploy replaces every hashed chunk file; a tab opened before the deploy
+// fails its next lazy-route import and lands on the ErrorBoundary ("Something
+// went wrong"). Retry via one full reload (per-path, sessionStorage-guarded)
+// so stale tabs self-heal into the new build instead of erroring.
+function lazyWithRetry(importer: () => Promise<{ default: React.ComponentType<any> }>) {
+  return lazy(() => {
+    const key = `chunk-reload:${window.location.pathname}`;
+    return importer()
+      .then((mod) => {
+        sessionStorage.removeItem(key);
+        return mod;
+      })
+      .catch((error) => {
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, "1");
+          window.location.reload();
+          return new Promise<never>(() => {});
+        }
+        sessionStorage.removeItem(key);
+        throw error;
+      });
+  });
+}
+
 // Lazy load all route components for code splitting
-const Welcome = lazy(() => import("./pages/Welcome"));
-const Powers = lazy(() => import("./pages/Powers"));
-const Auth = lazy(() => import("./pages/Auth"));
-const TheRiver = lazy(() => import("./pages/TheRiver"));
-const TheForest = lazy(() => import("./pages/TheForest"));
-const MiniGamesHub = lazy(() => import("./pages/MiniGamesHub"));
-const IRLLayer = lazy(() => import("./pages/IRLLayer"));
-const HearthSurfing = lazy(() => import("./pages/HearthSurfing"));
-const Profile = lazy(() => import("./pages/Profile"));
-const PublicProfile = lazy(() => import("./pages/PublicProfile"));
-const Settings = lazy(() => import("./pages/Settings"));
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
-const Messages = lazy(() => import("./pages/Messages"));
-const GettingStarted = lazy(() => import("./pages/GettingStarted"));
-const InviteFriends = lazy(() => import("./pages/InviteFriends"));
-const MyXcrol = lazy(() => import("./pages/MyXcrol"));
-const UserXcrol = lazy(() => import("./pages/UserXcrol"));
-const Brook = lazy(() => import("./pages/Brook"));
-const TheVillage = lazy(() => import("./pages/TheVillage"));
-const GroupProfile = lazy(() => import("./pages/GroupProfile"));
-const TheTown = lazy(() => import("./pages/TheTown"));
-const TheCastle = lazy(() => import("./pages/TheCastle"));
-const EveryCountry = lazy(() => import("./pages/EveryCountry"));
-const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
-const Terms = lazy(() => import("./pages/Terms"));
-const Privacy = lazy(() => import("./pages/Privacy"));
-const ContentPolicy = lazy(() => import("./pages/ContentPolicy"));
-const Developers = lazy(() => import("./pages/Developers"));
-const InstallApp = lazy(() => import("./pages/InstallApp"));
-const SharedPost = lazy(() => import("./pages/SharedPost"));
-const PublicHost = lazy(() => import("./pages/PublicHost"));
-const Map = lazy(() => import("./pages/Map"));
-const Scrolls = lazy(() => import("./pages/Scrolls"));
-const ScrollEditor = lazy(() => import("./pages/ScrollEditor"));
-const ScrollReader = lazy(() => import("./pages/ScrollReader"));
-const ScrollAiTutorial = lazy(() => import("./pages/ScrollAiTutorial"));
-const CastleLibrary = lazy(() => import("./pages/CastleLibrary"));
-const PublicationReader = lazy(() => import("./pages/PublicationReader"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+const Welcome = lazyWithRetry(() => import("./pages/Welcome"));
+const Powers = lazyWithRetry(() => import("./pages/Powers"));
+const Auth = lazyWithRetry(() => import("./pages/Auth"));
+const TheRiver = lazyWithRetry(() => import("./pages/TheRiver"));
+const TheForest = lazyWithRetry(() => import("./pages/TheForest"));
+const MiniGamesHub = lazyWithRetry(() => import("./pages/MiniGamesHub"));
+const IRLLayer = lazyWithRetry(() => import("./pages/IRLLayer"));
+const HearthSurfing = lazyWithRetry(() => import("./pages/HearthSurfing"));
+const Profile = lazyWithRetry(() => import("./pages/Profile"));
+const PublicProfile = lazyWithRetry(() => import("./pages/PublicProfile"));
+const Settings = lazyWithRetry(() => import("./pages/Settings"));
+const AdminDashboard = lazyWithRetry(() => import("./pages/AdminDashboard"));
+const Messages = lazyWithRetry(() => import("./pages/Messages"));
+const GettingStarted = lazyWithRetry(() => import("./pages/GettingStarted"));
+const InviteFriends = lazyWithRetry(() => import("./pages/InviteFriends"));
+const MyXcrol = lazyWithRetry(() => import("./pages/MyXcrol"));
+const UserXcrol = lazyWithRetry(() => import("./pages/UserXcrol"));
+const Brook = lazyWithRetry(() => import("./pages/Brook"));
+const TheVillage = lazyWithRetry(() => import("./pages/TheVillage"));
+const GroupProfile = lazyWithRetry(() => import("./pages/GroupProfile"));
+const TheTown = lazyWithRetry(() => import("./pages/TheTown"));
+const TheCastle = lazyWithRetry(() => import("./pages/TheCastle"));
+const EveryCountry = lazyWithRetry(() => import("./pages/EveryCountry"));
+const OAuthAuthorize = lazyWithRetry(() => import("./pages/OAuthAuthorize"));
+const Terms = lazyWithRetry(() => import("./pages/Terms"));
+const Privacy = lazyWithRetry(() => import("./pages/Privacy"));
+const ContentPolicy = lazyWithRetry(() => import("./pages/ContentPolicy"));
+const Developers = lazyWithRetry(() => import("./pages/Developers"));
+const InstallApp = lazyWithRetry(() => import("./pages/InstallApp"));
+const SharedPost = lazyWithRetry(() => import("./pages/SharedPost"));
+const PublicHost = lazyWithRetry(() => import("./pages/PublicHost"));
+const Map = lazyWithRetry(() => import("./pages/Map"));
+const Scrolls = lazyWithRetry(() => import("./pages/Scrolls"));
+const ScrollEditor = lazyWithRetry(() => import("./pages/ScrollEditor"));
+const ScrollReader = lazyWithRetry(() => import("./pages/ScrollReader"));
+const ScrollAiTutorial = lazyWithRetry(() => import("./pages/ScrollAiTutorial"));
+const CastleLibrary = lazyWithRetry(() => import("./pages/CastleLibrary"));
+const PublicationReader = lazyWithRetry(() => import("./pages/PublicationReader"));
+const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
