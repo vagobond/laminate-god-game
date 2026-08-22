@@ -33,18 +33,24 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const usernameParam = url.searchParams.get("username");
     if (!usernameParam) return fallback();
-    const handle = usernameParam.startsWith("@") ? usernameParam.slice(1) : usernameParam;
+    const handle = (usernameParam.startsWith("@") ? usernameParam.slice(1) : usernameParam).trim();
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { data: profile } = await supabase
+    // Accept a raw user id (our own canonical falls back to /host/<uuid> for
+    // username-less profiles) and match usernames lowercased (stored
+    // lowercase) — mirrors PublicHost's lookup.
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const baseQuery = supabase
       .from("profiles")
-      .select("id, display_name, username, avatar_url, bio, hometown_city, hometown_country")
-      .eq("username", handle)
-      .maybeSingle();
+      .select("id, display_name, username, avatar_url, bio, hometown_city, hometown_country");
+    const { data: profile } = await (UUID_RE.test(handle)
+      ? baseQuery.eq("id", handle)
+      : baseQuery.eq("username", handle.toLowerCase())
+    ).maybeSingle();
     if (!profile) return fallback();
 
     const { data: prefs } = await supabase
