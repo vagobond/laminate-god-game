@@ -55,13 +55,17 @@ const UserXcrol = () => {
     try {
       setLoading(true);
 
-      // First resolve the username to get user ID
+      // First resolve the handle to a user ID. Accepted forms, most specific
+      // first: a raw user id (stable — what profile pages now link with),
+      // "@username", or a display name (legacy links; ambiguous, last resort).
       const handle = username?.trim() || "";
       let targetUserId: string | null = null;
       let displayName = handle;
 
-      // Check if it's a username format (starts with @) or display name
-      if (handle.startsWith("@")) {
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (UUID_RE.test(handle)) {
+        targetUserId = handle;
+      } else if (handle.startsWith("@")) {
         const normalizedUsername = handle.slice(1).toLowerCase();
         const { data: resolvedId } = await supabase.rpc("resolve_username_to_id", {
           target_username: normalizedUsername,
@@ -149,13 +153,21 @@ const UserXcrol = () => {
 
   const displayName = profileInfo?.display_name || username || "User";
 
-  // Extract the clean username for linking back to profile
-  const cleanUsername = username?.startsWith("@") ? username.slice(1) : username;
+  // Back to Profile must be deterministic. The URL param may be a display
+  // name (legacy links), which is NOT routable as /@<param> — that broke the
+  // back button for every user whose username differs from their display
+  // name. Prefer the resolved user id (/u/:id always works); keep the
+  // @username form only when that's literally what the URL carried.
+  const backPath = username?.startsWith("@")
+    ? `/${username}`
+    : profileInfo
+      ? `/u/${profileInfo.id}`
+      : "/";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 p-4 pt-20">
       <div className="max-w-2xl mx-auto space-y-6">
-        <Button variant="ghost" onClick={() => navigate(`/@${cleanUsername}`)}>
+        <Button variant="ghost" onClick={() => navigate(backPath)}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Profile
         </Button>

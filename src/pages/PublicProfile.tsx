@@ -138,7 +138,11 @@ const PublicProfile = () => {
 
           {/* Public Xcrol Entries */}
           {resolvedUserId && (
-            <PublicXcrolEntries userId={resolvedUserId} username={displayName} />
+            <PublicXcrolEntries
+              userId={resolvedUserId}
+              username={displayName}
+              profileHandle={username ? `@${username.replace(/^@+/, "")}` : resolvedUserId}
+            />
           )}
 
           {/* Published Scrolls */}
