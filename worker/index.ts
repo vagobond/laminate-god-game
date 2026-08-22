@@ -41,9 +41,11 @@ export default {
     const embedMatch = url.pathname.match(EMBED_PATH);
     if (embedMatch) {
       const id = embedMatch[1];
+      // Usernames are stored lowercase; lowercase here (like /card/* and
+      // og-profile do) so mixed-case embed URLs don't 404.
       const param = UUID_RE.test(id)
         ? `userId=${encodeURIComponent(id)}`
-        : `username=${encodeURIComponent(id)}`;
+        : `username=${encodeURIComponent(id.toLowerCase())}`;
       const embedUrl = `${env.SUPABASE_URL}/functions/v1/embed-profile?${param}`;
       try {
         const res = await fetch(embedUrl, {
