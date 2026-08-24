@@ -26,8 +26,11 @@ import {
 
 import type { Reaction } from "@/components/XcrolReactions";
 import type { RiverReply } from "@/components/RiverReplies";
+import { pickStoredPreview, type PreviewRowFields } from "@/lib/link-preview-store";
 
-interface RiverEntry {
+// Preview fields ride the row (see 20260824090000_entry_link_previews) so the
+// card renders without calling the link-preview edge function.
+interface RiverEntry extends PreviewRowFields {
   id: string;
   content: string;
   link: string | null;
@@ -160,6 +163,7 @@ export default function TheRiver() {
             latitude: newRow.latitude ?? null,
             longitude: newRow.longitude ?? null,
             location_label: newRow.location_label ?? null,
+            ...(pickStoredPreview(newRow) ?? {}),
             author: {
               display_name: profile?.display_name ?? null,
               avatar_url: profile?.avatar_url ?? null,
@@ -343,6 +347,7 @@ export default function TheRiver() {
         latitude: e.latitude ?? null,
         longitude: e.longitude ?? null,
         location_label: e.location_label ?? null,
+        ...(pickStoredPreview(e) ?? {}),
         author: {
           display_name: e.author_display_name,
           avatar_url: e.author_avatar_url,

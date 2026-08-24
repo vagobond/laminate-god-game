@@ -2668,6 +2668,13 @@ export type Database = {
           link: string | null
           location_label: string | null
           longitude: number | null
+          preview_description: string | null
+          preview_favicon_url: string | null
+          preview_fetched_at: string | null
+          preview_image_url: string | null
+          preview_site_name: string | null
+          preview_title: string | null
+          preview_type: string | null
           privacy_level: string
           user_id: string
         }
@@ -2680,6 +2687,13 @@ export type Database = {
           link?: string | null
           location_label?: string | null
           longitude?: number | null
+          preview_description?: string | null
+          preview_favicon_url?: string | null
+          preview_fetched_at?: string | null
+          preview_image_url?: string | null
+          preview_site_name?: string | null
+          preview_title?: string | null
+          preview_type?: string | null
           privacy_level?: string
           user_id: string
         }
@@ -2692,6 +2706,13 @@ export type Database = {
           link?: string | null
           location_label?: string | null
           longitude?: number | null
+          preview_description?: string | null
+          preview_favicon_url?: string | null
+          preview_fetched_at?: string | null
+          preview_image_url?: string | null
+          preview_site_name?: string | null
+          preview_title?: string | null
+          preview_type?: string | null
           privacy_level?: string
           user_id?: string
         }

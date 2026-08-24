@@ -15,12 +15,13 @@ import type { RiverReply } from "@/components/RiverReplies";
 import type { ReactionData } from "@/pages/TheRiver";
 import { SharePostDialog } from "@/components/SharePostDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { pickStoredPreview, type PreviewRowFields } from "@/lib/link-preview-store";
 
 // Lazy so mapbox-gl only loads when someone clicks a pin chip.
 const EntryPinMap = lazy(() => import("@/components/EntryPinMap"));
 
 interface RiverEntryCardProps {
-  entry: {
+  entry: PreviewRowFields & {
     id: string;
     content: string;
     link: string | null;
@@ -164,7 +165,7 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, rep
 
                 {entry.link && (
                   <>
-                    <LinkPreview url={entry.link} />
+                    <LinkPreview url={entry.link} stored={pickStoredPreview(entry)} />
                     <a
                       href={entry.link}
                       target="_blank"

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Scroll, Lock, Users, UserCheck, Heart, ExternalLink, Trash2, Share2, Globe } from "lucide-react";
 import { XcrolEntryForm } from "@/components/XcrolEntryForm";
 import { LinkPreview } from "@/components/LinkPreview";
+import { pickStoredPreview, PREVIEW_COLUMNS, type PreviewRowFields } from "@/lib/link-preview-store";
 import { SharePostDialog } from "@/components/SharePostDialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -23,7 +24,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-interface XcrolEntry {
+interface XcrolEntry extends PreviewRowFields {
   id: string;
   content: string;
   link: string | null;
@@ -85,7 +86,7 @@ const MyXcrol = () => {
     try {
       const { data, error } = await supabase
         .from("xcrol_entries")
-        .select("id, content, link, entry_date, privacy_level, user_id, created_at")
+        .select(`id, content, link, entry_date, privacy_level, user_id, created_at, ${PREVIEW_COLUMNS}`)
         .eq("user_id", user.id)
         .order("entry_date", { ascending: false })
         .limit(50);
@@ -212,7 +213,7 @@ const MyXcrol = () => {
                     <p className="text-foreground whitespace-pre-wrap">{entry.content}</p>
                     {entry.link && (
                       <>
-                        <LinkPreview url={entry.link.startsWith("http") ? entry.link : `https://${entry.link}`} />
+                        <LinkPreview url={entry.link.startsWith("http") ? entry.link : `https://${entry.link}`} stored={pickStoredPreview(entry)} />
                         <a
                           href={entry.link.startsWith("http") ? entry.link : `https://${entry.link}`}
                           target="_blank"

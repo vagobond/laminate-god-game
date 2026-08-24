@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Play, Globe } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import type { StoredPreview } from "@/lib/link-preview-store";
 
 interface LinkPreviewData {
   type: "pixelfed" | "peertube" | "generic" | "unknown";
@@ -18,6 +19,18 @@ interface LinkPreviewData {
 
 interface LinkPreviewProps {
   url: string;
+  /**
+   * Preview data already stored on the entry row. When present, it renders
+   * directly and NO edge call is made — this is the path virtually every
+   * render takes, and it is why The River no longer burns the link-preview
+   * rate limit (30/min/IP) on every page view.
+   *
+   * Pass `undefined` (not null) for callers that have no stored data at all
+   * (compose previews); pass the row's fields for entries. A row whose link
+   * predates stored previews has a link but a null `preview_type`, and falls
+   * back to fetching once.
+   */
+  stored?: StoredPreview | null;
 }
 
 function formatDuration(seconds: number): string {
@@ -37,16 +50,43 @@ function isPreviewableUrl(url: string): boolean {
   }
 }
 
-export const LinkPreview = ({ url }: LinkPreviewProps) => {
+/** Stored row fields → the shape the renderers below already expect. */
+function fromStored(stored: StoredPreview, url: string): LinkPreviewData | null {
+  if (!stored.preview_type) return null;
+  return {
+    type: stored.preview_type,
+    title: stored.preview_title ?? undefined,
+    description: stored.preview_description ?? undefined,
+    image_url: stored.preview_image_url ?? undefined,
+    site_name: stored.preview_site_name ?? undefined,
+    favicon_url: stored.preview_favicon_url ?? undefined,
+    // Video embeds are resolved at click time from the original url; the
+    // stored row deliberately keeps no iframe src.
+    video_embed_url: undefined,
+    original_url: url,
+  };
+}
+
+export const LinkPreview = ({ url, stored }: LinkPreviewProps) => {
   // Wait for the session to load so logged-in requests carry the user's
   // token, but fetch either way: the edge function serves anonymous viewers
   // previews for links that appear in public entries.
   const { loading: authLoading } = useAuth();
-  const [data, setData] = useState<LinkPreviewData | null>(null);
+  const storedData = stored ? fromStored(stored, url) : null;
+  // A caller that passed stored fields has already resolved this link — even
+  // a null result means "nothing to show", so never fetch for it.
+  const useStored = stored !== undefined;
+  const [data, setData] = useState<LinkPreviewData | null>(storedData);
   const [loading, setLoading] = useState(false);
   const [showEmbed, setShowEmbed] = useState(false);
 
   useEffect(() => {
+    if (useStored) {
+      // Stored path: render what the row carries, make no network call.
+      setData(storedData);
+      setLoading(false);
+      return;
+    }
     if (authLoading) return;
     if (!url || !isPreviewableUrl(url)) return;
 
@@ -67,7 +107,9 @@ export const LinkPreview = ({ url }: LinkPreviewProps) => {
       });
 
     return () => { cancelled = true; };
-  }, [url, authLoading]);
+    // storedData is derived from `stored`; keying on the type + url is enough
+    // to re-render when the row's preview changes.
+  }, [url, authLoading, useStored, stored?.preview_type, stored?.preview_image_url]);
 
   if (!isPreviewableUrl(url) || loading || !data) {
     return null;

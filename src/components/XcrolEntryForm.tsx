@@ -12,6 +12,7 @@ import { useHometownDate } from "@/hooks/use-hometown-date";
 import { UserMentionInput } from "@/components/UserMentionInput";
 import { useNavigate } from "react-router-dom";
 import { isNostrPublishEnabled } from "@/lib/nostr-publish";
+import { previewFieldsFor } from "@/lib/link-preview-store";
 import { useNostrKey } from "@/hooks/use-nostr-key";
 import { finalizeEvent, verifyEvent } from "nostr-tools/pure";
 import { Relay } from "nostr-tools/relay";
@@ -127,15 +128,23 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
         location_label: hasPin ? locationLabel.trim().slice(0, 80) || null : null,
       };
 
+      // Resolve the link preview ONCE, here, and store it on the row: readers
+      // then render previews with no edge call. Never throws — a failed probe
+      // stores NULLs and simply shows no card.
+      const trimmedLink = link.trim() || null;
+      const previewFields = await previewFieldsFor(trimmedLink);
+
       if (todayEntry) {
         // Update existing entry
         const { error } = await supabase
           .from("xcrol_entries")
           .update({
             content: content.trim(),
-            link: link.trim() || null,
+            link: trimmedLink,
             privacy_level: privacyLevel,
             ...pinFields,
+            ...previewFields,
+            preview_fetched_at: previewFields.preview_type ? new Date().toISOString() : null,
           })
           .eq("id", todayEntry.id);
 
@@ -148,10 +157,12 @@ export const XcrolEntryForm = ({ userId, onEntrySaved, compact = false, prefillL
           .insert({
             user_id: userId,
             content: content.trim(),
-            link: link.trim() || null,
+            link: trimmedLink,
             privacy_level: privacyLevel,
             entry_date: todayDate,
             ...pinFields,
+            ...previewFields,
+            preview_fetched_at: previewFields.preview_type ? new Date().toISOString() : null,
           });
 
         if (error) throw error;
