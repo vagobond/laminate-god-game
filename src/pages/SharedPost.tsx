@@ -8,9 +8,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LinkPreview } from "@/components/LinkPreview";
+import { pickStoredPreview, PREVIEW_COLUMNS, type PreviewRowFields } from "@/lib/link-preview-store";
 import { MentionText } from "@/components/MentionText";
 
-interface SharedEntry {
+interface SharedEntry extends PreviewRowFields {
   id: string;
   content: string;
   link: string | null;
@@ -53,7 +54,7 @@ const SharedPost = () => {
       // anyone; friends-level entries only for entitled, signed-in viewers).
       const { data: entryData, error: entryError } = await supabase
         .from("xcrol_entries")
-        .select("id, content, link, entry_date, privacy_level, user_id")
+        .select(`id, content, link, entry_date, privacy_level, user_id, ${PREVIEW_COLUMNS}`)
         .eq("id", postId)
         .maybeSingle();
 
@@ -204,7 +205,7 @@ const SharedPost = () => {
 
                 {entry.link && (
                   <div className="mt-3">
-                    <LinkPreview url={entry.link} />
+                    <LinkPreview url={entry.link} stored={pickStoredPreview(entry)} />
                     <a
                       href={entry.link}
                       target="_blank"
