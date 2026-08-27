@@ -19,7 +19,7 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/post/*", "/embed/*", "/card/*", "/@*", "/u/*"]
+    "run_worker_first": true  // all requests: the www->apex redirect must see every path; worker falls through to ASSETS
   },
   "vars": {
     "SUPABASE_URL": "https://wmatvlxehyaufhjljtby.supabase.co"
