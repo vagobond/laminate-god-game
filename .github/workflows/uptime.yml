@@ -37,3 +37,33 @@ jobs:
           body=$(curl -sS --retry 2 --retry-delay 15 --retry-all-errors --max-time 30 https://wmatvlxehyaufhjljtby.supabase.co/functions/v1/health)
           echo "$body"
           echo "$body" | grep -q '"status":"healthy"'
+
+  # Worklist/backlog #14a: auth-config drift guard (DETECTION ONLY).
+  # Auth URL config is dashboard-only state no file enforces (config.toml has no
+  # [auth] section, deliberately: `supabase config push` would overwrite the ~19
+  # live settings and silently kill custom SMTP, Google OAuth, and the customized
+  # email templates). That drift is exactly what broke password reset after the
+  # 08-17 cutover. This job can page, never change anything.
+  auth-config:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Auth config drift guard
+        env:
+          TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          cfg=$(curl -sS --retry 2 --retry-delay 15 --retry-all-errors --max-time 30             -H "Authorization: Bearer $TOKEN"             "https://api.supabase.com/v1/projects/$REF/config/auth")
+          site=$(echo "$cfg" | jq -r '.site_url // .SITE_URL // empty')
+          allow=$(echo "$cfg" | jq -r '.uri_allow_list // .URI_ALLOW_LIST // empty')
+          echo "site_url=$site"
+          echo "uri_allow_list=$allow"
+          if [ "$site" != "https://xcrol.com" ]; then
+            echo "::error::site_url drifted: $site (expected https://xcrol.com)"; exit 1
+          fi
+          for needle in "https://xcrol.com" "https://www.xcrol.com" "workers.dev"; do
+            case "$allow" in
+              *"$needle"*) : ;;
+              *) echo "::error::redirect allow-list missing: $needle"; exit 1 ;;
+            esac
+          done
