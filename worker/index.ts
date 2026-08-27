@@ -38,6 +38,15 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
+    // Canonical host: www -> apex, permanent. Sessions and localStorage are
+    // per-origin, so a user "logged in" on apex is anonymous on www — this
+    // split caused the 08-17 password-reset bug and the 08-27 OAuth-consent
+    // "Invalid session" bug. One origin ends the class.
+    if (url.hostname === "www.xcrol.com") {
+      url.hostname = "xcrol.com";
+      return Response.redirect(url.toString(), 301);
+    }
+
     const embedMatch = url.pathname.match(EMBED_PATH);
     if (embedMatch) {
       const id = embedMatch[1];
