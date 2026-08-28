@@ -115,11 +115,21 @@ const PublicationReader = () => {
   }
 
   const items = Array.isArray(pub.content_json) ? pub.content_json : [];
-  // Free preview for logged-out readers: the front matter — everything before
-  // the first chapter-labeled item (for a book, the introduction). If the
-  // publication opens with a labeled item, the first item alone is free.
+  // Free preview for logged-out readers: the front matter (everything before
+  // the first chapter-labeled item — for a book, the introduction). When the
+  // front matter is short (entry-style scrolls like The First Scroll), extend
+  // the preview through the leading items until it totals roughly an
+  // introduction's worth of text.
+  const FREE_PREVIEW_CHARS = 4500;
   const firstLabeled = items.findIndex((it: PublicationItem) => !!it.chapter_label);
-  const freeCount = firstLabeled > 0 ? firstLabeled : Math.min(1, items.length);
+  let freeCount = firstLabeled > 0 ? firstLabeled : Math.min(1, items.length);
+  let previewChars = items
+    .slice(0, freeCount)
+    .reduce((n: number, it: PublicationItem) => n + (it.content?.length ?? 0), 0);
+  while (freeCount < items.length && previewChars < FREE_PREVIEW_CHARS) {
+    previewChars += items[freeCount].content?.length ?? 0;
+    freeCount++;
+  }
   const gated = !user && items.length > freeCount;
   const visibleItems = user ? items : items.slice(0, freeCount);
   let lastChapter: string | null = null;

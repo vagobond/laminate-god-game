@@ -66,12 +66,12 @@ const CastleLibrary = () => {
 
         {!authLoading && !user && (
           <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-center">
-            Reading past a book's introduction takes a free library card — an Xcrol account.{" "}
+            To read past a book's opening pages, sign up or log in to Xcrol — it's free.{" "}
             <RouterLink
               to={`/auth?returnUrl=${encodeURIComponent(location.pathname + location.search)}`}
               className="font-semibold text-primary hover:underline"
             >
-              Get yours
+              Sign up
             </RouterLink>
           </div>
         )}
