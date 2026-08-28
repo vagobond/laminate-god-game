@@ -22,6 +22,9 @@
     "run_worker_first": true  // all requests: the www->apex redirect must see every path; worker falls through to ASSETS
   },
   "vars": {
-    "SUPABASE_URL": "https://wmatvlxehyaufhjljtby.supabase.co"
+    "SUPABASE_URL": "https://wmatvlxehyaufhjljtby.supabase.co",
+    // Public anon key (already shipped in the client bundle) for in-worker
+    // PostgREST reads of anon-visible rows (group OG cards).
+    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndtYXR2bHhlaHlhdWZoamxqdGJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NzU4MjQsImV4cCI6MjA4MjU1MTgyNH0.7j8b65giQ9ZXLkWpbKdiZLWp6kT9lm8jhqoM7Yxt8tU"
   }
 }

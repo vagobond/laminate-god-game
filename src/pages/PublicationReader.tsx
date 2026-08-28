@@ -14,8 +14,10 @@ import {
   type PublicationItem,
 } from "@/lib/scroll-publish";
 import { PublicationReactions } from "@/components/scrolls/PublicationReactions";
+import { CastleGateDialog, CastleGatePanel } from "@/components/scrolls/CastleGate";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 interface AuthorInfo {
   display_name: string | null;
@@ -25,6 +27,8 @@ interface AuthorInfo {
 
 const PublicationReader = () => {
   const { slug } = useParams<{ slug: string }>();
+  const { user, loading: authLoading } = useAuth();
+  const [gateOpen, setGateOpen] = useState(false);
   const [pub, setPub] = useState<PublicationWithContent | null>(null);
   const [author, setAuthor] = useState<AuthorInfo | null>(null);
   const [more, setMore] = useState<Publication[]>([]);
@@ -83,7 +87,12 @@ const PublicationReader = () => {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  if (loading) {
+  // Surface the signup pitch once per visit for logged-out readers.
+  useEffect(() => {
+    if (!authLoading && !user) setGateOpen(true);
+  }, [authLoading, user]);
+
+  if (loading || authLoading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
   if (loadError && !pub) {
@@ -106,6 +115,23 @@ const PublicationReader = () => {
   }
 
   const items = Array.isArray(pub.content_json) ? pub.content_json : [];
+  // Free preview for logged-out readers: the front matter (everything before
+  // the first chapter-labeled item — for a book, the introduction). When the
+  // front matter is short (entry-style scrolls like The First Scroll), extend
+  // the preview through the leading items until it totals roughly an
+  // introduction's worth of text.
+  const FREE_PREVIEW_CHARS = 4500;
+  const firstLabeled = items.findIndex((it: PublicationItem) => !!it.chapter_label);
+  let freeCount = firstLabeled > 0 ? firstLabeled : Math.min(1, items.length);
+  let previewChars = items
+    .slice(0, freeCount)
+    .reduce((n: number, it: PublicationItem) => n + (it.content?.length ?? 0), 0);
+  while (freeCount < items.length && previewChars < FREE_PREVIEW_CHARS) {
+    previewChars += items[freeCount].content?.length ?? 0;
+    freeCount++;
+  }
+  const gated = !user && items.length > freeCount;
+  const visibleItems = user ? items : items.slice(0, freeCount);
   let lastChapter: string | null = null;
   const authorHref = author?.username ? `/@${author.username}` : `/u/${pub.user_id}`;
   const authorName = author?.display_name ?? author?.username ?? "Anonymous";
@@ -167,7 +193,7 @@ const PublicationReader = () => {
             {pub.blurb && <p className="mt-6 text-muted-foreground max-w-xl mx-auto italic">{pub.blurb}</p>}
           </header>
 
-          {items.map((it: PublicationItem) => {
+          {visibleItems.map((it: PublicationItem) => {
             const showChapter = it.chapter_label && it.chapter_label !== lastChapter;
             if (showChapter) lastChapter = it.chapter_label;
             return (
@@ -193,11 +219,18 @@ const PublicationReader = () => {
               </section>
             );
           })}
+          {gated && <CastleGatePanel bookTitle={pub.title} />}
         </article>
 
-        <div className="mt-12 border-t border-border pt-6">
-          <PublicationReactions publicationId={pub.id} />
-        </div>
+        {gated && (
+          <CastleGateDialog open={gateOpen} onOpenChange={setGateOpen} bookTitle={pub.title} />
+        )}
+
+        {user && (
+          <div className="mt-12 border-t border-border pt-6">
+            <PublicationReactions publicationId={pub.id} />
+          </div>
+        )}
 
         {more.length > 0 && (
           <div className="mt-12">

@@ -6,16 +6,29 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft, Library, Search } from "lucide-react";
 import { listLibrary, type LibraryEntry } from "@/lib/scroll-publish";
 import { LibraryCard } from "@/components/scrolls/LibraryCard";
+import { CastleGateDialog } from "@/components/scrolls/CastleGate";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 
 type Sort = "newest" | "most_read" | "most_reacted";
 
 const CastleLibrary = () => {
+  const { user, loading: authLoading } = useAuth();
+  const location = useLocation();
+  const [gateOpen, setGateOpen] = useState(false);
   const [entries, setEntries] = useState<LibraryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<Sort>("newest");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+
+  // Logged-out visitors can browse the shelf (the shop window) but get the
+  // signup pitch on arrival; reading past a book's front matter is gated in
+  // the reader itself.
+  useEffect(() => {
+    if (!authLoading && !user) setGateOpen(true);
+  }, [authLoading, user]);
 
   const load = async (s: Sort, q: string) => {
     setLoading(true);
@@ -51,6 +64,18 @@ const CastleLibrary = () => {
           <p className="text-muted-foreground italic">Published Scrolls from across the realm.</p>
         </div>
 
+        {!authLoading && !user && (
+          <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-center">
+            To read past a book's opening pages, sign up or log in to Xcrol — it's free.{" "}
+            <RouterLink
+              to={`/auth?returnUrl=${encodeURIComponent(location.pathname + location.search)}`}
+              className="font-semibold text-primary hover:underline"
+            >
+              Sign up
+            </RouterLink>
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-2 items-center justify-between">
           <div className="flex gap-1">
             {(["newest","most_read","most_reacted"] as Sort[]).map((s) => (
@@ -84,6 +109,8 @@ const CastleLibrary = () => {
             {entries.map((e) => <LibraryCard key={e.id} entry={e} />)}
           </div>
         )}
+
+        {!user && <CastleGateDialog open={gateOpen} onOpenChange={setGateOpen} />}
       </div>
     </div>
   );

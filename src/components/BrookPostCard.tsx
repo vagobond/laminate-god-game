@@ -115,7 +115,7 @@ export const BrookPostCard = ({ post, currentUserId, onDelete, defaultCommentsOp
                   >
                     <ExternalLink className="h-3 w-3" />
                     {(() => {
-                      try { return new URL(normalizedUrl).hostname; } catch { return post.link; }
+                      try { const u = new URL(normalizedUrl); return u.hostname + (u.pathname === "/" ? "" : u.pathname); } catch { return post.link; }
                     })()}
                   </a>
                 </div>

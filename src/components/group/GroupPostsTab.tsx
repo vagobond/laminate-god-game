@@ -206,7 +206,7 @@ const GroupPostsTab = ({ posts, group, userId, onCreatePost, onDeletePost, onUpd
                         >
                           <ExternalLink className="h-3 w-3" />
                           {(() => {
-                            try { return new URL(post.link).hostname; } catch { return post.link; }
+                            try { const u = new URL(post.link); return u.hostname + (u.pathname === "/" ? "" : u.pathname); } catch { return post.link; }
                           })()}
                         </a>
                       </>
