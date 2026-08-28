@@ -153,7 +153,7 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, rep
                     className="mt-1 inline-flex items-center gap-1 text-primary hover:underline text-xs max-w-full truncate"
                   >
                     <ExternalLink className="h-3 w-3" />
-                    {(() => { try { return new URL(entry.link).hostname; } catch { return entry.link; } })()}
+                    {(() => { try { const u = new URL(entry.link); return u.hostname + (u.pathname === "/" ? "" : u.pathname); } catch { return entry.link; } })()}
                   </a>
                 )}
               </>
@@ -173,7 +173,7 @@ export const RiverEntryCard = ({ entry, initialReactions, onReactionsChange, rep
                       className="mt-2 inline-flex items-center gap-1 text-primary hover:underline text-sm max-w-full truncate"
                     >
                       <ExternalLink className="h-3 w-3" />
-                      {(() => { try { return new URL(entry.link).hostname; } catch { return entry.link; } })()}
+                      {(() => { try { const u = new URL(entry.link); return u.hostname + (u.pathname === "/" ? "" : u.pathname); } catch { return entry.link; } })()}
                     </a>
                   </>
                 )}
